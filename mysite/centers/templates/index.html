@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindScanner</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'centers/styles.css' %}">
+    <script type="text/javascript"
+        src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=af5q47mofm"></script>
+</head>
+
+<body>
+    <header>
+        <h1>MindScanner</h1>
+        <div id="auth-buttons" style="float: right;">
+            {% if user.is_authenticated %}
+                <form id="logout-form" method="POST" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+                <a href="{% url 'signup' %}">Sign Up</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div id="map" style="width: 100%; height: 500px;"></div>
+    <div id="center-info" style="margin-top: 20px;"></div>
+    
+    <!-- Review form container -->
+    <div id="review-form-container" style="display:none; margin-top: 20px;">
+        <h3>Write a Review</h3>
+        <form id="review-form" method="POST">
+            {% csrf_token %}
+            <label for="review-title">Title:</label>
+            <input type="text" id="review-title" name="title" required><br><br>
+            <label for="review-summary">Summary:</label>
+            <textarea id="review-summary" name="summary" required></textarea><br><br>
+            <button type="submit">Submit Review</button>
+        </form>
+    </div>
+
+    <div id="reviews"></div>
+
+    <footer>
+        <p>Powered by MindScanner. <a href="#">Contact Us</a></p>
+    </footer>
+
+    <!-- Include the JavaScript file -->
+    <script src="{% static 'centers/map.js' %}"></script>
+
+    <script>
+        // Dynamically generate centers array from the data passed from Django
+        var centers = [
+            {% for center in centers %}
+            {
+                id: {{ center.id }},
+                name: "{{ center.name|escapejs }}",
+                lat: {{ center.latitude }},
+                lng: {{ center.longitude }},
+                address: "{{ center.address|escapejs }}",
+                contact: "{{ center.contact|escapejs }}",
+                url: "{{ center.url|escapejs }}",
+                operating_hours: "{{ center.operating_hours|escapejs }}",
+                description: "{{ center.description|escapejs }}",
+                isAuthenticated: {{ user.is_authenticated|yesno:"true,false" }}
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        // Function to get query parameter
+        function getQueryParam(param) {
+            var urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // On page load, check if there's a center_id parameter
+        document.addEventListener('DOMContentLoaded', function () {
+            var centerId = getQueryParam('center_id');
+            if (centerId) {
+                // Trigger the marker corresponding to the centerId
+                loadCenters(centers, centerId);
+            } else {
+                loadCenters(centers);
+            }
+        });
+    </script>
+</body>
+
+</html>

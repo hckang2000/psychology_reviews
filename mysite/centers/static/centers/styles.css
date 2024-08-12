@@ -1,0 +1,169 @@
+/* styles.css */
+
+/* Header styles */
+header {
+    position: relative;
+    height: 60px;
+    padding: 10px 20px;
+    background-color: #fefae0;
+}
+
+#auth-buttons a {
+    color: #d49f00;
+    text-decoration: none;
+    margin-left: 15px;
+    font-size: 1rem;
+}
+
+#auth-buttons a:hover {
+    text-decoration: underline;
+}
+
+/* General Page Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #fffaf0; /* Light yellow background */
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-top: 20px;
+    font-size: 2.5rem;
+}
+
+#map {
+    width: 100%;
+    height: 500px;
+    margin: 20px auto;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#center-info {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fefae0; /* Light yellow shade */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#center-info h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.8rem;
+    color: #555;
+}
+
+#center-info p {
+    margin: 5px 0;
+    color: #777;
+}
+
+#center-info a {
+    text-decoration: none;
+    color: #d49f00; /* Darker yellow for links */
+}
+
+#center-info a:hover {
+    text-decoration: underline;
+}
+
+#review-form-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fefae0; /* Light yellow shade */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#review-form label {
+    font-weight: bold;
+    color: #555;
+}
+
+#review-form input[type="text"],
+#review-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+    font-size: 1rem;
+}
+
+#review-form button {
+    background-color: #d49f00; /* Darker yellow for buttons */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#review-form button:hover {
+    background-color: #b88700; /* Slightly darker yellow on hover */
+}
+
+#reviews {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fefae0; /* Light yellow shade */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.review {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+}
+
+.review:last-child {
+    border-bottom: none;
+}
+
+.review h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #555;
+}
+
+.review p {
+    margin: 5px 0;
+    color: #777;
+}
+
+.review a {
+    text-decoration: none;
+    color: #d49f00; /* Darker yellow for links */
+}
+
+.review a:hover {
+    text-decoration: underline;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    background-color: #fefae0;
+    color: #555;
+    border-top: 1px solid #ddd;
+    margin-top: 40px;
+}
+
+footer a {
+    color: #d49f00;
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
