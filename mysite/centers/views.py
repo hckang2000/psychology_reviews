@@ -63,3 +63,8 @@ def add_review(request, center_id):
     else:
         form = ReviewForm()
     return render(request, 'centers/center_detail.html', {'form': form, 'center': center})
+
+def search(request):
+    query = request.GET.get('q')
+    results = Center.objects.filter(name__icontains=query) if query else []
+    return render(request, 'centers/search_results.html', {'results': results, 'query': query})

@@ -5,6 +5,7 @@ from centers import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='index'),
+    path('', include('centers.urls')),  # centers 앱의 URL 포함
     path('reviews/<int:center_id>/', views.get_reviews, name='get_reviews'),
     path('reviews/<int:center_id>/add/', views.add_review, name='add_review'),
     path('accounts/', include('accounts.urls')),  # Include the URLs from the accounts app

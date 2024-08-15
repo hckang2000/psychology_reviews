@@ -13,8 +13,16 @@
 
 <body>
     <header>
-        <h1>MindScanner</h1>
-        <div id="auth-buttons" style="float: right;">
+        <div class="header-left">
+            <h1>MindScanner</h1>
+        </div>
+        <div class="header-center">
+            <form action="{% url 'search' %}" method="get" class="search-form">
+                <input type="text" name="q" placeholder="Search centers..." class="search-input">
+                <button type="submit" class="search-button">Search</button>
+            </form>
+        </div>
+        <div id="auth-buttons" class="header-right">
             {% if user.is_authenticated %}
                 <form id="logout-form" method="POST" action="{% url 'logout' %}">
                     {% csrf_token %}
@@ -50,7 +58,6 @@
     </footer>
 
     <!-- Include the JavaScript file -->
-     <!-- 테스트-->
     <script src="{% static 'centers/map.js' %}"></script>
 
     <script>

@@ -6,6 +6,63 @@ header {
     height: 60px;
     padding: 10px 20px;
     background-color: #fefae0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-left h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    flex-shrink: 0; /* Prevent the logo from shrinking */
+}
+
+.header-center {
+    display: flex;
+    justify-content: center;
+    flex-grow: 1;
+    margin-left: 20px;
+    margin-right: 20px;
+    max-width: 600px; /* Ensure the search bar doesn't take up the full width */
+    border: 2px solid red; /* Temporary border for debugging */
+}
+
+.search-form {
+    display: flex;
+    align-items: center;
+    width: 100%; /* Take up the full width of the center section */
+    background-color: lightgray; /* Temporary background for debugging */
+}
+
+.search-input {
+    padding: 5px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px 0 0 5px;
+    outline: none;
+    flex-grow: 1;
+    min-width: 0; /* Ensure the input can shrink properly */
+}
+
+.search-button {
+    padding: 5px 10px;
+    font-size: 1rem;
+    background-color: #d49f00;
+    color: white;
+    border: 1px solid #ddd;
+    border-left: none;
+    border-radius: 0 5px 5px 0;
+    cursor: pointer;
+}
+
+.search-button:hover {
+    background-color: #b88700;
+}
+
+#auth-buttons {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0; /* Prevent the auth buttons from shrinking */
 }
 
 #auth-buttons a {
@@ -29,10 +86,9 @@ body {
 }
 
 h1 {
-    text-align: center;
-    color: #333;
-    margin-top: 20px;
+    margin: 0;
     font-size: 2.5rem;
+    color: #333;
 }
 
 #map {
@@ -156,7 +212,7 @@ footer {
     background-color: #fefae0;
     color: #555;
     border-top: 1px solid #ddd;
-    margin-top: 40px;
+    margin-top: 40px;   
 }
 
 footer a {
