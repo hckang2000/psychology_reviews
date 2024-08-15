@@ -14,7 +14,7 @@ header {
 .header-left h1 {
     margin: 0;
     font-size: 1.5rem;
-    flex-shrink: 0; /* Prevent the logo from shrinking */
+    flex-shrink: 0;
 }
 
 .header-center {
@@ -23,15 +23,13 @@ header {
     flex-grow: 1;
     margin-left: 20px;
     margin-right: 20px;
-    max-width: 600px; /* Ensure the search bar doesn't take up the full width */
-    border: 2px solid red; /* Temporary border for debugging */
+    max-width: 600px;
 }
 
 .search-form {
     display: flex;
     align-items: center;
-    width: 100%; /* Take up the full width of the center section */
-    background-color: lightgray; /* Temporary background for debugging */
+    width: 100%;
 }
 
 .search-input {
@@ -41,7 +39,7 @@ header {
     border-radius: 5px 0 0 5px;
     outline: none;
     flex-grow: 1;
-    min-width: 0; /* Ensure the input can shrink properly */
+    min-width: 0;
 }
 
 .search-button {
@@ -62,7 +60,7 @@ header {
 #auth-buttons {
     display: flex;
     align-items: center;
-    flex-shrink: 0; /* Prevent the auth buttons from shrinking */
+    flex-shrink: 0;
 }
 
 #auth-buttons a {
@@ -79,7 +77,7 @@ header {
 /* General Page Styles */
 body {
     font-family: 'Arial', sans-serif;
-    background-color: #fffaf0; /* Light yellow background */
+    background-color: #fffaf0;
     color: #333;
     margin: 0;
     padding: 0;
@@ -99,40 +97,40 @@ h1 {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-#center-info {
+#center-info, #reviews {
     max-width: 800px;
     margin: 20px auto;
     padding: 20px;
-    background-color: #fefae0; /* Light yellow shade */
+    background-color: #fefae0;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: block; /* Flex 제거, 블록 레이아웃 사용 */
 }
 
-#center-info h2 {
-    margin: 0 0 10px 0;
-    font-size: 1.8rem;
-    color: #555;
+#center-info-content {
+    padding-right: 0; /* Padding 조정 */
+    margin-bottom: 20px; /* 하단 마진 추가 */
 }
 
-#center-info p {
-    margin: 5px 0;
-    color: #777;
+.write-review-btn {
+    background-color: #d49f00;
+    color: white;
+    border: none;
+    padding: 10px 20px; /* 패딩 조정 */
+    border-radius: 5px;
+    cursor: pointer;
+    display: inline-block;
 }
 
-#center-info a {
-    text-decoration: none;
-    color: #d49f00; /* Darker yellow for links */
-}
-
-#center-info a:hover {
-    text-decoration: underline;
+.write-review-btn:hover {
+    background-color: #b88700;
 }
 
 #review-form-container {
     max-width: 800px;
     margin: 20px auto;
     padding: 20px;
-    background-color: #fefae0; /* Light yellow shade */
+    background-color: #fefae0;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -155,7 +153,7 @@ h1 {
 }
 
 #review-form button {
-    background-color: #d49f00; /* Darker yellow for buttons */
+    background-color: #d49f00;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -164,16 +162,7 @@ h1 {
 }
 
 #review-form button:hover {
-    background-color: #b88700; /* Slightly darker yellow on hover */
-}
-
-#reviews {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 20px;
-    background-color: #fefae0; /* Light yellow shade */
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #b88700;
 }
 
 .review {
@@ -198,7 +187,7 @@ h1 {
 
 .review a {
     text-decoration: none;
-    color: #d49f00; /* Darker yellow for links */
+    color: #d49f00;
 }
 
 .review a:hover {
@@ -212,7 +201,7 @@ footer {
     background-color: #fefae0;
     color: #555;
     border-top: 1px solid #ddd;
-    margin-top: 40px;   
+    margin-top: 40px;
 }
 
 footer a {

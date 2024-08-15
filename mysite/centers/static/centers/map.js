@@ -33,9 +33,12 @@ function loadCenters(centers, selectedCenterId = null) {
 }
 
 function displayCenterInfo(center) {
+    console.log("displayCenterInfo called with center: ", center);
     var centerInfoDiv = document.getElementById('center-info');
+    
+    // Update HTML content directly without extra wrappers
     centerInfoDiv.innerHTML = `
-        <div class="info-box">
+        <div id="center-info-content">
             <h2>${center.name}</h2>
             <p><strong>Address:</strong> ${center.address}</p>
             <p><strong>Contact:</strong> ${center.contact}</p>
@@ -43,13 +46,36 @@ function displayCenterInfo(center) {
             <p><strong>Operating Hours:</strong> ${center.operating_hours}</p>
             <p><strong>Description:</strong> ${center.description}</p>
         </div>
+        ${center.isAuthenticated ? 
+            '<button class="write-review-btn" onclick="showReviewForm()">Write a Review</button>' :
+            '<p><a href="/accounts/login/">Log in</a> to write a review.</p>'
+        }
     `;
+
+    // Add event listener to the "Write a Review" button if present
+    var writeReviewBtn = document.querySelector('.write-review-btn');
+    if (writeReviewBtn) {
+        writeReviewBtn.addEventListener('click', function () {
+            var formContainer = document.getElementById('review-form-container');
+            formContainer.style.display = 'block';
+            // Ensure that the review is for the correct center
+            document.getElementById('review-form').action = `/reviews/${center.id}/add/`;
+        });
+    }
+
+    // Load reviews for the selected center
+    displayCenterReviews(center.id);
+}
+
+function showReviewForm() {
+    document.getElementById('review-form-container').style.display = 'block';
 }
 
 function displayCenterReviews(centerId) {
     fetch(`/reviews/${centerId}/`)
         .then(response => response.json())
         .then(data => {
+            console.log("Reviews data: ", data);
             var reviewsDiv = document.getElementById('reviews');
             reviewsDiv.innerHTML = '';
             data.reviews.forEach(review => {
