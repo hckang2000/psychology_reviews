@@ -12,11 +12,6 @@ var centers = [
 ];
 
 function loadCenters(centers, selectedCenterId = null) {
-    var map = new naver.maps.Map('map', {
-        center: new naver.maps.LatLng(37.5665, 126.9780), // Default center
-        zoom: 10
-    });
-
     centers.forEach(function (center) {
         var marker = new naver.maps.Marker({
             position: new naver.maps.LatLng(center.lat, center.lng),
@@ -26,17 +21,18 @@ function loadCenters(centers, selectedCenterId = null) {
 
         naver.maps.Event.addListener(marker, 'click', function () {
             displayCenterInfo(center);
+            displayCenterReviews(center.id);
         });
 
-        // If the current center matches the selectedCenterId, trigger it
         if (selectedCenterId && center.id == selectedCenterId) {
+            map.setCenter(new naver.maps.LatLng(center.lat, center.lng));
             displayCenterInfo(center);
+            displayCenterReviews(center.id);
         }
     });
 }
 
 function displayCenterInfo(center) {
-    // Display center information
     var centerInfoDiv = document.getElementById('center-info');
     centerInfoDiv.innerHTML = `
         <div class="info-box">
@@ -46,26 +42,12 @@ function displayCenterInfo(center) {
             <p><strong>Website:</strong> <a href="${center.url}" target="_blank">${center.url}</a></p>
             <p><strong>Operating Hours:</strong> ${center.operating_hours}</p>
             <p><strong>Description:</strong> ${center.description}</p>
-            ${center.isAuthenticated ? 
-                '<button id="write-review-btn" class="btn">Write a Review</button>' :
-                '<p><a href="/accounts/login/">Log in</a> to write a review.</p>'
-            }
         </div>
     `;
+}
 
-    // Add event listener to the "Write a Review" button
-    var writeReviewBtn = document.getElementById('write-review-btn');
-    if (writeReviewBtn) {
-        writeReviewBtn.addEventListener('click', function () {
-            var formContainer = document.getElementById('review-form-container');
-            formContainer.style.display = 'block';
-            // Ensure that the review is for the correct center
-            document.getElementById('review-form').action = `/reviews/${center.id}/add/`;
-        });
-    }
-
-    // Load reviews for the selected center
-    fetch(`/reviews/${center.id}/`)
+function displayCenterReviews(centerId) {
+    fetch(`/reviews/${centerId}/`)
         .then(response => response.json())
         .then(data => {
             var reviewsDiv = document.getElementById('reviews');
@@ -83,16 +65,6 @@ function displayCenterInfo(center) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Check if the write-review-btn exists before adding an event listener
-    var writeReviewBtn = document.getElementById('write-review-btn');
-    if (writeReviewBtn) {
-        writeReviewBtn.addEventListener('click', function () {
-            var formContainer = document.getElementById('review-form-container');
-            if (formContainer.style.display === 'none') {
-                formContainer.style.display = 'block';
-            } else {
-                formContainer.style.display = 'none';
-            }
-        });
-    }
+    var selectedCenterId = getQueryParam('center_id');  // Get the center_id from the URL
+    loadCenters(centers, selectedCenterId);
 });

@@ -1,24 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
+<!-- centers/templates/search_results.html --><!DOCTYPE html><html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Results</title>
-</head>
+    <title>Search Results - MindScanner</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'centers/styles.css' %}"></head>
+
 <body>
-    <h1>Search Results</h1>
-    {% if query %}
-        <p>Results for "{{ query }}":</p>
-        <ul>
-            {% for center in results %}
-                <li>{{ center.name }} - {{ center.address }}</li>
+    <!-- Header Section -->
+    <header>
+        <div class="header-left">
+            <h1>MindScanner</h1>
+        </div>
+        <div class="header-center">
+            <form action="{% url 'search' %}" method="get" class="search-form">
+                <input type="text" name="q" placeholder="Search centers..." class="search-input" value="{{ request.GET.q }}">
+                <button type="submit" class="search-button">Search</button>
+            </form>
+        </div>
+        <div id="auth-buttons" class="header-right">
+            {% if user.is_authenticated %}
+                <form id="logout-form" method="POST" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+                <a href="{% url 'signup' %}">Sign Up</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Search Results Section -->
+    <div class="container">
+        <h2>Search Results for "{{ request.GET.q }}"</h2>
+        {% if centers %}
+            {% for center in centers %}
+            <div id="center-info">
+                <h2>{{ center.name }}</h2>
+                <p><strong>Address:</strong> {{ center.address }}</p>
+                <p><strong>Contact:</strong> {{ center.contact }}</p>
+                <p><strong>Website:</strong> <a href="{{ center.url }}" target="_blank">{{ center.url }}</a></p>
+                <p><strong>Operating Hours:</strong> {{ center.operating_hours }}</p>
+                <p><strong>Description:</strong> {{ center.description }}</p>
+                <!-- "Read More" button -->
+                <a href="{% url 'index' %}?center_id={{ center.id }}" class="btn">Read More</a>
+            </div>
             {% endfor %}
-        </ul>
-        {% if not results %}
-            <p>No results found.</p>
+        {% else %}
+            <p>No centers found for "{{ request.GET.q }}"</p>
         {% endif %}
-    {% else %}
-        <p>No search query provided.</p>
-    {% endif %}
-</body>
+    </div>
+
+    <footer>
+        <p>Powered by MindScanner. <a href="#">Contact Us</a></p>
+    </footer></body>
+
 </html>

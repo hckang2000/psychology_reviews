@@ -5,10 +5,12 @@ from .forms import ReviewForm
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
+from django.db.models import Q
 
 def index(request):
     centers = Center.objects.all()
-    return render(request, 'index.html', {'centers': centers})
+    selected_center_id = request.GET.get('center_id')  # Get the selected center ID from the query parameter
+    return render(request, 'index.html', {'centers': centers, 'selected_center_id': selected_center_id})
 
 def get_reviews(request, center_id):
     center = get_object_or_404(Center, pk=center_id)
@@ -65,6 +67,14 @@ def add_review(request, center_id):
     return render(request, 'centers/center_detail.html', {'form': form, 'center': center})
 
 def search(request):
-    query = request.GET.get('q')
-    results = Center.objects.filter(name__icontains=query) if query else []
-    return render(request, 'centers/search_results.html', {'results': results, 'query': query})
+    query = request.GET.get('q', '')
+    if query:
+        centers = Center.objects.filter(
+            Q(name__icontains=query) |
+            Q(address__icontains=query) |
+            Q(contact__icontains=query)
+        )
+    else:
+        centers = Center.objects.none()
+
+    return render(request, 'centers/search_results.html', {'centers': centers})
