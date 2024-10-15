@@ -1,5 +1,7 @@
 /* styles.css */
 
+/* Existing styles */
+
 /* Header styles */
 header {
     position: relative;
@@ -24,6 +26,54 @@ header {
     margin-left: 20px;
     margin-right: 20px;
     max-width: 600px;
+}
+
+/* Slider Container */
+.slider-container {
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+    position: relative;
+    margin: 20px auto;
+    overflow: hidden;
+}
+
+/* Individual Slide */
+.slide {
+    display: none;
+    width: 100%;
+    height: auto;
+}
+
+.slide img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+/* Slider Navigation */
+.slider-nav {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.slider-nav button {
+    cursor: pointer;
+    padding: 10px 20px;
+    background-color: #d49f00;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    margin: 0 5px;
+}
+
+.slider-nav button:hover {
+    background-color: #b88700;
+}
+
+/* Show the first slide by default */
+.slider-container .slide:first-child {
+    display: block;
 }
 
 .search-form {
@@ -104,19 +154,19 @@ h1 {
     background-color: #fefae0;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    display: block; /* Flex 제거, 블록 레이아웃 사용 */
+    display: block;
 }
 
 #center-info-content {
-    padding-right: 0; /* Padding 조정 */
-    margin-bottom: 20px; /* 하단 마진 추가 */
+    padding-right: 0;
+    margin-bottom: 20px;
 }
 
 .write-review-btn {
     background-color: #d49f00;
     color: white;
     border: none;
-    padding: 10px 20px; /* 패딩 조정 */
+    padding: 10px 20px;
     border-radius: 5px;
     cursor: pointer;
     display: inline-block;

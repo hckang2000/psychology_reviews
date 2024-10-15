@@ -1,3 +1,9 @@
+// Utility function to get query parameters from the URL
+function getQueryParam(param) {
+    var urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
+
 console.log("Starting to load the map...");
 
 var map = new naver.maps.Map('map', {
@@ -12,7 +18,9 @@ var centers = [
 ];
 
 function loadCenters(centers, selectedCenterId = null) {
+    
     centers.forEach(function (center) {
+        console.log('Adding marker for center:', center.name); // Log each marker creation
         var marker = new naver.maps.Marker({
             position: new naver.maps.LatLng(center.lat, center.lng),
             map: map,
@@ -20,6 +28,7 @@ function loadCenters(centers, selectedCenterId = null) {
         });
 
         naver.maps.Event.addListener(marker, 'click', function () {
+            console.log('Marker clicked for:', center.name); // Log when the marker is clicked
             displayCenterInfo(center);
             displayCenterReviews(center.id);
         });
@@ -32,25 +41,71 @@ function loadCenters(centers, selectedCenterId = null) {
     });
 }
 
+function initSlider() {
+    let currentSlideIndex = 0;
+    const slides = document.querySelectorAll('.slide');
+
+    if (slides.length === 0) {
+        return;  // No slides to show, exit early
+    }
+
+    // Show the current slide
+    function showSlide(index) {
+        // Hide all slides
+        slides.forEach((slide, i) => {
+            slide.style.display = (i === index) ? 'block' : 'none';
+        });
+    }
+
+    // Move the slider by a certain number of steps
+    window.moveSlide = function(n) {
+        currentSlideIndex = (currentSlideIndex + n + slides.length) % slides.length;
+        showSlide(currentSlideIndex);
+    };
+
+    // Show the first slide
+    showSlide(currentSlideIndex);
+}
+
+
 function displayCenterInfo(center) {
-    console.log("displayCenterInfo called with center: ", center);
+    console.log("Displaying center info for:", center.name);
+
+    // Update HTML content for center-info
     var centerInfoDiv = document.getElementById('center-info');
-    
-    // Update HTML content directly without extra wrappers
     centerInfoDiv.innerHTML = `
         <div id="center-info-content">
+            <!-- Image Slider Section -->
+            <div id="image-slider" class="slider-container">
+                <div class="slider-wrapper">
+                    ${center.images.length > 0 
+                        ? center.images.map(image => 
+                            `<div class="slide">
+                                <img src="${image}" alt="Facility image for ${center.name}">
+                            </div>`).join('')
+                        : '<p>No images available for this center.</p>'
+                    }
+                </div>
+                <div class="slider-nav">
+                    <button class="prev" onclick="moveSlide(-1)">&#10094;</button>
+                    <button class="next" onclick="moveSlide(1)">&#10095;</button>
+                </div>
+            </div>
+
+            <!-- Center Info Section -->
             <h2>${center.name}</h2>
             <p><strong>Address:</strong> ${center.address}</p>
             <p><strong>Contact:</strong> ${center.contact}</p>
             <p><strong>Website:</strong> <a href="${center.url}" target="_blank">${center.url}</a></p>
-            <p><strong>Operating Hours:</strong> ${center.operating_hours}</p>
-            <p><strong>Description:</strong> ${center.description}</p>
         </div>
         ${center.isAuthenticated ? 
             '<button class="write-review-btn" onclick="showReviewForm()">Write a Review</button>' :
             '<p><a href="/accounts/login/">Log in</a> to write a review.</p>'
         }
     `;
+
+    // Initialize slider functionality after content is loaded
+    initSlider();  // Initialize the slider for this center
 
     // Add event listener to the "Write a Review" button if present
     var writeReviewBtn = document.querySelector('.write-review-btn');
@@ -66,6 +121,7 @@ function displayCenterInfo(center) {
     // Load reviews for the selected center
     displayCenterReviews(center.id);
 }
+
 
 function showReviewForm() {
     document.getElementById('review-form-container').style.display = 'block';
@@ -90,7 +146,9 @@ function displayCenterReviews(centerId) {
         });
 }
 
+
 document.addEventListener('DOMContentLoaded', function () {
     var selectedCenterId = getQueryParam('center_id');  // Get the center_id from the URL
+    console.log("Selected Center ID:", selectedCenterId);
     loadCenters(centers, selectedCenterId);
 });

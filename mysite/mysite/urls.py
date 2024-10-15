@@ -1,14 +1,20 @@
 from django.contrib import admin
-from django.urls import path, include  # include is needed to include URLs from other apps
+from django.urls import path, include
+from django.conf import settings  # Import settings
+from django.conf.urls.static import static  # Import static for serving media files
 from centers import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='index'),
-    path('', include('centers.urls')),  # centers 앱의 URL 포함
+    path('', include('centers.urls')),
     path('reviews/<int:center_id>/', views.get_reviews, name='get_reviews'),
     path('reviews/<int:center_id>/add/', views.add_review, name='add_review'),
-    path('accounts/', include('accounts.urls')),  # Include the URLs from the accounts app
-    path('accounts/', include('django.contrib.auth.urls')),  # For login/logout
+    path('accounts/', include('accounts.urls')),
+    path('accounts/', include('django.contrib.auth.urls')),
     path('<int:center_id>/', views.center_detail, name='center_detail'),
 ]
+
+# Add static files (media)
+if settings.DEBUG:  # Only serve media files in development mode
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

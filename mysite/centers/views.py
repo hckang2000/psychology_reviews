@@ -8,9 +8,30 @@ from datetime import datetime
 from django.db.models import Q
 
 def index(request):
-    centers = Center.objects.all()
-    selected_center_id = request.GET.get('center_id')  # Get the selected center ID from the query parameter
-    return render(request, 'index.html', {'centers': centers, 'selected_center_id': selected_center_id})
+    centers = Center.objects.all().prefetch_related('images')  # Prefetch images
+
+    center_list = []
+    for center in centers:
+        center_data = {
+            'id': center.id,
+            'name': center.name,
+            'lat': center.latitude,
+            'lng': center.longitude,
+            'address': center.address,
+            'contact': center.contact,
+            'url': center.url,
+            'operating_hours': center.operating_hours,
+            'description': center.description,
+            'images': [image.image.url for image in center.images.all()],  # Image URLs
+            'is_authenticated': request.user.is_authenticated
+        }
+        print(center.name, center.images.all())  # Debug: log the images for each center
+        center_list.append(center_data)
+
+    selected_center_id = request.GET.get('center_id')
+    return render(request, 'index.html', {'centers': center_list, 'selected_center_id': selected_center_id})
+
+
 
 def get_reviews(request, center_id):
     center = get_object_or_404(Center, pk=center_id)
@@ -24,10 +45,6 @@ def get_reviews(request, center_id):
 def center_detail(request, center_id):
     center = Center.objects.get(pk=center_id)
     reviews = Review.objects.filter(center=center).order_by('-date')
-
-    for review in reviews:
-        if isinstance(review.date, str):
-            review.date = datetime.strptime(review.date, '%Y-%m-%d').date()
 
     if request.method == 'POST':
         if not request.user.is_authenticated:
@@ -43,11 +60,16 @@ def center_detail(request, center_id):
     else:
         form = ReviewForm()
 
+    # Pass the center images to the template
+    center_images = center.images.all()
+
     return render(request, 'centers/center_detail.html', {
         'center': center,
         'reviews': reviews,
         'form': form,
+        'center_images': center_images,  # Pass the images to the template
     })
+
     
 @login_required
 def add_review(request, center_id):
