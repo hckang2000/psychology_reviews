@@ -56,42 +56,44 @@ function showCenterDetails(center) {
     
     // Create HTML content for center details
     let content = `
-        <div class="center-details">
-            <div class="bottom-sheet-header">
-                <div class="drag-handle"></div>
-                <button class="close-button" onclick="closeBottomSheet()">×</button>
-            </div>
-            <h2>${center.name}</h2>
-            <p><strong>주소:</strong> ${center.address}</p>
-            <p><strong>연락처:</strong> ${center.contact}</p>
-            <p><strong>운영시간:</strong> ${center.operating_hours}</p>
-            <p><strong>웹사이트:</strong> <a href="${center.url}" target="_blank">${center.url}</a></p>
-            <p>${center.description}</p>
+        <div class="bottom-sheet-header">
+            <div class="drag-handle"></div>
+            <button class="close-button" onclick="closeBottomSheet()">×</button>
+        </div>
+        <div class="bottom-sheet-content">
+            <div class="center-details">
+                <h2>${center.name}</h2>
+                <p><strong>주소:</strong> ${center.address}</p>
+                <p><strong>연락처:</strong> ${center.contact}</p>
+                <p><strong>운영시간:</strong> ${center.operating_hours}</p>
+                <p><strong>웹사이트:</strong> <a href="${center.url}" target="_blank">${center.url}</a></p>
+                <p>${center.description}</p>
     `;
 
     // Add image slider if there are images
     if (center.images && center.images.length > 0) {
         content += `
-            <div class="image-slider">
-                <img src="${center.images[0]}" alt="${center.name}">
-            </div>
+                <div class="image-slider">
+                    <img src="${center.images[0]}" alt="${center.name}">
+                </div>
         `;
     }
 
     // Add review section
     content += `
-            <div class="review-section">
-                <h3>리뷰</h3>
-                ${center.isAuthenticated ? 
-                    '<button onclick="showReviewForm()">리뷰 작성하기</button>' :
-                    '<p><a href="/login">로그인</a>하여 리뷰를 작성해보세요.</p>'
-                }
+                <div class="review-section">
+                    <h3>리뷰</h3>
+                    ${center.isAuthenticated ? 
+                        '<button onclick="showReviewForm()">리뷰 작성하기</button>' :
+                        '<p><a href="/login">로그인</a>하여 리뷰를 작성해보세요.</p>'
+                    }
+                </div>
             </div>
         </div>
     `;
 
     centerDetails.innerHTML = content;
-    bottomSheet.classList.add('active');
+    bottomSheet.classList.add('show');
 
     // Load reviews for this center
     loadReviews(center.id);
@@ -366,7 +368,7 @@ function getCookie(name) {
 // 닫기 버튼 기능 추가
 function closeBottomSheet() {
     const bottomSheet = document.getElementById('center-info-sheet');
-    bottomSheet.classList.remove('active');
+    bottomSheet.classList.remove('show');
     bottomSheet.style.transform = '';
     currentCenterId = null; // 현재 선택된 센터 ID 초기화
 }
