@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindScanner - Find Psychological Counseling Centers</title>
+    <title>MindScanner - 심리상담소 찾기</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'centers/styles.css' %}">
     <!-- Swiper.js CSS -->
@@ -20,21 +20,21 @@
                 <h1>MindScanner</h1>
             </div>
             <div class="header-center">
-                <form id="search-form">
-                    <input type="text" id="search-input" placeholder="Search for counseling centers...">
-                    <button type="submit">Search</button>
+                <form id="search-form" class="search-form">
+                    <input type="text" id="search-input" class="search-input" placeholder="상담소 이름, 주소, 연락처로 검색">
+                    <button type="submit" class="search-button">검색</button>
                 </form>
             </div>
             <div id="auth-buttons" class="header-right">
                 {% if user.is_authenticated %}
-                    <span>Welcome, {{ user.username }}</span>
+                    <span class="user-greeting">{{ user.username }}님 환영합니다</span>
                     <form id="logout-form" method="POST" action="{% url 'logout' %}">
                         {% csrf_token %}
-                        <button type="submit">Logout</button>
+                        <button type="submit" class="auth-button">로그아웃</button>
                     </form>
                 {% else %}
-                    <a href="{% url 'login' %}">Login</a>
-                    <a href="{% url 'signup' %}">Sign Up</a>
+                    <a href="{% url 'login' %}" class="auth-button">로그인</a>
+                    <a href="{% url 'signup' %}" class="auth-button signup">회원가입</a>
                 {% endif %}
             </div>
         </header>
@@ -42,10 +42,14 @@
         <!-- Map Section -->
         <div id="map" class="map-container"></div>
 
+        <!-- Overlay -->
+        <div id="overlay" class="overlay"></div>
+
         <!-- Bottom Sheet for Center Info -->
         <div id="center-info-sheet" class="bottom-sheet">
             <div class="bottom-sheet-header">
-                <div class="bottom-sheet-handle"></div>
+                <div class="drag-handle"></div>
+                <button class="close-button" onclick="closeBottomSheet()">×</button>
             </div>
             <div class="bottom-sheet-content">
                 <!-- Center Info Section -->

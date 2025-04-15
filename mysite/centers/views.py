@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
 from django.db.models import Q
+from django.core.paginator import Paginator
 import json
 from decimal import Decimal
 
@@ -52,6 +53,12 @@ def index(request):
 def get_reviews(request, center_id):
     center = get_object_or_404(Center, pk=center_id)
     reviews = Review.objects.filter(center=center).order_by('-date')
+    
+    # 페이지네이션 설정
+    page_number = request.GET.get('page', 1)
+    paginator = Paginator(reviews, 10)  # 페이지당 10개의 리뷰
+    page_obj = paginator.get_page(page_number)
+    
     reviews_data = [
         {
             'id': review.id,
@@ -60,9 +67,23 @@ def get_reviews(request, center_id):
             'author': review.user.username if review.user else '익명',
             'created_at': review.date.isoformat() if hasattr(review.date, 'isoformat') else review.date.strftime('%Y-%m-%d')
         }
-        for review in reviews
+        for review in page_obj
     ]
-    return JsonResponse({'reviews': reviews_data})
+    
+    # 페이지네이션 정보 추가
+    pagination_data = {
+        'current_page': page_obj.number,
+        'total_pages': paginator.num_pages,
+        'has_previous': page_obj.has_previous(),
+        'has_next': page_obj.has_next(),
+        'previous_page': page_obj.previous_page_number() if page_obj.has_previous() else None,
+        'next_page': page_obj.next_page_number() if page_obj.has_next() else None,
+    }
+    
+    return JsonResponse({
+        'reviews': reviews_data,
+        'pagination': pagination_data
+    })
 
 def center_detail(request, center_id):
     center = Center.objects.get(pk=center_id)
@@ -146,3 +167,9 @@ def search(request):
         centers = Center.objects.none()
 
     return render(request, 'centers/search_results.html', {'centers': centers})
+
+def check_auth(request):
+    """사용자의 인증 상태를 확인하는 API 엔드포인트"""
+    return JsonResponse({
+        'is_authenticated': request.user.is_authenticated
+    })

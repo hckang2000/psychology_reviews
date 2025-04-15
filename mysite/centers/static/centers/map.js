@@ -49,153 +49,204 @@ function loadCenters(centersData, selectedCenterId) {
 }
 
 function showCenterDetails(center) {
-    console.log("Showing details for center:", center.name);
-    
     const bottomSheet = document.getElementById('center-info-sheet');
-    const centerDetails = document.getElementById('center-details');
+    const overlay = document.getElementById('overlay');
+    const centerDetails = document.querySelector('#center-info-sheet .bottom-sheet-content #center-details');
+    
+    if (!bottomSheet || !overlay || !centerDetails) {
+        console.error('필요한 요소를 찾을 수 없습니다:', {
+            bottomSheet: !!bottomSheet,
+            overlay: !!overlay,
+            centerDetails: !!centerDetails
+        });
+        return;
+    }
     
     // 현재 선택된 센터 ID 저장
     currentCenterId = center.id;
     
     // Create HTML content for center details
     let content = `
-        <div class="bottom-sheet-header">
-            <div class="drag-handle"></div>
-            <button class="close-button" onclick="closeBottomSheet()">×</button>
-        </div>
-        <div class="bottom-sheet-content">
-            <div class="center-details">
-                <h2>${center.name}</h2>
-                <p><strong>주소:</strong> ${center.address}</p>
-                <p><strong>연락처:</strong> ${center.contact}</p>
-                <p><strong>운영시간:</strong> ${center.operating_hours}</p>
-                <p><strong>웹사이트:</strong> <a href="${center.url}" target="_blank">${center.url}</a></p>
-                <p>${center.description}</p>
-    `;
+        <div class="center-info">
+            <h2>${center.name}</h2>
+            <p><strong>주소:</strong> ${center.address}</p>
+            <p><strong>연락처:</strong> ${center.phone || '정보 없음'}</p>
+            <p><strong>설명:</strong> ${center.description || '정보 없음'}</p>
+        </div>`;
 
     // Add image slider if there are images
     if (center.images && center.images.length > 0) {
         content += `
-                <div class="swiper-container">
-                    <div class="swiper-wrapper">
-                        ${center.images.map(image => `
-                            <div class="swiper-slide">
-                                <div class="image-container">
-                                    <img src="${image}" alt="${center.name}">
-                                </div>
-                            </div>
-                        `).join('')}
+        <div class="swiper-container">
+            <div class="swiper-wrapper">
+                ${center.images.map(image => `
+                    <div class="swiper-slide">
+                        <img src="${image}" alt="상담소 이미지">
                     </div>
-                    <!-- Slider Navigation Controls -->
-                    <div class="swiper-button-next"></div>
-                    <div class="swiper-button-prev"></div>
-                    <!-- Pagination -->
-                    <div class="swiper-pagination"></div>
-                </div>
-        `;
+                `).join('')}
+            </div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
+            <div class="swiper-pagination"></div>
+        </div>`;
     }
 
-    // Add review section
-    content += `
-                <div class="review-section">
-                    <h3>리뷰</h3>
-                    ${center.isAuthenticated ? 
-                        '<button onclick="showReviewForm()">리뷰 작성하기</button>' :
-                        '<p><a href="/login">로그인</a>하여 리뷰를 작성해보세요.</p>'
-                    }
-                </div>
-            </div>
-        </div>
-    `;
-
-    centerDetails.innerHTML = content;
+    // Show overlay and bottom sheet immediately
+    overlay.classList.add('show');
     bottomSheet.classList.add('show');
 
-    // Load reviews for this center
-    loadReviews(center.id);
+    // 로그인 상태 확인을 위해 서버에 요청
+    fetch('/check-auth/')
+        .then(response => response.json())
+        .then(data => {
+            // Add review section with authentication check
+            const reviewSection = `
+                <div class="review-section">
+                    <h3>리뷰</h3>
+                    <div id="review-form-container">
+                        ${data.is_authenticated ? 
+                            `<button onclick="showReviewForm('${center.id}')" class="review-button">리뷰 작성하기</button>` :
+                            `<div class="login-message">
+                                <span>리뷰를 작성하시려면</span>
+                                <a href="/accounts/login/">로그인</a>
+                                <span>해주세요</span>
+                            </div>`
+                        }
+                    </div>
+                    <div class="reviews-list"></div>
+                </div>`;
 
-    // Initialize Swiper if there are images
-    if (center.images && center.images.length > 0) {
-        setTimeout(() => {
-            const swiper = new Swiper('.swiper-container', {
-                direction: 'horizontal',
-                loop: true,
-                pagination: {
-                    el: '.swiper-pagination',
-                    clickable: true,
-                },
-                navigation: {
-                    nextEl: '.swiper-button-next',
-                    prevEl: '.swiper-button-prev',
-                },
-                breakpoints: {
-                    320: {
-                        slidesPerView: 1,
-                        spaceBetween: 10
-                    },
-                    480: {
-                        slidesPerView: 1,
-                        spaceBetween: 20
-                    },
-                    640: {
-                        slidesPerView: 1,
-                        spaceBetween: 30
-                    },
-                    768: {
-                        slidesPerView: 1,
-                        spaceBetween: 40
-                    }
-                }
-            });
-        }, 100);
-    }
+            content += reviewSection;
+            centerDetails.innerHTML = content;
 
-    // 드래그 이벤트 설정
-    setupDragHandles();
+            // Initialize Swiper if there are images
+            if (center.images && center.images.length > 0) {
+                new Swiper('.swiper-container', {
+                    loop: true,
+                    navigation: {
+                        nextEl: '.swiper-button-next',
+                        prevEl: '.swiper-button-prev',
+                    },
+                    pagination: {
+                        el: '.swiper-pagination',
+                        clickable: true
+                    },
+                    observer: true,
+                    observeParents: true
+                });
+            }
+
+            // Load reviews for this center
+            loadReviews(center.id);
+
+            // Setup drag handles
+            setupDragHandles();
+        })
+        .catch(error => {
+            console.error('인증 상태 확인 오류:', error);
+            // 오류 발생 시 비로그인 상태로 처리
+            const reviewSection = `
+                <div class="review-section">
+                    <h3>리뷰</h3>
+                    <div id="review-form-container">
+                        <div class="login-message">
+                            <span>리뷰를 작성하시려면</span>
+                            <a href="/accounts/login/">로그인</a>
+                            <span>해주세요</span>
+                        </div>
+                    </div>
+                    <div class="reviews-list"></div>
+                </div>`;
+
+            content += reviewSection;
+            centerDetails.innerHTML = content;
+            
+            // Initialize Swiper if there are images
+            if (center.images && center.images.length > 0) {
+                new Swiper('.swiper-container', {
+                    loop: true,
+                    navigation: {
+                        nextEl: '.swiper-button-next',
+                        prevEl: '.swiper-button-prev',
+                    },
+                    pagination: {
+                        el: '.swiper-pagination',
+                        clickable: true
+                    },
+                    observer: true,
+                    observeParents: true
+                });
+            }
+
+            // Load reviews for this center
+            loadReviews(center.id);
+
+            // Setup drag handles
+            setupDragHandles();
+        });
 }
 
-// 드래그 핸들 설정 함수
+function closeBottomSheet() {
+    const bottomSheet = document.getElementById('center-info-sheet');
+    const overlay = document.getElementById('overlay');
+    
+    // Hide bottom sheet and overlay with transition
+    bottomSheet.classList.remove('show');
+    overlay.classList.remove('show');
+    
+    // Reset transform
+    bottomSheet.style.transform = '';
+    
+    currentCenterId = null;
+}
+
 function setupDragHandles() {
     const bottomSheet = document.getElementById('center-info-sheet');
     const dragHandle = document.querySelector('.drag-handle');
+    const overlay = document.getElementById('overlay');
     
     if (!dragHandle) return;
     
     let startY;
     let startTransform = 0;
-    
-    // 터치 이벤트
+
+    // Handle overlay click
+    overlay.addEventListener('click', closeBottomSheet);
+
+    // Touch events
     dragHandle.addEventListener('touchstart', (e) => {
         startY = e.touches[0].clientY;
         const transform = bottomSheet.style.transform;
         if (transform) {
             startTransform = parseInt(transform.replace('translateY(', '').replace('px)', ''));
         }
+        bottomSheet.style.transition = 'none';
     });
     
     dragHandle.addEventListener('touchmove', (e) => {
         const currentY = e.touches[0].clientY;
         const diff = currentY - startY;
         
-        if (diff > 0) { // 아래로 드래그만 허용
+        if (diff > 0) { // Only allow dragging down
             bottomSheet.style.transform = `translateY(${startTransform + diff}px)`;
         }
     });
     
     dragHandle.addEventListener('touchend', () => {
+        bottomSheet.style.transition = 'transform 0.3s ease-in-out';
         const transform = bottomSheet.style.transform;
         if (transform) {
             const currentY = parseInt(transform.replace('translateY(', '').replace('px)', ''));
             
-            if (currentY > 100) { // 100px 이상 드래그하면 닫기
+            if (currentY > 100) { // If dragged down more than 100px
                 closeBottomSheet();
             } else {
                 bottomSheet.style.transform = '';
             }
         }
     });
-    
-    // 마우스 이벤트 (데스크톱 지원)
+
+    // Mouse events (desktop support)
     dragHandle.addEventListener('mousedown', (e) => {
         startY = e.clientY;
         const transform = bottomSheet.style.transform;
@@ -211,7 +262,7 @@ function setupDragHandles() {
         const currentY = e.clientY;
         const diff = currentY - startY;
         
-        if (diff > 0) { // 아래로 드래그만 허용
+        if (diff > 0) { // Only allow dragging down
             bottomSheet.style.transform = `translateY(${startTransform + diff}px)`;
         }
     }
@@ -221,7 +272,7 @@ function setupDragHandles() {
         if (transform) {
             const currentY = parseInt(transform.replace('translateY(', '').replace('px)', ''));
             
-            if (currentY > 100) { // 100px 이상 드래그하면 닫기
+            if (currentY > 100) { // If dragged down more than 100px
                 closeBottomSheet();
             } else {
                 bottomSheet.style.transform = '';
@@ -233,9 +284,9 @@ function setupDragHandles() {
     }
 }
 
-function loadReviews(centerId) {
+function loadReviews(centerId, page = 1) {
     // Fetch reviews from the server
-    fetch(`/reviews/${centerId}/`)
+    fetch(`/reviews/${centerId}/?page=${page}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('리뷰를 불러오는데 실패했습니다.');
@@ -254,12 +305,58 @@ function loadReviews(centerId) {
                         <h3>${review.title}</h3>
                         <div class="review-meta">
                             <span>${review.author || '익명'}</span> • 
-                            <span>${new Date(review.created_at).toLocaleDateString()}</span>
+                            <span>${new Date(review.created_at).toLocaleDateString('ko-KR')}</span>
                         </div>
                         <div class="review-content">${review.content || review.summary || ''}</div>
                     `;
                     reviewsList.appendChild(reviewItem);
                 });
+
+                // 페이지네이션 UI 추가
+                if (data.pagination.total_pages > 1) {
+                    const paginationContainer = document.createElement('div');
+                    paginationContainer.className = 'pagination-container';
+                    
+                    let paginationHTML = '<div class="pagination">';
+                    
+                    // 이전 페이지 버튼
+                    if (data.pagination.has_previous) {
+                        paginationHTML += `
+                            <button onclick="loadReviews(${centerId}, ${data.pagination.previous_page})" 
+                                    class="pagination-button">
+                                이전
+                            </button>`;
+                    }
+                    
+                    // 페이지 번호들
+                    for (let i = 1; i <= data.pagination.total_pages; i++) {
+                        if (i === data.pagination.current_page) {
+                            paginationHTML += `
+                                <button class="pagination-button current" disabled>
+                                    ${i}
+                                </button>`;
+                        } else {
+                            paginationHTML += `
+                                <button onclick="loadReviews(${centerId}, ${i})" 
+                                        class="pagination-button">
+                                    ${i}
+                                </button>`;
+                        }
+                    }
+                    
+                    // 다음 페이지 버튼
+                    if (data.pagination.has_next) {
+                        paginationHTML += `
+                            <button onclick="loadReviews(${centerId}, ${data.pagination.next_page})" 
+                                    class="pagination-button">
+                                다음
+                            </button>`;
+                    }
+                    
+                    paginationHTML += '</div>';
+                    paginationContainer.innerHTML = paginationHTML;
+                    reviewsList.appendChild(paginationContainer);
+                }
             } else {
                 reviewsList.innerHTML = '<p>아직 작성된 리뷰가 없습니다.</p>';
             }
@@ -275,7 +372,7 @@ function loadReviews(centerId) {
             reviewSection.appendChild(reviewsList);
         })
         .catch(error => {
-            console.error('Error loading reviews:', error);
+            console.error('리뷰 로딩 오류:', error);
             const reviewSection = document.querySelector('.review-section');
             const reviewsList = document.createElement('div');
             reviewsList.className = 'reviews-list';
@@ -284,7 +381,7 @@ function loadReviews(centerId) {
         });
 }
 
-function showReviewForm() {
+function showReviewForm(centerId) {
     const reviewSection = document.querySelector('.review-section');
     const reviewsList = reviewSection.querySelector('.reviews-list');
     
@@ -296,9 +393,9 @@ function showReviewForm() {
     reviewSection.innerHTML = `
         <h3>리뷰 작성</h3>
         <form class="review-form" onsubmit="submitReview(event)">
-            <input type="text" name="title" placeholder="제목" required>
-            <textarea name="content" placeholder="리뷰 내용" required></textarea>
-            <button type="submit">제출하기</button>
+            <input type="text" name="title" placeholder="제목을 입력해주세요" required>
+            <textarea name="content" placeholder="리뷰 내용을 입력해주세요" required></textarea>
+            <button type="submit">작성 완료</button>
             <button type="button" onclick="cancelReviewForm()">취소</button>
         </form>
     `;
@@ -316,7 +413,10 @@ function cancelReviewForm() {
     // Reset review section to original state
     reviewSection.innerHTML = `
         <h3>리뷰</h3>
-        <button onclick="showReviewForm()">리뷰 작성하기</button>
+        <div id="review-form-container">
+            <button onclick="showReviewForm()" class="review-button">리뷰 작성하기</button>
+        </div>
+        <div class="reviews-list"></div>
     `;
     
     // Reload reviews
@@ -327,7 +427,7 @@ function submitReview(event) {
     event.preventDefault();
     
     if (!currentCenterId) {
-        alert('리뷰를 작성할 센터가 선택되지 않았습니다.');
+        alert('리뷰를 작성할 상담소가 선택되지 않았습니다.');
         return;
     }
     
@@ -338,7 +438,7 @@ function submitReview(event) {
     // Get CSRF token
     const csrfToken = getCookie('csrftoken');
     if (!csrfToken) {
-        alert('CSRF 토큰을 찾을 수 없습니다. 페이지를 새로고침하고 다시 시도해주세요.');
+        alert('보안 토큰을 찾을 수 없습니다. 페이지를 새로고침하고 다시 시도해주세요.');
         return;
     }
     
@@ -358,44 +458,46 @@ function submitReview(event) {
         // 응답이 JSON이 아닌 경우 처리
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-            // 응답이 HTML인 경우 (오류 페이지)
             return response.text().then(text => {
-                console.error('서버 응답이 JSON이 아닙니다:', text.substring(0, 200) + '...');
-                throw new Error('서버에서 JSON 응답을 반환하지 않았습니다. 로그인이 필요할 수 있습니다.');
+                console.error('서버 응답 오류:', text.substring(0, 200) + '...');
+                throw new Error('로그인이 필요하거나 서버에서 오류가 발생했습니다.');
             });
         }
         
         if (!response.ok) {
             return response.json().then(data => {
-                throw new Error(data.error || '리뷰 제출에 실패했습니다.');
+                throw new Error(data.error || '리뷰 작성에 실패했습니다.');
             });
         }
         
         return response.json();
     })
     .then(data => {
-        alert('리뷰가 제출되었습니다.');
+        alert('리뷰가 성공적으로 등록되었습니다.');
         // Reset review section to original state
         const reviewSection = document.querySelector('.review-section');
         reviewSection.innerHTML = `
             <h3>리뷰</h3>
-            <button onclick="showReviewForm()">리뷰 작성하기</button>
+            <div id="review-form-container">
+                <button onclick="showReviewForm()">리뷰 작성하기</button>
+            </div>
+            <div class="reviews-list"></div>
         `;
         // Reload reviews
         loadReviews(currentCenterId);
     })
     .catch(error => {
-        console.error('Error submitting review:', error);
-        alert('리뷰 제출 중 오류가 발생했습니다: ' + error.message);
+        console.error('리뷰 제출 오류:', error);
+        alert('리뷰 작성 중 오류가 발생했습니다: ' + error.message);
         
         // 오류 발생 시 리뷰 폼을 다시 표시
         const reviewSection = document.querySelector('.review-section');
         reviewSection.innerHTML = `
             <h3>리뷰 작성</h3>
             <form class="review-form" onsubmit="submitReview(event)">
-                <input type="text" name="title" placeholder="제목" required>
-                <textarea name="content" placeholder="리뷰 내용" required></textarea>
-                <button type="submit">제출하기</button>
+                <input type="text" name="title" placeholder="제목을 입력해주세요" required>
+                <textarea name="content" placeholder="리뷰 내용을 입력해주세요" required></textarea>
+                <button type="submit">작성 완료</button>
                 <button type="button" onclick="cancelReviewForm()">취소</button>
             </form>
         `;
@@ -415,12 +517,4 @@ function getCookie(name) {
         }
     }
     return cookieValue;
-}
-
-// 닫기 버튼 기능 추가
-function closeBottomSheet() {
-    const bottomSheet = document.getElementById('center-info-sheet');
-    bottomSheet.classList.remove('show');
-    bottomSheet.style.transform = '';
-    currentCenterId = null; // 현재 선택된 센터 ID 초기화
 }

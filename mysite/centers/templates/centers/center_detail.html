@@ -6,22 +6,27 @@
     <title>{{ center.name }}</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'centers/styles.css' %}">
+    <!-- Swiper.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 </head>
 <body>
 
 <!-- Image Slider Section -->
-<div id="image-slider" class="slider-container">
-    {% for image in center.images.all %}
-    <div class="slide">
-        <img src="{{ image.image.url }}" alt="Facility image for {{ center.name }}">
+<div class="swiper-container max-w-screen-md mx-auto">
+    <div class="swiper-wrapper">
+        {% for image in center.images.all %}
+        <div class="swiper-slide">
+            <div class="image-container">
+                <img src="{{ image.image.url }}" alt="Facility image for {{ center.name }}">
+            </div>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
-
-<!-- Slider Navigation Controls -->
-<div class="slider-nav">
-    <button class="prev" onclick="moveSlide(-1)">&#10094;</button>
-    <button class="next" onclick="moveSlide(1)">&#10095;</button>
+    <!-- Slider Navigation Controls -->
+    <div class="swiper-button-next"></div>
+    <div class="swiper-button-prev"></div>
+    <!-- Pagination -->
+    <div class="swiper-pagination"></div>
 </div>
 
 <!-- Main Center Information -->
@@ -62,40 +67,50 @@
     {% endfor %}
 </div>
 
-<!-- Slider functionality -->
+<!-- Swiper.js JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script>
-    let currentSlideIndex = 0;
-    const slides = document.querySelectorAll('.slide');
-
-    function showSlide(index) {
-        // Hide all slides
-        slides.forEach((slide) => {
-            slide.style.display = 'none';
-        });
-
-        // Show the selected slide
-        slides[index].style.display = 'block';
-    }
-
-    function moveSlide(direction) {
-        currentSlideIndex += direction;
-
-        // Wrap around if we go past the last slide
-        if (currentSlideIndex >= slides.length) {
-            currentSlideIndex = 0;
+    // Initialize Swiper
+    const swiper = new Swiper('.swiper-container', {
+        // Optional parameters
+        direction: 'horizontal',
+        loop: true,
+        
+        // If we need pagination
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+        
+        // Navigation arrows
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+        
+        // Responsive breakpoints
+        breakpoints: {
+            // when window width is >= 320px
+            320: {
+                slidesPerView: 1,
+                spaceBetween: 10
+            },
+            // when window width is >= 480px
+            480: {
+                slidesPerView: 1,
+                spaceBetween: 20
+            },
+            // when window width is >= 640px
+            640: {
+                slidesPerView: 1,
+                spaceBetween: 30
+            },
+            // when window width is >= 768px
+            768: {
+                slidesPerView: 1,
+                spaceBetween: 40
+            }
         }
-
-        // Wrap around if we go before the first slide
-        if (currentSlideIndex < 0) {
-            currentSlideIndex = slides.length - 1;
-        }
-
-        showSlide(currentSlideIndex);
-    }
-
-    // Show the first slide when the page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        showSlide(currentSlideIndex);
     });
 </script>
 
