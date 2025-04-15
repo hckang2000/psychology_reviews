@@ -11,23 +11,24 @@ var markers = [];
 var currentCenterId = null; // 현재 선택된 센터 ID를 저장할 변수
 
 function initMap() {
+    console.log("Initializing map...");
     map = new naver.maps.Map('map', {
         center: new naver.maps.LatLng(37.5665, 126.9780), // 서울 중심
         zoom: 13
     });
 }
 
-var centers = [
-    // The centers data will be dynamically passed from Django
-];
-
-function loadCenters(centers, selectedCenterId) {
+function loadCenters(centersData, selectedCenterId) {
+    console.log("Loading centers:", centersData);
+    
     // Clear existing markers
     markers.forEach(marker => marker.setMap(null));
     markers = [];
 
     // Add markers for each center
-    centers.forEach(center => {
+    centersData.forEach(center => {
+        console.log("Adding marker for center:", center.name, center.lat, center.lng);
+        
         const marker = new naver.maps.Marker({
             position: new naver.maps.LatLng(center.lat, center.lng),
             map: map
@@ -41,13 +42,15 @@ function loadCenters(centers, selectedCenterId) {
         markers.push(marker);
 
         // If this is the selected center, show its details
-        if (center.id === selectedCenterId) {
+        if (selectedCenterId && center.id === selectedCenterId) {
             showCenterDetails(center);
         }
     });
 }
 
 function showCenterDetails(center) {
+    console.log("Showing details for center:", center.name);
+    
     const bottomSheet = document.getElementById('center-info-sheet');
     const centerDetails = document.getElementById('center-details');
     
@@ -73,8 +76,21 @@ function showCenterDetails(center) {
     // Add image slider if there are images
     if (center.images && center.images.length > 0) {
         content += `
-                <div class="image-slider">
-                    <img src="${center.images[0]}" alt="${center.name}">
+                <div class="swiper-container">
+                    <div class="swiper-wrapper">
+                        ${center.images.map(image => `
+                            <div class="swiper-slide">
+                                <div class="image-container">
+                                    <img src="${image}" alt="${center.name}">
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <!-- Slider Navigation Controls -->
+                    <div class="swiper-button-next"></div>
+                    <div class="swiper-button-prev"></div>
+                    <!-- Pagination -->
+                    <div class="swiper-pagination"></div>
                 </div>
         `;
     }
@@ -97,6 +113,42 @@ function showCenterDetails(center) {
 
     // Load reviews for this center
     loadReviews(center.id);
+
+    // Initialize Swiper if there are images
+    if (center.images && center.images.length > 0) {
+        setTimeout(() => {
+            const swiper = new Swiper('.swiper-container', {
+                direction: 'horizontal',
+                loop: true,
+                pagination: {
+                    el: '.swiper-pagination',
+                    clickable: true,
+                },
+                navigation: {
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev',
+                },
+                breakpoints: {
+                    320: {
+                        slidesPerView: 1,
+                        spaceBetween: 10
+                    },
+                    480: {
+                        slidesPerView: 1,
+                        spaceBetween: 20
+                    },
+                    640: {
+                        slidesPerView: 1,
+                        spaceBetween: 30
+                    },
+                    768: {
+                        slidesPerView: 1,
+                        spaceBetween: 40
+                    }
+                }
+            });
+        }, 100);
+    }
 
     // 드래그 이벤트 설정
     setupDragHandles();
@@ -372,6 +424,3 @@ function closeBottomSheet() {
     bottomSheet.style.transform = '';
     currentCenterId = null; // 현재 선택된 센터 ID 초기화
 }
-
-// Initialize map when the page loads
-document.addEventListener('DOMContentLoaded', initMap);

@@ -6,17 +6,23 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
 from django.db.models import Q
+import json
+from decimal import Decimal
 
 def index(request):
     centers = Center.objects.all().prefetch_related('images')  # Prefetch images
 
     center_list = []
     for center in centers:
+        # Decimal 타입을 float로 변환
+        lat = float(center.latitude) if isinstance(center.latitude, Decimal) else center.latitude
+        lng = float(center.longitude) if isinstance(center.longitude, Decimal) else center.longitude
+        
         center_data = {
             'id': center.id,
             'name': center.name,
-            'lat': center.latitude,
-            'lng': center.longitude,
+            'lat': lat,
+            'lng': lng,
             'address': center.address,
             'contact': center.contact,
             'url': center.url,
@@ -29,7 +35,17 @@ def index(request):
         center_list.append(center_data)
 
     selected_center_id = request.GET.get('center_id')
-    return render(request, 'index.html', {'centers': center_list, 'selected_center_id': selected_center_id})
+    
+    # JSON 형식으로 데이터 전달
+    centers_json = json.dumps(center_list)
+    selected_center_id_json = json.dumps(selected_center_id) if selected_center_id else 'null'
+    is_authenticated_json = json.dumps(request.user.is_authenticated)
+    
+    return render(request, 'index.html', {
+        'centers_json': centers_json,
+        'selected_center_id_json': selected_center_id_json,
+        'is_authenticated_json': is_authenticated_json
+    })
 
 
 
@@ -37,7 +53,13 @@ def get_reviews(request, center_id):
     center = get_object_or_404(Center, pk=center_id)
     reviews = Review.objects.filter(center=center).order_by('-date')
     reviews_data = [
-        {'title': review.title, 'summary': review.summary, 'date': review.date, 'url': review.url}
+        {
+            'id': review.id,
+            'title': review.title, 
+            'content': review.summary, 
+            'author': review.user.username if review.user else '익명',
+            'created_at': review.date.isoformat() if hasattr(review.date, 'isoformat') else review.date.strftime('%Y-%m-%d')
+        }
         for review in reviews
     ]
     return JsonResponse({'reviews': reviews_data})
@@ -73,20 +95,44 @@ def center_detail(request, center_id):
     
 @login_required
 def add_review(request, center_id):
-    center = Center.objects.get(pk=center_id)
+    center = get_object_or_404(Center, pk=center_id)
+    
     if request.method == 'POST':
-        form = ReviewForm(request.POST)
-        if form.is_valid():
-            review = form.save(commit=False)
-            review.user = request.user
-            review.center = center
-            review.date = timezone.now()
-            review.url = ''  # Set default value for URL
-            review.save()
-            return redirect(f'/?center_id={center_id}')  # Redirect to index with center ID
-    else:
-        form = ReviewForm()
-    return render(request, 'centers/center_detail.html', {'form': form, 'center': center})
+        try:
+            # JSON 데이터 파싱
+            data = json.loads(request.body)
+            title = data.get('title')
+            content = data.get('content')
+            
+            if not title or not content:
+                return JsonResponse({'error': '제목과 내용은 필수입니다.'}, status=400)
+            
+            # 리뷰 생성
+            review = Review.objects.create(
+                user=request.user,
+                center=center,
+                title=title,
+                summary=content,  # content를 summary 필드에 저장
+                date=timezone.now()
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'review': {
+                    'id': review.id,
+                    'title': review.title,
+                    'content': review.summary,
+                    'author': request.user.username,
+                    'created_at': review.date.isoformat()
+                }
+            })
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '잘못된 JSON 형식입니다.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    # GET 요청 처리
+    return JsonResponse({'error': 'POST 요청만 허용됩니다.'}, status=405)
 
 def search(request):
     query = request.GET.get('q', '')

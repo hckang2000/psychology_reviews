@@ -4,140 +4,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindScanner</title>
+    <title>MindScanner - Find Psychological Counseling Centers</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'centers/styles.css' %}">
+    <!-- Swiper.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=af5q47mofm"></script>
 </head>
 
 <body>
-    <header>
-        <div class="header-left">
-            <h1>MindScanner</h1>
-        </div>
-        <div class="header-center">
-            <form action="{% url 'search' %}" method="get" class="search-form">
-                <input type="text" name="q" placeholder="Search centers..." class="search-input">
-                <button type="submit" class="search-button">Search</button>
-            </form>
-        </div>
-        <div id="auth-buttons" class="header-right">
-            {% if user.is_authenticated %}
-                <form id="logout-form" method="POST" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <button type="submit">Logout</button>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>MindScanner</h1>
+            </div>
+            <div class="header-center">
+                <form id="search-form">
+                    <input type="text" id="search-input" placeholder="Search for counseling centers...">
+                    <button type="submit">Search</button>
                 </form>
-            {% else %}
-                <a href="{% url 'login' %}">Login</a>
-                <a href="{% url 'signup' %}">Sign Up</a>
-            {% endif %}
-        </div>
-    </header>
+            </div>
+            <div id="auth-buttons" class="header-right">
+                {% if user.is_authenticated %}
+                    <span>Welcome, {{ user.username }}</span>
+                    <form id="logout-form" method="POST" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}">Login</a>
+                    <a href="{% url 'signup' %}">Sign Up</a>
+                {% endif %}
+            </div>
+        </header>
 
-    <!-- Map Section -->
-    <div id="map" style="width: 100%; height: 500px;"></div>
+        <!-- Map Section -->
+        <div id="map" class="map-container"></div>
 
-    <!-- Center Info Section with Image Slider -->
-    <div id="center-info" style="margin-top: 20px;">
-        <div id="image-slider" class="slider-container">
-            <div class="slider-wrapper">
-                {% for image in center.images.all %}
-                <div class="slide">
-                    <img src="{{ image.image.url }}" alt="Facility image for {{ center.name }}">
+        <!-- Bottom Sheet for Center Info -->
+        <div id="center-info-sheet" class="bottom-sheet">
+            <div class="bottom-sheet-header">
+                <div class="bottom-sheet-handle"></div>
+            </div>
+            <div class="bottom-sheet-content">
+                <!-- Center Info Section -->
+                <div id="center-details">
+                    <!-- Center details will be loaded here dynamically -->
                 </div>
-                {% endfor %}
-            </div>
-            <div class="slider-nav">
-                <button class="prev" onclick="moveSlide(-1)">&#10094;</button>
-                <button class="next" onclick="moveSlide(1)">&#10095;</button>
+                
+                <!-- Review Form Container -->
+                <div id="review-form-container" style="display:none;">
+                    <!-- Review form will be loaded here dynamically -->
+                </div>
+                
+                <!-- Reviews Section -->
+                <div id="reviews">
+                    <!-- Reviews will be loaded here dynamically -->
+                </div>
             </div>
         </div>
-
-        <h2>{{ center.name }}</h2>
-        <p><strong>Address:</strong> {{ center.address }}</p>
-        <p><strong>Contact:</strong> {{ center.contact }}</p>
-        <p><strong>Website:</strong> <a href="{{ center.url }}" target="_blank">{{ center.url }}</a></p>
-
-        {% if user.is_authenticated %}
-            <button id="write-review-btn">Write a Review</button>
-        {% else %}
-            <p><a href="{% url 'login' %}">Log in</a> to write a review.</p>
-        {% endif %}
     </div>
 
-    <!-- Review form container -->
-    <div id="review-form-container" style="display:none; margin-top: 20px;">
-        <h3>Write a Review</h3>
-        <form id="review-form" method="POST">
-            {% csrf_token %}
-            <label for="review-title">Title:</label>
-            <input type="text" id="review-title" name="title" required><br><br>
-            <label for="review-summary">Summary:</label>
-            <textarea id="review-summary" name="summary" required></textarea><br><br>
-            <button type="submit">Submit Review</button>
-        </form>
-    </div>
-
-    <div id="reviews"></div>
-
-    <footer>
-        <p>Powered by MindScanner. <a href="#">Contact Us</a></p>
-    </footer>
-
-    <!-- Include the JavaScript file -->
-    <script src="{% static 'centers/map.js' %}"></script>
-
-    <!-- Script for dynamically populating centers array -->
+    <!-- 데이터를 JavaScript 변수로 전달 -->
     <script>
-        // Dynamically generate centers array from the data passed from Django
-        var centers = [
-            {% for center in centers %}
-            {
-                id: {{ center.id }},
-                name: "{{ center.name|escapejs }}",
-                lat: {{ center.lat }},
-                lng: {{ center.lng }},
-                address: "{{ center.address|escapejs }}",
-                contact: "{{ center.contact|escapejs }}",
-                url: "{{ center.url|escapejs }}",
-                operating_hours: "{{ center.operating_hours|escapejs }}",
-                description: "{{ center.description|escapejs }}",
-                images: [{% for image in center.images %}"{{ image }}"{% if not forloop.last %},{% endif %}{% endfor %}],  // Ensure image URLs are passed
-                isAuthenticated: {{ user.is_authenticated|yesno:"true,false" }}
-            }{% if not forloop.last %},{% endif %}
-            
-            {% endfor %}
-        ];
-        {% for image in center.images.all %}
-    <p>Image URL: {{ image.image.url }}</p>  <!-- Debugging -->
-{% endfor %}
-        console.log("Centers with images:", centers);  // Debugging
-    
-        // Initialize map and load centers
-        document.addEventListener('DOMContentLoaded', function () {
-            var centerId = getQueryParam('center_id');
-            loadCenters(centers, centerId);
-        });
+        // Django에서 전달된 데이터를 JavaScript 변수로 저장
+        var centersData = {{ centers_json|safe }};
+        var selectedCenterId = {{ selected_center_id_json|safe }};
+        var isAuthenticated = {{ is_authenticated_json|safe }};
     </script>
-    
-    
-    
-    
 
-    <!-- Script for the slider functionality -->
+    <script src="{% static 'centers/map.js' %}"></script>
+    <!-- Swiper.js JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
-        var currentSlide = 0;
-        function moveSlide(n) {
-            var slides = document.querySelectorAll('.slide');
-            currentSlide = (currentSlide + n + slides.length) % slides.length;
-            slides.forEach((slide, index) => {
-                slide.style.display = (index === currentSlide) ? 'block' : 'none';
+        // Initialize map when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            
+            // Load centers data
+            loadCenters(centersData, selectedCenterId);
+            
+            // Handle search form submission
+            document.getElementById('search-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const searchTerm = document.getElementById('search-input').value;
+                // Implement search functionality
+                console.log('Searching for:', searchTerm);
             });
-        }
-
-        // Initialize slider on page load
-        document.addEventListener('DOMContentLoaded', function () {
-            moveSlide(0);
         });
     </script>
 </body>
