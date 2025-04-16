@@ -156,17 +156,23 @@ def add_review(request, center_id):
     return JsonResponse({'error': 'POST 요청만 허용됩니다.'}, status=405)
 
 def search(request):
-    query = request.GET.get('q', '')
+    query = request.GET.get('q', '')  # search-form에서 전달된 검색어
+    
     if query:
+        # 이름, 주소, 설명에서 검색
         centers = Center.objects.filter(
-            Q(name__icontains=query) |
-            Q(address__icontains=query) |
-            Q(contact__icontains=query)
-        )
+            Q(name__icontains=query) |  # 이름에서 검색
+            Q(address__icontains=query) |  # 주소에서 검색
+            Q(description__icontains=query)  # 설명에서 검색
+        ).distinct()
     else:
         centers = Center.objects.none()
-
-    return render(request, 'centers/search_results.html', {'centers': centers})
+    
+    context = {
+        'centers': centers,
+        'query': query,
+    }
+    return render(request, 'centers/search_results.html', context)
 
 def check_auth(request):
     """사용자의 인증 상태를 확인하는 API 엔드포인트"""

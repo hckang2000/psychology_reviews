@@ -78,13 +78,16 @@
         var isAuthenticated = {{ is_authenticated_json|safe }};
     </script>
 
-    <script src="{% static 'centers/map.js' %}"></script>
+    <script type="text/javascript" src="{% static 'centers/map.js' %}"></script>
     <!-- Swiper.js JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
-        // Initialize map when the page loads
         document.addEventListener('DOMContentLoaded', function() {
-            initMap();
+            // centersData가 전역 변수로 설정되어 있는지 확인
+            if (typeof centersData === 'undefined') {
+                console.error('centersData is not defined');
+                return;
+            }
             
             // Load centers data
             loadCenters(centersData, selectedCenterId);

@@ -1,56 +1,66 @@
-<!-- centers/templates/search_results.html --><!DOCTYPE html><html lang="en">
+<!-- centers/templates/search_results.html --><!DOCTYPE html><html lang="ko">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Results - MindScanner</title>
+    <title>검색 결과 - MindScanner</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'centers/styles.css' %}"></head>
 
 <body>
-    <!-- Header Section -->
-    <header>
-        <div class="header-left">
-            <h1>MindScanner</h1>
-        </div>
-        <div class="header-center">
-            <form action="{% url 'search' %}" method="get" class="search-form">
-                <input type="text" name="q" placeholder="Search centers..." class="search-input" value="{{ request.GET.q }}">
-                <button type="submit" class="search-button">Search</button>
-            </form>
-        </div>
-        <div id="auth-buttons" class="header-right">
-            {% if user.is_authenticated %}
-                <form id="logout-form" method="POST" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <button type="submit">Logout</button>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1><a href="{% url 'index' %}" class="home-link">MindScanner</a></h1>
+            </div>
+            <div class="header-center">
+                <form action="{% url 'search' %}" method="get" class="search-form">
+                    <input type="text" name="q" placeholder="심리상담소 검색..." class="search-input" value="{{ query }}">
+                    <button type="submit" class="search-button">검색</button>
                 </form>
+            </div>
+            <div class="header-right">
+                {% if user.is_authenticated %}
+                <span class="user-greeting">{{ user.username }}님 환영합니다</span>
+                <a href="{% url 'logout' %}" class="auth-button">로그아웃</a>
+                {% else %}
+                <a href="{% url 'login' %}" class="auth-button">로그인</a>
+                <a href="{% url 'signup' %}" class="auth-button signup">회원가입</a>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Search Results -->
+        <div class="search-results-container">
+            <h2 class="search-results-title">
+                {% if query %}
+                    "{{ query }}" 검색 결과
+                {% else %}
+                    전체 심리상담소 목록
+                {% endif %}
+            </h2>
+
+            {% if centers %}
+                <div class="centers-grid">
+                    {% for center in centers %}
+                    <div class="center-card">
+                        <h3>{{ center.name }}</h3>
+                        <p><strong>주소:</strong> {{ center.address }}</p>
+                        <p><strong>연락처:</strong> {{ center.contact }}</p>
+                        <p><strong>운영시간:</strong> {{ center.operating_hours }}</p>
+                        <p class="center-description">{{ center.description|truncatewords:30 }}</p>
+                        <div class="card-buttons">
+                            <a href="{{ center.url }}" target="_blank" class="center-link">웹사이트 방문</a>
+                            <a href="/?center_id={{ center.id }}" class="center-link view-details">센터 정보 확인</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             {% else %}
-                <a href="{% url 'login' %}">Login</a>
-                <a href="{% url 'signup' %}">Sign Up</a>
+                <p class="no-results">검색 결과가 없습니다.</p>
             {% endif %}
         </div>
-    </header>
-
-    <!-- Search Results Section -->
-    <div class="container">
-        <h2>Search Results for "{{ request.GET.q }}"</h2>
-        {% if centers %}
-            {% for center in centers %}
-            <div id="center-info">
-                <h2>{{ center.name }}</h2>
-                <p><strong>Address:</strong> {{ center.address }}</p>
-                <p><strong>Contact:</strong> {{ center.contact }}</p>
-                <p><strong>Website:</strong> <a href="{{ center.url }}" target="_blank">{{ center.url }}</a></p>
-                <p><strong>Operating Hours:</strong> {{ center.operating_hours }}</p>
-                <p><strong>Description:</strong> {{ center.description }}</p>
-                <!-- "Read More" button -->
-                <a href="{% url 'index' %}?center_id={{ center.id }}" class="btn">Read More</a>
-            </div>
-            {% endfor %}
-        {% else %}
-            <p>No centers found for "{{ request.GET.q }}"</p>
-        {% endif %}
     </div>
 
     <footer>

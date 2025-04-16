@@ -10,15 +10,7 @@ var map;
 var markers = [];
 var currentCenterId = null; // 현재 선택된 센터 ID를 저장할 변수
 
-function initMap() {
-    console.log("Initializing map...");
-    map = new naver.maps.Map('map', {
-        center: new naver.maps.LatLng(37.5665, 126.9780), // 서울 중심
-        zoom: 13
-    });
-}
-
-function loadCenters(centersData, selectedCenterId) {
+function loadCenters(centersData) {
     console.log("Loading centers:", centersData);
     
     // Clear existing markers
@@ -27,10 +19,12 @@ function loadCenters(centersData, selectedCenterId) {
 
     // Add markers for each center
     centersData.forEach(center => {
-        console.log("Adding marker for center:", center.name, center.lat, center.lng);
+        const lat = parseFloat(center.lat);
+        const lng = parseFloat(center.lng);
+        console.log("Adding marker for center:", center.name, lat, lng);
         
         const marker = new naver.maps.Marker({
-            position: new naver.maps.LatLng(center.lat, center.lng),
+            position: new naver.maps.LatLng(lat, lng),
             map: map
         });
 
@@ -40,11 +34,6 @@ function loadCenters(centersData, selectedCenterId) {
         });
 
         markers.push(marker);
-
-        // If this is the selected center, show its details
-        if (selectedCenterId && center.id === selectedCenterId) {
-            showCenterDetails(center);
-        }
     });
 }
 
@@ -521,3 +510,133 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+// URL에서 center_id 파라미터 확인
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM Content Loaded");
+    
+    // centersData 확인
+    console.log("Raw Centers Data:", centersData);
+    if (!Array.isArray(centersData)) {
+        console.error("centersData is not an array!");
+        return;
+    }
+
+    // URL에서 center_id 파라미터 확인
+    const urlParams = new URLSearchParams(window.location.search);
+    const centerId = urlParams.get('center_id');
+    console.log("Center ID from URL:", centerId);
+
+    let initialLat = 37.5665;  // 기본 위도 (서울시청)
+    let initialLng = 126.9780; // 기본 경도 (서울시청)
+    let initialZoom = 13;      // 기본 줌 레벨
+
+    // 선택된 센터가 있는 경우 해당 좌표로 설정
+    if (centerId) {
+        const centerIdNum = parseInt(centerId);
+        console.log("Parsed Center ID:", centerIdNum);
+
+        const center = centersData.find(c => c.id === centerIdNum);
+        console.log("Found center:", center);
+        
+        if (center) {
+            const lat = parseFloat(center.lat);
+            const lng = parseFloat(center.lng);
+            console.log("Parsed coordinates:", { lat, lng });
+            
+            if (!isNaN(lat) && !isNaN(lng)) {
+                initialLat = lat;
+                initialLng = lng;
+                initialZoom = 15;
+                console.log("Using center coordinates:", initialLat, initialLng);
+            }
+        }
+    }
+
+    // 지도 초기화
+    console.log("Initializing map with coordinates:", initialLat, initialLng);
+    map = new naver.maps.Map('map', {
+        center: new naver.maps.LatLng(initialLat, initialLng),
+        zoom: initialZoom
+    });
+
+    // 센터 데이터 로드
+    loadCenters(centersData);
+
+    // 선택된 센터가 있는 경우 상세 정보 표시
+    if (centerId) {
+        const center = centersData.find(c => c.id === parseInt(centerId));
+        if (center) {
+            showCenterDetails(center);
+        }
+    }
+
+    // 검색 폼 이벤트 리스너 설정
+    const searchForm = document.getElementById('search-form');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const searchInput = document.getElementById('search-input');
+            const searchTerm = searchInput.value.trim();
+            if (searchTerm) {
+                window.location.href = `/search/?q=${encodeURIComponent(searchTerm)}`;
+            }
+        });
+    }
+});
+
+function goHome() {
+    // 초기 지도 중심점과 줌 레벨로 이동
+    map.setCenter(new naver.maps.LatLng(37.5665, 126.9780)); // 서울 시청 좌표
+    map.setZoom(13);
+    
+    // 모든 마커 다시 표시
+    loadCenters(centersData);
+    
+    // 바텀 시트 닫기
+    const bottomSheet = document.querySelector('.bottom-sheet');
+    if (bottomSheet) {
+        bottomSheet.classList.remove('active');
+    }
+}
+
+// 홈 버튼 이벤트 리스너
+document.addEventListener('DOMContentLoaded', function() {
+    const homeButton = document.getElementById('home-button');
+    if (homeButton) {
+        homeButton.addEventListener('click', goHome);
+    }
+});
+
+// MindScanner 로고 클릭 이벤트 리스너
+document.addEventListener('DOMContentLoaded', function() {
+    const logo = document.querySelector('.logo');
+    if (logo) {
+        logo.addEventListener('click', function() {
+            // 초기 지도 중심점과 줌 레벨로 이동
+            map.setCenter(new naver.maps.LatLng(37.5665, 126.9780)); // 서울 시청 좌표
+            map.setZoom(13);
+            
+            // 모든 마커 다시 표시
+            loadCenters(centersData);
+            
+            // 바텀 시트 닫기
+            const bottomSheet = document.querySelector('.bottom-sheet');
+            if (bottomSheet) {
+                bottomSheet.classList.remove('active');
+            }
+            
+            // 검색 폼 초기화
+            const searchForm = document.getElementById('search-form');
+            if (searchForm) {
+                searchForm.style.display = 'none';
+            }
+            
+            // 검색 입력창 초기화
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+        });
+    }
+});
