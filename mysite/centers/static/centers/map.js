@@ -382,6 +382,9 @@ function loadReviews(centerId, page = 1) {
 }
 
 function showReviewForm(centerId) {
+    // Set current center ID
+    currentCenterId = centerId;
+    
     const reviewSection = document.querySelector('.review-section');
     const reviewsList = reviewSection.querySelector('.reviews-list');
     
