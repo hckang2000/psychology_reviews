@@ -16,28 +16,49 @@ function loadCenters(centersData) {
     // Clear existing markers
     markers.forEach(marker => marker.setMap(null));
     markers = [];
-
-    // Add markers for each center
+    
     centersData.forEach(center => {
         const lat = parseFloat(center.lat);
         const lng = parseFloat(center.lng);
-        console.log("Adding marker for center:", center.name, lat, lng);
+        
+        if (isNaN(lat) || isNaN(lng)) {
+            console.error("Invalid coordinates for center:", center);
+            return;
+        }
+        
+        console.log("Creating marker for center:", center.name, "at coordinates:", lat, lng);
         
         const marker = new naver.maps.Marker({
             position: new naver.maps.LatLng(lat, lng),
             map: map
         });
-
-        // Add click event to marker
+        
+        markers.push(marker);
+        
         naver.maps.Event.addListener(marker, 'click', function() {
+            console.log("Marker clicked for center:", center.name);
             showCenterDetails(center);
         });
-
-        markers.push(marker);
     });
+    
+    // URL에서 center_id 파라미터 확인
+    const urlParams = new URLSearchParams(window.location.search);
+    const centerId = urlParams.get('center_id');
+    
+    if (centerId) {
+        console.log("Found center_id in URL:", centerId);
+        const center = centersData.find(c => c.id === parseInt(centerId));
+        if (center) {
+            console.log("Found matching center:", center);
+            showCenterDetails(center);
+        } else {
+            console.error("No matching center found for ID:", centerId);
+        }
+    }
 }
 
 function showCenterDetails(center) {
+    console.log("Showing center details for:", center);
     const bottomSheet = document.getElementById('center-info-sheet');
     const overlay = document.getElementById('overlay');
     const centerDetails = document.querySelector('#center-info-sheet .bottom-sheet-content #center-details');
@@ -53,6 +74,19 @@ function showCenterDetails(center) {
     
     // 현재 선택된 센터 ID 저장
     currentCenterId = center.id;
+    
+    // 지도 중심점 이동
+    const lat = parseFloat(center.lat);
+    const lng = parseFloat(center.lng);
+    console.log("Moving map to coordinates:", lat, lng);
+    
+    if (!isNaN(lat) && !isNaN(lng)) {
+        const position = new naver.maps.LatLng(lat, lng);
+        map.setCenter(position);
+        map.setZoom(17); // 적절한 줌 레벨로 설정
+    } else {
+        console.error("Invalid coordinates for center:", center);
+    }
     
     // Create HTML content for center details
     let content = `
@@ -511,7 +545,6 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// URL에서 center_id 파라미터 확인
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DOM Content Loaded");
     
@@ -553,17 +586,65 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // 네이버 지도 API가 로드되었는지 확인
+    if (typeof naver === 'undefined' || typeof naver.maps === 'undefined') {
+        console.error("Naver Maps API is not loaded yet!");
+        // API가 로드될 때까지 대기
+        const checkNaverMaps = setInterval(function() {
+            if (typeof naver !== 'undefined' && typeof naver.maps !== 'undefined') {
+                clearInterval(checkNaverMaps);
+                initializeMap(initialLat, initialLng, initialZoom);
+            }
+        }, 100);
+    } else {
+        // API가 이미 로드된 경우 바로 초기화
+        initializeMap(initialLat, initialLng, initialZoom);
+    }
+});
+
+// 지도 초기화 함수
+function initializeMap(initialLat, initialLng, initialZoom) {
     // 지도 초기화
     console.log("Initializing map with coordinates:", initialLat, initialLng);
-    map = new naver.maps.Map('map', {
+    
+    // 지도 컨테이너의 크기 설정
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) {
+        console.error('Map container not found');
+        return;
+    }
+    
+    // 명시적으로 지도 컨테이너 크기 설정
+    const headerHeight = 60;
+    const windowHeight = window.innerHeight;
+    mapContainer.style.height = `${windowHeight - headerHeight}px`;
+    mapContainer.style.width = '100%';
+    
+    map = new naver.maps.Map(mapContainer, {
         center: new naver.maps.LatLng(initialLat, initialLng),
-        zoom: initialZoom
+        zoom: initialZoom,
+        scaleControl: false,
+        mapDataControl: false,
+        zoomControl: true,
+        zoomControlOptions: {
+            position: naver.maps.Position.RIGHT_CENTER
+        }
+    });
+
+    // 윈도우 크기 변경 시 지도 크기 조정
+    window.addEventListener('resize', function() {
+        const newHeight = window.innerHeight - headerHeight;
+        mapContainer.style.height = `${newHeight}px`;
+        mapContainer.style.width = '100%';
+        map.setSize(new naver.maps.Size(window.innerWidth, newHeight));
     });
 
     // 센터 데이터 로드
     loadCenters(centersData);
 
     // 선택된 센터가 있는 경우 상세 정보 표시
+    const urlParams = new URLSearchParams(window.location.search);
+    const centerId = urlParams.get('center_id');
     if (centerId) {
         const center = centersData.find(c => c.id === parseInt(centerId));
         if (center) {
@@ -583,7 +664,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-});
+}
 
 function goHome() {
     // 초기 지도 중심점과 줌 레벨로 이동

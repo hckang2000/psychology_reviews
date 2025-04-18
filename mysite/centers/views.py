@@ -155,23 +155,24 @@ def add_review(request, center_id):
     # GET 요청 처리
     return JsonResponse({'error': 'POST 요청만 허용됩니다.'}, status=405)
 
-def search(request):
-    query = request.GET.get('q', '')  # search-form에서 전달된 검색어
+def search_results(request):
+    query = request.GET.get('q', '')
+    centers = []
     
     if query:
-        # 이름, 주소, 설명에서 검색
+        # 검색어가 있는 경우 centers 모델에서 검색
         centers = Center.objects.filter(
-            Q(name__icontains=query) |  # 이름에서 검색
-            Q(address__icontains=query) |  # 주소에서 검색
-            Q(description__icontains=query)  # 설명에서 검색
+            Q(name__icontains=query) |
+            Q(address__icontains=query) |
+            Q(contact__icontains=query) |  # phone 대신 contact 필드 사용
+            Q(description__icontains=query)
         ).distinct()
-    else:
-        centers = Center.objects.none()
     
     context = {
-        'centers': centers,
         'query': query,
+        'centers': centers,
     }
+    
     return render(request, 'centers/search_results.html', context)
 
 def check_auth(request):

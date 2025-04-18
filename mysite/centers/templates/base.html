@@ -5,11 +5,112 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MindScanner{% endblock %}</title>
     {% load static %}
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'centers/styles.css' %}">
     {% block extra_css %}{% endblock %}
+    <!-- Base JavaScript -->
+    <script>
+        console.log('Base HTML loaded');
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded in base.html');
+            // Check if script.js is loaded
+            const scriptElement = document.querySelector('script[src*="script.js"]');
+            console.log('script.js element found:', !!scriptElement);
+            if (!scriptElement) {
+                console.error('script.js not found in document');
+            }
+        });
+    </script>
 </head>
 <body>
-    {% block content %}{% endblock %}
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <a href="/" class="logo">MindScanner</a>
+            </div>
+            <div class="header-center">
+                <form id="search-form" class="search-form" action="{% url 'search_results' %}" method="GET">
+                    <input type="text" id="search-input" name="q" class="search-input" placeholder="상담소 이름, 주소, 연락처로 검색">
+                    <button type="submit" class="search-button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+            <div class="header-right">
+                {% if user.is_authenticated %}
+                    <span class="user-greeting">{{ user.username }}님 환영합니다</span>
+                    <form method="POST" action="{% url 'logout' %}" class="auth-form">
+                        {% csrf_token %}
+                        <button type="submit" class="auth-button">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}" class="auth-button">
+                        <i class="fas fa-key"></i>
+                    </a>
+                {% endif %}
+                <button class="hamburger-button">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-header">
+                    {% if user.is_authenticated %}
+                        <h2>{{ user.username }}님 안녕하세요!</h2>
+                    {% else %}
+                        <h2>로그인을 해주세요</h2>
+                    {% endif %}
+                </div>
+                <nav class="sidebar-menu">
+                    <a href="/" class="menu-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        지도에서 찾기
+                    </a>
+                    <a href="#" class="menu-item">
+                        <i class="fas fa-comments"></i>
+                        자유 게시판
+                    </a>
+                    <a href="#" class="menu-item">
+                        <i class="fas fa-user-secret"></i>
+                        익명 게시판
+                    </a>
+                </nav>
+                <div class="sidebar-footer">
+                    {% if user.is_authenticated %}
+                        <form method="POST" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="logout-button">로그아웃</button>
+                        </form>
+                    {% else %}
+                        <div class="auth-links">
+                            <a href="{% url 'signup' %}">회원가입</a>
+                            <span class="divider">|</span>
+                            <a href="{% url 'login' %}">로그인</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Overlay -->
+        <div class="sidebar-overlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{% static 'centers/script.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html> 

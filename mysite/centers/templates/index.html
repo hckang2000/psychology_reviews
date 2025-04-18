@@ -1,75 +1,49 @@
-<!DOCTYPE html>
-<html lang="ko">
+{% extends 'base.html' %}
+{% load static %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindScanner - 심리상담소 찾기</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'centers/styles.css' %}">
+{% block title %}MindScanner - 심리상담소 찾기{% endblock %}
+
+{% block extra_css %}
     <!-- Swiper.js CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-    <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=af5q47mofm"></script>
-</head>
+{% endblock %}
 
-<body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <h1>MindScanner</h1>
-            </div>
-            <div class="header-center">
-                <form id="search-form" class="search-form">
-                    <input type="text" id="search-input" class="search-input" placeholder="상담소 이름, 주소, 연락처로 검색">
-                    <button type="submit" class="search-button">검색</button>
-                </form>
-            </div>
-            <div id="auth-buttons" class="header-right">
-                {% if user.is_authenticated %}
-                    <span class="user-greeting">{{ user.username }}님 환영합니다</span>
-                    <form id="logout-form" method="POST" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="auth-button">로그아웃</button>
-                    </form>
-                {% else %}
-                    <a href="{% url 'login' %}" class="auth-button">로그인</a>
-                    <a href="{% url 'signup' %}" class="auth-button signup">회원가입</a>
-                {% endif %}
-            </div>
-        </header>
+{% block content %}
+    <!-- Map Section -->
+    <div id="map" class="map-container"></div>
 
-        <!-- Map Section -->
-        <div id="map" class="map-container"></div>
+    <!-- Overlay -->
+    <div id="overlay" class="overlay"></div>
 
-        <!-- Overlay -->
-        <div id="overlay" class="overlay"></div>
-
-        <!-- Bottom Sheet for Center Info -->
-        <div id="center-info-sheet" class="bottom-sheet">
-            <div class="bottom-sheet-header">
-                <div class="drag-handle"></div>
-                <button class="close-button" onclick="closeBottomSheet()">×</button>
+    <!-- Bottom Sheet for Center Info -->
+    <div id="center-info-sheet" class="bottom-sheet">
+        <div class="bottom-sheet-header">
+            <div class="drag-handle"></div>
+            <button class="close-button" onclick="closeBottomSheet()">×</button>
+        </div>
+        <div class="bottom-sheet-content">
+            <!-- Center Info Section -->
+            <div id="center-details">
+                <!-- Center details will be loaded here dynamically -->
             </div>
-            <div class="bottom-sheet-content">
-                <!-- Center Info Section -->
-                <div id="center-details">
-                    <!-- Center details will be loaded here dynamically -->
-                </div>
-                
-                <!-- Review Form Container -->
-                <div id="review-form-container" style="display:none;">
-                    <!-- Review form will be loaded here dynamically -->
-                </div>
-                
-                <!-- Reviews Section -->
-                <div id="reviews">
-                    <!-- Reviews will be loaded here dynamically -->
-                </div>
+            
+            <!-- Review Form Container -->
+            <div id="review-form-container" style="display:none;">
+                <!-- Review form will be loaded here dynamically -->
+            </div>
+            
+            <!-- Reviews Section -->
+            <div id="reviews">
+                <!-- Reviews will be loaded here dynamically -->
             </div>
         </div>
     </div>
+{% endblock %}
 
+{% block extra_js %}
+    <!-- 네이버 지도 API -->
+    <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=af5q47mofm"></script>
+    
     <!-- 데이터를 JavaScript 변수로 전달 -->
     <script>
         // Django에서 전달된 데이터를 JavaScript 변수로 저장
@@ -95,12 +69,12 @@
             // Handle search form submission
             document.getElementById('search-form').addEventListener('submit', function(e) {
                 e.preventDefault();
-                const searchTerm = document.getElementById('search-input').value;
-                // Implement search functionality
-                console.log('Searching for:', searchTerm);
+                const searchInput = document.getElementById('search-input');
+                const searchTerm = searchInput.value.trim();
+                if (searchTerm) {
+                    window.location.href = `/search/?q=${encodeURIComponent(searchTerm)}`;
+                }
             });
         });
     </script>
-</body>
-
-</html>
+{% endblock %}
