@@ -9,6 +9,9 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 import json
 from decimal import Decimal
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+import requests
 
 def index(request):
     centers = Center.objects.all().prefetch_related('images')  # Prefetch images
@@ -45,10 +48,34 @@ def index(request):
     return render(request, 'index.html', {
         'centers_json': centers_json,
         'selected_center_id_json': selected_center_id_json,
-        'is_authenticated_json': is_authenticated_json
+        'is_authenticated_json': is_authenticated_json,
+        'naver_client_id': settings.NAVER_CLIENT_ID  # 네이버 API 키 추가
     })
 
-
+def center_list(request):
+    centers = Center.objects.all().prefetch_related('images')
+    center_list = []
+    
+    for center in centers:
+        lat = float(center.latitude) if isinstance(center.latitude, Decimal) else center.latitude
+        lng = float(center.longitude) if isinstance(center.longitude, Decimal) else center.longitude
+        
+        center_data = {
+            'id': center.id,
+            'name': center.name,
+            'lat': lat,
+            'lng': lng,
+            'address': center.address,
+            'contact': center.contact,
+            'url': center.url,
+            'operating_hours': center.operating_hours,
+            'description': center.description,
+            'images': [image.image.url for image in center.images.all()],
+            'is_authenticated': request.user.is_authenticated
+        }
+        center_list.append(center_data)
+    
+    return JsonResponse({'centers': center_list})
 
 def get_reviews(request, center_id):
     center = get_object_or_404(Center, pk=center_id)
@@ -180,3 +207,41 @@ def check_auth(request):
     return JsonResponse({
         'is_authenticated': request.user.is_authenticated
     })
+
+@csrf_exempt
+def geocode_address(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            address = data.get('address')
+            
+            if not address:
+                return JsonResponse({'error': '주소가 필요합니다.'}, status=400)
+            
+            # 네이버 지도 API 호출
+            headers = {
+                'X-NCP-APIGW-API-KEY-ID': settings.NAVER_CLIENT_ID,
+                'X-NCP-APIGW-API-KEY': settings.NAVER_CLIENT_SECRET
+            }
+            
+            response = requests.get(
+                f'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode',
+                params={'query': address},
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get('addresses'):
+                    first_result = result['addresses'][0]
+                    return JsonResponse({
+                        'latitude': float(first_result['y']),
+                        'longitude': float(first_result['x'])
+                    })
+            
+            return JsonResponse({'error': '주소를 찾을 수 없습니다.'}, status=404)
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': '잘못된 요청입니다.'}, status=400)
