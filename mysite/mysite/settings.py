@@ -45,7 +45,10 @@ ROOT_URLCONF = 'mysite.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'centers', 'templates')],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'centers', 'templates'),
+            os.path.join(BASE_DIR, 'mysite', 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -109,6 +112,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Login and logout redirects
-LOGIN_REDIRECT_URL = 'index'
-LOGIN_URL = 'login'
-LOGOUT_REDIRECT_URL = 'index'
+LOGIN_REDIRECT_URL = 'centers:index'
+LOGIN_URL = 'accounts:login'
+LOGOUT_REDIRECT_URL = 'centers:index'

@@ -8,7 +8,7 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{% static 'centers/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'centers/style.css' %}">
     {% block extra_css %}{% endblock %}
     <!-- Base JavaScript -->
     <script>
@@ -29,10 +29,10 @@
         <!-- Header -->
         <header class="header">
             <div class="header-left">
-                <a href="/" class="logo">MindScanner</a>
+                <a href="{% url 'centers:index' %}" class="logo">MindScanner</a>
             </div>
             <div class="header-center">
-                <form id="search-form" class="search-form" action="{% url 'search_results' %}" method="GET">
+                <form id="search-form" class="search-form" action="{% url 'centers:search_results' %}" method="GET">
                     <input type="text" id="search-input" name="q" class="search-input" placeholder="상담소 이름, 주소, 연락처로 검색">
                     <button type="submit" class="search-button">
                         <i class="fas fa-search"></i>
@@ -42,14 +42,14 @@
             <div class="header-right">
                 {% if user.is_authenticated %}
                     <span class="user-greeting">{{ user.username }}님 환영합니다</span>
-                    <form method="POST" action="{% url 'logout' %}" class="auth-form">
+                    <form method="POST" action="{% url 'accounts:logout' %}" class="auth-form">
                         {% csrf_token %}
                         <button type="submit" class="auth-button">
                             <i class="fas fa-sign-out-alt"></i>
                         </button>
                     </form>
                 {% else %}
-                    <a href="{% url 'login' %}" class="auth-button">
+                    <a href="{% url 'accounts:login' %}" class="auth-button">
                         <i class="fas fa-key"></i>
                     </a>
                 {% endif %}
@@ -70,7 +70,7 @@
                     {% endif %}
                 </div>
                 <nav class="sidebar-menu">
-                    <a href="/" class="menu-item">
+                    <a href="{% url 'centers:index' %}" class="menu-item">
                         <i class="fas fa-map-marker-alt"></i>
                         지도에서 찾기
                     </a>
@@ -85,15 +85,15 @@
                 </nav>
                 <div class="sidebar-footer">
                     {% if user.is_authenticated %}
-                        <form method="POST" action="{% url 'logout' %}">
+                        <form method="POST" action="{% url 'accounts:logout' %}">
                             {% csrf_token %}
                             <button type="submit" class="logout-button">로그아웃</button>
                         </form>
                     {% else %}
                         <div class="auth-links">
-                            <a href="{% url 'signup' %}">회원가입</a>
+                            <a href="{% url 'accounts:signup' %}">회원가입</a>
                             <span class="divider">|</span>
-                            <a href="{% url 'login' %}">로그인</a>
+                            <a href="{% url 'accounts:login' %}">로그인</a>
                         </div>
                     {% endif %}
                 </div>

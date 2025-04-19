@@ -50,6 +50,7 @@
         var centersData = {{ centers_json|safe }};
         var selectedCenterId = {{ selected_center_id_json|safe }};
         var isAuthenticated = {{ is_authenticated_json|safe }};
+        var searchResultsUrl = "{% url 'centers:search_results' %}";
     </script>
 
     <script type="text/javascript" src="{% static 'centers/map.js' %}"></script>
@@ -67,14 +68,17 @@
             loadCenters(centersData, selectedCenterId);
             
             // Handle search form submission
-            document.getElementById('search-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const searchInput = document.getElementById('search-input');
-                const searchTerm = searchInput.value.trim();
-                if (searchTerm) {
-                    window.location.href = `/search/?q=${encodeURIComponent(searchTerm)}`;
-                }
-            });
+            const searchForm = document.querySelector('.search-form');
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const searchInput = this.querySelector('input[type="search"]');
+                    const searchTerm = searchInput.value.trim();
+                    if (searchTerm) {
+                        window.location.href = `${searchResultsUrl}?q=${encodeURIComponent(searchTerm)}`;
+                    }
+                });
+            }
         });
     </script>
 {% endblock %}

@@ -6,12 +6,10 @@ from centers import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.index, name='index'),
-    path('', include('centers.urls')),
+    path('', include('centers.urls', namespace='centers')),
+    path('accounts/', include('accounts.urls', namespace='accounts')),
     path('reviews/<int:center_id>/', views.get_reviews, name='get_reviews'),
     path('reviews/<int:center_id>/add/', views.add_review, name='add_review'),
-    path('accounts/', include('accounts.urls')),
-    path('accounts/', include('django.contrib.auth.urls')),
     path('<int:center_id>/', views.center_detail, name='center_detail'),
 ]
 

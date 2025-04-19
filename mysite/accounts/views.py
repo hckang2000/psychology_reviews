@@ -14,7 +14,7 @@ def signup(request):
             user.profile.nickname = nickname  # Save nickname to profile
             user.save()
             login(request, user)
-            return redirect('index')
+            return redirect('centers:index')
     else:
         form = SignUpForm()
     return render(request, 'registration/signup.html', {'form': form})
@@ -24,4 +24,4 @@ class CustomLoginView(LoginView):
 
     def get_success_url(self):
         # Using reverse_lazy ensures the URL is correctly resolved and handled
-        return reverse_lazy('index')
+        return reverse_lazy('centers:index')
