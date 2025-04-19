@@ -1,14 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # exit on error
 set -o errexit
 
-# Python 및 pip 업그레이드
-python -m pip install --upgrade pip
-
-# 의존성 설치
+# Install python dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
 
-# 정적 파일 수집 및 데이터베이스 마이그레이션
+# Create staticfiles directory if it doesn't exist
+mkdir -p mysite/staticfiles
+
 cd mysite
+# 정적 파일 수집
 python manage.py collectstatic --no-input
+# 데이터베이스 마이그레이션
 python manage.py migrate 
