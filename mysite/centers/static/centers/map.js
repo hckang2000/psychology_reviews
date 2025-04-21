@@ -91,10 +91,13 @@ function showCenterDetails(center) {
     // Create HTML content for center details
     let content = `
         <div class="center-info">
-            <h2>${center.name}</h2>
-            <p><strong>주소:</strong> ${center.address}</p>
-            <p><strong>연락처:</strong> ${center.contact || '정보 없음'}</p>
-            <p><strong>설명:</strong> ${center.description || '정보 없음'}</p>
+            <h2 class="center-name">${center.name}</h2>
+            <div class="center-details">
+                <p><i class="fas fa-map-marker-alt"></i> ${center.address}</p>
+                <p><i class="fas fa-phone"></i> ${center.contact}</p>
+                <p><i class="fas fa-clock"></i> ${center.operating_hours || '운영시간 정보가 없습니다.'}</p>
+                ${center.description ? `<p class="center-description"><i class="fas fa-info-circle"></i> ${center.description}</p>` : ''}
+            </div>
         </div>`;
 
     // Add therapist section if there are therapists
@@ -112,12 +115,15 @@ function showCenterDetails(center) {
                             }
                         </div>
                         <div class="therapist-info">
-                            <h4 class="therapist-name">${therapist.name}</h4>
-                            <p class="therapist-experience">경력: ${therapist.experience}년</p>
-                            <p class="therapist-specialty">전문 분야: ${therapist.specialty}</p>
+                            <h4 class="text-xl font-semibold mb-2">${therapist.name}</h4>
+                            <p class="text-gray-600 mb-1">경력: ${therapist.experience}년</p>
+                            <p class="text-gray-600">전문 분야: ${therapist.specialty}</p>
                         </div>
                     </div>
                 `).join('')}
+            </div>
+            <div class="scroll-indicator">
+                <i class="fas fa-arrow-right"></i> 옆으로 스크롤하여 더 보기
             </div>
         </div>`;
     }
@@ -130,7 +136,7 @@ function showCenterDetails(center) {
                 ${center.images.map(image => `
                     <div class="swiper-slide">
                         <img src="${image}" alt="상담소 이미지">
-                    </div>
+                </div>
                 `).join('')}
             </div>
             <div class="swiper-button-prev"></div>
@@ -202,7 +208,7 @@ function showCenterDetails(center) {
                             <a href="/accounts/login/">로그인</a>
                             <span>해주세요</span>
                         </div>
-                    </div>
+        </div>
                     <div class="reviews-list"></div>
                 </div>`;
 
@@ -346,7 +352,7 @@ function loadReviews(centerId, page = 1) {
             reviewsList.className = 'reviews-list';
             
             if (data.reviews && data.reviews.length > 0) {
-                data.reviews.forEach(review => {
+            data.reviews.forEach(review => {
                     const reviewItem = document.createElement('div');
                     reviewItem.className = 'review-item';
                     reviewItem.innerHTML = `

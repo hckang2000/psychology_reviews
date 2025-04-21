@@ -1327,18 +1327,30 @@ body.sidebar-open {
 }
 
 .therapist-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    display: flex;
+    overflow-x: auto;
     gap: 1.5rem;
-    margin-top: 1rem;
+    padding: 0.5rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.therapist-grid::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 .therapist-card {
+    flex: 0 0 auto;
+    width: calc(33.333% - 1rem); /* 기본적으로 3개씩 표시 */
+    min-width: 250px;
     background: #fff;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s;
+    scroll-snap-align: start;
 }
 
 .therapist-card:hover {
@@ -1387,23 +1399,41 @@ body.sidebar-open {
     margin-bottom: 0.25rem;
 }
 
-/* Responsive adjustments */
+/* 반응형 스타일 */
+@media (max-width: 1024px) {
+    .therapist-card {
+        width: calc(50% - 1rem); /* 태블릿에서 2개씩 표시 */
+    }
+}
+
 @media (max-width: 640px) {
-    .therapist-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 1rem;
+    .therapist-card {
+        width: calc(80% - 1rem); /* 모바일에서 1.5개 정도 표시 */
     }
+}
 
-    .therapist-info {
-        padding: 0.75rem;
-    }
+/* 스크롤 표시기 추가 */
+.therapist-section {
+    position: relative;
+}
 
-    .therapist-name {
-        font-size: 1rem;
-    }
+.scroll-indicator {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    font-size: 0.875rem;
+    color: #666;
+    opacity: 0.8;
+}
 
-    .therapist-experience,
-    .therapist-specialty {
-        font-size: 0.8rem;
-    }
+/* 스크롤 애니메이션 */
+@keyframes scrollPulse {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(10px); }
+    100% { transform: translateX(0); }
+}
+
+.scroll-indicator i {
+    animation: scrollPulse 1.5s infinite;
+    display: inline-block;
 }
