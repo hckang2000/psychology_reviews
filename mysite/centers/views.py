@@ -14,13 +14,21 @@ from django.conf import settings
 import requests
 
 def index(request):
-    centers = Center.objects.all().prefetch_related('images')  # Prefetch images
+    centers = Center.objects.all().prefetch_related('images', 'therapists')
 
     center_list = []
     for center in centers:
         # Decimal 타입을 float로 변환
         lat = float(center.latitude) if isinstance(center.latitude, Decimal) else center.latitude
         lng = float(center.longitude) if isinstance(center.longitude, Decimal) else center.longitude
+        
+        # 상담사 정보 추가
+        therapists_data = [{
+            'name': therapist.name,
+            'photo': therapist.photo.url if therapist.photo else None,
+            'experience': therapist.experience,
+            'specialty': therapist.specialty
+        } for therapist in center.therapists.all()]
         
         center_data = {
             'id': center.id,
@@ -32,10 +40,10 @@ def index(request):
             'url': center.url,
             'operating_hours': center.operating_hours,
             'description': center.description,
-            'images': [image.image.url for image in center.images.all()],  # Image URLs
+            'images': [image.image.url for image in center.images.all()],
+            'therapists': therapists_data,
             'is_authenticated': request.user.is_authenticated
         }
-        print(center.name, center.images.all())  # Debug: log the images for each center
         center_list.append(center_data)
 
     selected_center_id = request.GET.get('center_id')
@@ -49,7 +57,7 @@ def index(request):
         'centers_json': centers_json,
         'selected_center_id_json': selected_center_id_json,
         'is_authenticated_json': is_authenticated_json,
-        'naver_client_id': settings.NAVER_CLIENT_ID  # 네이버 API 키 추가
+        'naver_client_id': settings.NAVER_CLIENT_ID
     })
 
 def center_list(request):

@@ -93,9 +93,34 @@ function showCenterDetails(center) {
         <div class="center-info">
             <h2>${center.name}</h2>
             <p><strong>주소:</strong> ${center.address}</p>
-            <p><strong>연락처:</strong> ${center.phone || '정보 없음'}</p>
+            <p><strong>연락처:</strong> ${center.contact || '정보 없음'}</p>
             <p><strong>설명:</strong> ${center.description || '정보 없음'}</p>
         </div>`;
+
+    // Add therapist section if there are therapists
+    if (center.therapists && center.therapists.length > 0) {
+        content += `
+        <div class="therapist-section mb-8">
+            <h3 class="text-2xl font-semibold mb-4">상담사 소개</h3>
+            <div class="therapist-grid">
+                ${center.therapists.map(therapist => `
+                    <div class="therapist-card">
+                        <div class="therapist-photo ${!therapist.photo ? 'no-photo' : ''}">
+                            ${therapist.photo ? 
+                                `<img src="${therapist.photo}" alt="${therapist.name}">` :
+                                `<div class="placeholder-text">상담사<br>사진</div>`
+                            }
+                        </div>
+                        <div class="therapist-info">
+                            <h4 class="therapist-name">${therapist.name}</h4>
+                            <p class="therapist-experience">경력: ${therapist.experience}년</p>
+                            <p class="therapist-specialty">전문 분야: ${therapist.specialty}</p>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
+    }
 
     // Add image slider if there are images
     if (center.images && center.images.length > 0) {

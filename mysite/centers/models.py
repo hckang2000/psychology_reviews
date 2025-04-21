@@ -51,10 +51,18 @@ class Review(models.Model):
         return f"{self.center.name} - {self.title}"
 
 class Therapist(models.Model):
-    center = models.ForeignKey(Center, on_delete=models.CASCADE, related_name='therapists')
-    name = models.CharField(max_length=200)
-    experience = models.IntegerField()  # 경력 (년수)
-    specialty = models.CharField(max_length=200)  # 전문 분야
+    center = models.ForeignKey(Center, on_delete=models.CASCADE, related_name='therapists', verbose_name='상담소')
+    name = models.CharField(max_length=200, verbose_name='이름')
+    photo = models.ImageField(upload_to='therapists/', blank=True, null=True, verbose_name='사진')
+    experience = models.IntegerField(verbose_name='경력(년)')
+    specialty = models.CharField(max_length=200, verbose_name='전문 분야')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='생성일')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='수정일')
+
+    class Meta:
+        verbose_name = '상담사'
+        verbose_name_plural = '상담사 목록'
+        ordering = ['-experience']  # 경력이 많은 순서대로 정렬
 
     def __str__(self):
         return f"{self.name} ({self.specialty})"

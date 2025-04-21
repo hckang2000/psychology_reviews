@@ -30,12 +30,43 @@
 </div>
 
 <!-- Main Center Information -->
-<div id="center-info">
-    <h2>{{ center.name }}</h2>
-    <p>{{ center.description }}</p>
-    <p><strong>Address:</strong> {{ center.address }}</p>
-    <p><strong>Contact:</strong> {{ center.contact }}</p>
-    <p><strong>Website:</strong> <a href="{{ center.url }}" target="_blank">{{ center.url }}</a></p>
+<div id="center-info" class="max-w-screen-md mx-auto p-6">
+    <h2 class="text-3xl font-bold mb-4">{{ center.name }}</h2>
+    <div class="mb-6">
+        <p class="mb-2"><strong>주소:</strong> {{ center.address }}</p>
+        <p class="mb-2"><strong>연락처:</strong> {{ center.contact }}</p>
+        {% if center.url %}
+        <p class="mb-4"><strong>웹사이트:</strong> <a href="{{ center.url }}" target="_blank" class="text-blue-600 hover:text-blue-800">{{ center.url }}</a></p>
+        {% endif %}
+        <p class="text-gray-700">{{ center.description }}</p>
+    </div>
+
+    <!-- Therapist Section -->
+    <div class="therapist-section mb-8">
+        <h3 class="text-2xl font-semibold mb-4">상담사 소개</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for therapist in center.therapists.all %}
+            <div class="therapist-card bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="aspect-square overflow-hidden bg-blue-500">
+                    {% if therapist.photo %}
+                    <img src="{{ therapist.photo.url }}" alt="{{ therapist.name }}" class="w-full h-full object-cover">
+                    {% else %}
+                    <div class="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
+                        상담사<br>사진
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="p-4">
+                    <h4 class="text-xl font-semibold mb-2">{{ therapist.name }}</h4>
+                    <p class="text-gray-600 mb-1">경력: {{ therapist.experience }}년</p>
+                    <p class="text-gray-600">전문 분야: {{ therapist.specialty }}</p>
+                </div>
+            </div>
+            {% empty %}
+            <p class="col-span-full text-gray-500 text-center">등록된 상담사가 없습니다.</p>
+            {% endfor %}
+        </div>
+    </div>
 
     {% if user.is_authenticated %}
         <button id="write-review-btn">Write a Review</button>
