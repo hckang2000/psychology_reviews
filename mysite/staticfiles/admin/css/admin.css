@@ -1,0 +1,29 @@
+.readonly-field {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    color: #666;
+}
+
+.geocoding-status {
+    margin-top: 10px;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.geocoding-status span {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.geocoding-status span[style*="color: green"] {
+    background-color: #e8f5e9;
+}
+
+.geocoding-status span[style*="color: red"] {
+    background-color: #ffebee;
+}
+
+.geocoding-status span[style*="color: #666"] {
+    background-color: #f5f5f5;
+} 
