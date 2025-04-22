@@ -36,7 +36,7 @@ def index(request):
             'lat': lat,
             'lng': lng,
             'address': center.address,
-            'contact': center.contact,
+            'phone': center.phone,
             'url': center.url,
             'operating_hours': center.operating_hours,
             'description': center.description,
@@ -74,7 +74,7 @@ def center_list(request):
             'lat': lat,
             'lng': lng,
             'address': center.address,
-            'contact': center.contact,
+            'phone': center.phone,
             'url': center.url,
             'operating_hours': center.operating_hours,
             'description': center.description,
@@ -199,7 +199,7 @@ def search_results(request):
         centers = Center.objects.filter(
             Q(name__icontains=query) |
             Q(address__icontains=query) |
-            Q(contact__icontains=query) |  # phone 대신 contact 필드 사용
+            Q(phone__icontains=query) |  # phone 대신 contact 필드 사용
             Q(description__icontains=query)
         ).distinct()
     

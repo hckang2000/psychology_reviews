@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db import models
 from django import forms
-from .models import Center, Review, Therapist, CenterImage
+from .models import Center, Review, Therapist, CenterImage, ExternalReview
 from django.conf import settings
 import requests
 
@@ -43,20 +43,21 @@ class CenterAdminForm(forms.ModelForm):
 @admin.register(Center)
 class CenterAdmin(admin.ModelAdmin):
     form = CenterAdminForm
-    list_display = ('name', 'address', 'contact', 'url', 'operating_hours')
+    list_display = ('name', 'address', 'phone', 'created_at')
     search_fields = ('name', 'address')
+    list_filter = ('created_at',)
     inlines = [TherapistInline, CenterImageInline]  # Display therapists and images inline
     readonly_fields = ('latitude', 'longitude')
     fieldsets = (
         ('기본 정보', {
-            'fields': ('name', 'address', 'contact', 'url')
+            'fields': ('name', 'address', 'phone')
         }),
         ('위치 정보', {
             'fields': ('latitude', 'longitude'),
             'classes': ('collapse',)
         }),
         ('상세 정보', {
-            'fields': ('operating_hours', 'description'),
+            'fields': ('created_at', 'description'),
             'classes': ('collapse',)
         }),
     )
@@ -88,16 +89,23 @@ class CenterAdmin(admin.ModelAdmin):
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ('center', 'title', 'date')
-    search_fields = ('center__name', 'title')
-    list_filter = ('center', 'date')
+    list_display = ('title', 'center', 'user', 'rating', 'date')
+    search_fields = ('title', 'content')
+    list_filter = ('center', 'user', 'rating', 'date')
 
 @admin.register(Therapist)
 class TherapistAdmin(admin.ModelAdmin):
-    list_display = ('name', 'center', 'experience', 'specialty')
+    list_display = ('name', 'center', 'specialty', 'created_at')
     search_fields = ('name', 'specialty')
-    list_filter = ('center', 'specialty')
+    list_filter = ('center', 'created_at')
+
+@admin.register(ExternalReview)
+class ExternalReviewAdmin(admin.ModelAdmin):
+    list_display = ('title', 'center', 'source', 'created_at')
+    search_fields = ('title', 'source')
+    list_filter = ('center', 'source', 'created_at')
 
 @admin.register(CenterImage)
 class CenterImageAdmin(admin.ModelAdmin):
-    list_display = ('center', 'image')  # Display center and image in list view
+    list_display = ('center', 'image', 'created_at')
+    list_filter = ('center', 'created_at')
