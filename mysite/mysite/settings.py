@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'centers',
     'accounts',
     'boards',
@@ -125,3 +126,5 @@ LOGOUT_REDIRECT_URL = 'centers:index'
 # 네이버 지도 API 설정
 NAVER_CLIENT_ID = os.getenv('NAVER_CLIENT_ID')
 NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET')
+
+SITE_ID = 1
