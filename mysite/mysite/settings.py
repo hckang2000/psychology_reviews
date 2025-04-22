@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+<<<<<<< HEAD
     
     # Third party apps
     'allauth',
@@ -40,6 +41,8 @@ INSTALLED_APPS = [
     
     # Local apps
     'boards',
+=======
+>>>>>>> 0f4b1fb
     'centers',
     'accounts',
 ]
@@ -168,6 +171,7 @@ LOGIN_REDIRECT_URL = 'centers:index'
 LOGIN_URL = 'accounts:login'
 LOGOUT_REDIRECT_URL = 'centers:index'
 
+<<<<<<< HEAD
 # Security settings
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
@@ -178,3 +182,10 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+=======
+# 네이버 지도 API 설정
+NAVER_CLIENT_ID = os.getenv('NAVER_CLIENT_ID')
+NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET')
+
+SITE_ID = 1
+>>>>>>> 0f4b1fb
