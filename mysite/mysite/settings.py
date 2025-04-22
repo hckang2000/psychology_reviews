@@ -13,13 +13,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-your-secret-key-here')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = True  # 임시로 디버그 모드 활성화
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'psychology-reviews.onrender.com',  # Render 도메인 추가
-    '.onrender.com'  # 모든 Render 하위 도메인 허용
+    'mindscanner.onrender.com',  # 도메인 수정
+    '.onrender.com'
 ]
 
 # Application definition
@@ -76,7 +76,8 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///db.sqlite3',
-        conn_max_age=600
+        conn_max_age=600,
+        conn_health_checks=True,
     )
 }
 

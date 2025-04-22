@@ -16,3 +16,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
 
 application = get_wsgi_application()
 application = WhiteNoise(application, root='staticfiles')
+application.add_files('static', prefix='static/')
+application.add_files('centers/static', prefix='centers/static/')
+application.add_files('boards/static', prefix='boards/static/')
