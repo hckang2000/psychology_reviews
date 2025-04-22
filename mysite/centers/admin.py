@@ -94,9 +94,10 @@ class ReviewAdmin(admin.ModelAdmin):
 
 @admin.register(Therapist)
 class TherapistAdmin(admin.ModelAdmin):
-    list_display = ('name', 'center', 'experience', 'specialty')
+    list_display = ('name', 'center', 'specialty', 'created_at')
+    list_filter = ('center', 'created_at')
     search_fields = ('name', 'specialty')
-    list_filter = ('center', 'specialty')
+    ordering = ('-created_at',)
 
 @admin.register(CenterImage)
 class CenterImageAdmin(admin.ModelAdmin):

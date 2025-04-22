@@ -52,9 +52,12 @@ class Review(models.Model):
 
 class Therapist(models.Model):
     center = models.ForeignKey(Center, on_delete=models.CASCADE, related_name='therapists')
-    name = models.CharField(max_length=200)
-    experience = models.IntegerField()  # 경력 (년수)
-    specialty = models.CharField(max_length=200)  # 전문 분야
+    name = models.CharField(max_length=100)
+    experience = models.IntegerField(verbose_name='경력(년)', default=0)
+    specialty = models.CharField(max_length=200)
+    profile_image = models.ImageField(upload_to='therapists/', null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.name} ({self.specialty})"
+        return f"{self.name} - {self.center.name}"
