@@ -112,8 +112,8 @@ function showCenterDetails(center) {
                             ${therapist.photo ? 
                                 `<img src="${therapist.photo}" alt="${therapist.name}">` :
                                 `<div class="placeholder-text">상담사<br>사진</div>`
-                            }
-                        </div>
+                    }
+                </div>
                         <div class="therapist-info">
                             <h4 class="text-xl font-semibold mb-2">${therapist.name}</h4>
                             <p class="text-gray-600 mb-1">경력: ${therapist.experience}년</p>
