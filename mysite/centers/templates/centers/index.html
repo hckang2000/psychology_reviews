@@ -1,11 +1,30 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}MindScanner - 지도{% endblock %}
+{% block title %}MindScanner - 심리상담소 찾기{% endblock %}
+
+{% block extra_css %}
+    <!-- Swiper.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="{% static 'centers/style.css' %}">
+{% endblock %}
 
 {% block content %}
-    <!-- Map Container -->
-    <div id="map" style="width:100%; height:100vh;"></div>
+    <!-- Search Container -->
+    <div class="search-container">
+        <form class="search-form" action="{% url 'centers:search_results' %}" method="get">
+            <input type="search" name="q" placeholder="지역명 또는 상담소명을 입력하세요" required>
+            <button type="submit">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+    </div>
+
+    <!-- Map Section -->
+    <div id="map" class="map-container"></div>
+
+    <!-- Overlay -->
+    <div id="overlay" class="overlay"></div>
 
     <!-- Bottom Sheet for Center Info -->
     <div id="center-info-sheet" class="bottom-sheet">
@@ -16,16 +35,67 @@
             </button>
         </div>
         <div class="bottom-sheet-content">
-            <div id="center-details"></div>
+            <!-- Center Info Section -->
+            <div id="center-details">
+                <!-- Center details will be loaded here dynamically -->
+            </div>
+            
+            <!-- Review Form Container -->
+            <div id="review-form-container" style="display:none;">
+                <!-- Review form will be loaded here dynamically -->
+            </div>
+            
+            <!-- Reviews Section -->
+            <div id="reviews">
+                <!-- Reviews will be loaded here dynamically -->
+            </div>
         </div>
     </div>
-    <div id="overlay" class="overlay"></div>
 {% endblock %}
 
 {% block extra_js %}
-    <script src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId={{ client_id }}"></script>
+    <!-- 네이버 지도 API -->
+    <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId={{ naver_client_id }}"></script>
+    
+    <!-- 데이터를 JavaScript 변수로 전달 -->
     <script>
-        const centersData = {{ centers_json|safe }};
+        const centersData = JSON.parse('{{ centers_json|safe }}');
+        const selectedCenterId = JSON.parse('{{ selected_center_id_json|safe }}');
+        const isAuthenticated = JSON.parse('{{ is_authenticated_json|safe }}');
+        const searchResultsUrl = "{% url 'centers:search_results' %}";
+        const reviewFormUrl = "{% url 'centers:review_form' 0 %}";
+        const getReviewsUrl = "{% url 'centers:get_reviews' 0 %}";
     </script>
+
+    <!-- Swiper.js JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="{% static 'centers/map.js' %}"></script>
-{% endblock %} 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // centersData가 전역 변수로 설정되어 있는지 확인
+            if (typeof centersData === 'undefined') {
+                console.error('centersData is not defined');
+                return;
+            }
+            
+            // Load centers data
+            loadCenters(centersData, selectedCenterId);
+            
+            // Handle search form submission
+            const searchForm = document.querySelector('.search-form');
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const searchInput = this.querySelector('input[type="search"]');
+                    const searchTerm = searchInput.value.trim();
+                    if (searchTerm) {
+                        window.location.href = `${searchResultsUrl}?q=${encodeURIComponent(searchTerm)}`;
+                    }
+                });
+            }
+
+            // Setup drag handles for bottom sheet
+            setupDragHandles();
+        });
+    </script>
+{% endblock %}
