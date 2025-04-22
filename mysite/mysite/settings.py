@@ -15,7 +15,12 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-your-secret-key-here')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'psychology-reviews.onrender.com',  # Render 도메인 추가
+    '.onrender.com'  # 모든 Render 하위 도메인 허용
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -98,7 +103,7 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
@@ -106,6 +111,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'boards/static'),
 ]
 
+# WhiteNoise 설정
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
