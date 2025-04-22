@@ -12,4 +12,5 @@ urlpatterns = [
     path('reviews/<int:center_id>/add/', views.add_review, name='add_review'),
     path('check-auth/', views.check_auth, name='check_auth'),
     path('<int:center_id>/', views.center_detail, name='center_detail'),
+    path('review-form/<int:center_id>/', views.review_form, name='review_form'),
 ]

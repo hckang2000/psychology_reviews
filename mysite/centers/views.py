@@ -53,7 +53,7 @@ def index(request):
     selected_center_id_json = json.dumps(selected_center_id) if selected_center_id else 'null'
     is_authenticated_json = json.dumps(request.user.is_authenticated)
     
-    return render(request, 'index.html', {
+    return render(request, 'centers/index.html', {
         'centers_json': centers_json,
         'selected_center_id_json': selected_center_id_json,
         'is_authenticated_json': is_authenticated_json,
@@ -253,3 +253,18 @@ def geocode_address(request):
             return JsonResponse({'error': str(e)}, status=500)
     
     return JsonResponse({'error': '잘못된 요청입니다.'}, status=400)
+
+def review_form(request, center_id):
+    center = get_object_or_404(Center, pk=center_id)
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.center = center
+            review.user = request.user
+            review.save()
+            return JsonResponse({'success': True})
+        return JsonResponse({'success': False, 'errors': form.errors})
+    else:
+        form = ReviewForm()
+    return render(request, 'centers/review_form.html', {'form': form, 'center': center})
