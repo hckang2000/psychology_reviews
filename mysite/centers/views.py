@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
-from .models import Center, Review
+from .models import Center, Review, ExternalReview
 from .forms import ReviewForm
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
@@ -14,7 +14,7 @@ from django.conf import settings
 import requests
 
 def index(request):
-    centers = Center.objects.all().prefetch_related('images', 'therapists')
+    centers = Center.objects.all().prefetch_related('images', 'therapists', 'reviews', 'external_reviews')
 
     center_list = []
     for center in centers:
@@ -30,6 +30,24 @@ def index(request):
             'specialty': therapist.specialty
         } for therapist in center.therapists.all()]
         
+        # 내부 리뷰 정보 추가
+        reviews_data = [{
+            'title': review.title,
+            'content': review.content,
+            'author': review.user.username if review.user else '익명',
+            'rating': review.rating,
+            'created_at': review.created_at.isoformat() if hasattr(review.created_at, 'isoformat') else review.created_at.strftime('%Y-%m-%d')
+        } for review in center.reviews.all().order_by('-created_at')]
+        
+        # 외부 리뷰 정보 추가
+        external_reviews_data = [{
+            'title': review.title,
+            'summary': review.summary,
+            'source': review.source,
+            'url': review.url,
+            'created_at': review.created_at.isoformat() if hasattr(review.created_at, 'isoformat') else review.created_at.strftime('%Y-%m-%d')
+        } for review in center.external_reviews.all().order_by('-created_at')]
+        
         center_data = {
             'id': center.id,
             'name': center.name,
@@ -42,6 +60,8 @@ def index(request):
             'description': center.description,
             'images': [image.image.url for image in center.images.all()],
             'therapists': therapists_data,
+            'reviews': reviews_data,
+            'external_reviews': external_reviews_data,
             'is_authenticated': request.user.is_authenticated
         }
         center_list.append(center_data)
@@ -87,7 +107,7 @@ def center_list(request):
 
 def get_reviews(request, center_id):
     center = get_object_or_404(Center, pk=center_id)
-    reviews = Review.objects.filter(center=center).order_by('-date')
+    reviews = Review.objects.filter(center=center).order_by('-created_at')
     
     # 페이지네이션 설정
     page_number = request.GET.get('page', 1)
@@ -98,9 +118,9 @@ def get_reviews(request, center_id):
         {
             'id': review.id,
             'title': review.title, 
-            'content': review.summary, 
+            'content': review.content,  # summary 대신 content 사용
             'author': review.user.username if review.user else '익명',
-            'created_at': review.date.isoformat() if hasattr(review.date, 'isoformat') else review.date.strftime('%Y-%m-%d')
+            'created_at': review.created_at.isoformat() if hasattr(review.created_at, 'isoformat') else review.created_at.strftime('%Y-%m-%d')
         }
         for review in page_obj
     ]
@@ -159,17 +179,26 @@ def add_review(request, center_id):
             data = json.loads(request.body)
             title = data.get('title')
             content = data.get('content')
+            rating = data.get('rating')
             
-            if not title or not content:
-                return JsonResponse({'error': '제목과 내용은 필수입니다.'}, status=400)
+            if not title or not content or not rating:
+                return JsonResponse({'error': '제목, 내용, 평점은 필수입니다.'}, status=400)
+            
+            try:
+                rating = int(rating)
+                if not (1 <= rating <= 5):
+                    raise ValueError
+            except (TypeError, ValueError):
+                return JsonResponse({'error': '평점은 1에서 5 사이의 숫자여야 합니다.'}, status=400)
             
             # 리뷰 생성
             review = Review.objects.create(
                 user=request.user,
                 center=center,
                 title=title,
-                summary=content,  # content를 summary 필드에 저장
-                date=timezone.now()
+                content=content,  # content 필드 사용
+                rating=rating,
+                created_at=timezone.now()
             )
             
             return JsonResponse({
@@ -177,9 +206,10 @@ def add_review(request, center_id):
                 'review': {
                     'id': review.id,
                     'title': review.title,
-                    'content': review.summary,
+                    'content': review.content,  # content 필드 사용
                     'author': request.user.username,
-                    'created_at': review.date.isoformat()
+                    'rating': review.rating,
+                    'created_at': review.created_at.isoformat()
                 }
             })
         except json.JSONDecodeError:
@@ -187,7 +217,6 @@ def add_review(request, center_id):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
     
-    # GET 요청 처리
     return JsonResponse({'error': 'POST 요청만 허용됩니다.'}, status=405)
 
 def search_results(request):
@@ -268,3 +297,38 @@ def review_form(request, center_id):
     else:
         form = ReviewForm()
     return render(request, 'centers/review_form.html', {'form': form, 'center': center})
+
+def get_external_reviews(request, center_id):
+    center = get_object_or_404(Center, pk=center_id)
+    external_reviews = ExternalReview.objects.filter(center=center).order_by('-created_at')
+    
+    # 페이지네이션 설정
+    page_number = request.GET.get('page', 1)
+    paginator = Paginator(external_reviews, 10)  # 페이지당 10개의 리뷰
+    page_obj = paginator.get_page(page_number)
+    
+    reviews_data = [
+        {
+            'id': review.id,
+            'title': review.title,
+            'content': review.content,
+            'source': review.source,
+            'created_at': review.created_at.isoformat() if hasattr(review.created_at, 'isoformat') else review.created_at.strftime('%Y-%m-%d')
+        }
+        for review in page_obj
+    ]
+    
+    # 페이지네이션 정보 추가
+    pagination_data = {
+        'current_page': page_obj.number,
+        'total_pages': paginator.num_pages,
+        'has_previous': page_obj.has_previous(),
+        'has_next': page_obj.has_next(),
+        'previous_page': page_obj.previous_page_number() if page_obj.has_previous() else None,
+        'next_page': page_obj.next_page_number() if page_obj.has_next() else None,
+    }
+    
+    return JsonResponse({
+        'reviews': reviews_data,
+        'pagination': pagination_data
+    })

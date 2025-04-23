@@ -59,18 +59,6 @@ function loadCenters(centersData) {
 
 function showCenterDetails(center) {
     console.log("Showing center details for:", center);
-    const bottomSheet = document.getElementById('center-info-sheet');
-    const overlay = document.getElementById('overlay');
-    const centerDetails = document.querySelector('#center-info-sheet .bottom-sheet-content #center-details');
-    
-    if (!bottomSheet || !overlay || !centerDetails) {
-        console.error('필요한 요소를 찾을 수 없습니다:', {
-            bottomSheet: !!bottomSheet,
-            overlay: !!overlay,
-            centerDetails: !!centerDetails
-        });
-        return;
-    }
     
     // 현재 선택된 센터 ID 저장
     currentCenterId = center.id;
@@ -78,264 +66,440 @@ function showCenterDetails(center) {
     // 지도 중심점 이동
     const lat = parseFloat(center.lat);
     const lng = parseFloat(center.lng);
-    console.log("Moving map to coordinates:", lat, lng);
-    
     if (!isNaN(lat) && !isNaN(lng)) {
         const position = new naver.maps.LatLng(lat, lng);
         map.setCenter(position);
-        map.setZoom(17); // 적절한 줌 레벨로 설정
-    } else {
-        console.error("Invalid coordinates for center:", center);
+        map.setZoom(17);
     }
     
-    // Create HTML content for center details
-    let content = `
-        <div class="center-info">
-            <h2 class="center-name">${center.name}</h2>
-            <div class="center-details">
-                <p><i class="fas fa-map-marker-alt"></i> ${center.address}</p>
-                <p><i class="fas fa-phone"></i> ${center.contact}</p>
-                <p><i class="fas fa-clock"></i> ${center.operating_hours || '운영시간 정보가 없습니다.'}</p>
-                ${center.description ? `<p class="center-description"><i class="fas fa-info-circle"></i> ${center.description}</p>` : ''}
-            </div>
-        </div>`;
-
-    // Add therapist section if there are therapists
-    if (center.therapists && center.therapists.length > 0) {
-        content += `
-        <div class="therapist-section mb-8">
-            <h3 class="text-2xl font-semibold mb-4">상담사 소개</h3>
-            <div class="therapist-grid">
-                ${center.therapists.map(therapist => `
+    // Bottom Sheet와 Overlay 표시
+    const overlay = document.getElementById('overlay');
+    const bottomSheet = document.getElementById('bottomSheet');
+    
+    if (overlay && bottomSheet) {
+        overlay.classList.remove('hidden');
+        bottomSheet.classList.remove('translate-y-full');
+    }
+    
+    // 상담센터 정보 표시
+    document.getElementById('centerName').textContent = center.name;
+    document.getElementById('centerAddress').textContent = center.address;
+    document.getElementById('centerPhone').textContent = center.phone;
+    document.getElementById('centerDescription').textContent = center.description;
+    
+    // 상담사 카드 표시
+    const therapistCards = document.getElementById('therapistCards');
+    if (therapistCards) {
+        therapistCards.innerHTML = '';
+        if (center.therapists && center.therapists.length > 0) {
+            center.therapists.forEach(therapist => {
+                const card = document.createElement('div');
+                card.className = 'swiper-slide';
+                card.innerHTML = `
                     <div class="therapist-card">
-                        <div class="therapist-photo ${!therapist.photo ? 'no-photo' : ''}">
-                            ${therapist.photo ? 
-                                `<img src="${therapist.photo}" alt="${therapist.name}">` :
-                                `<div class="placeholder-text">상담사<br>사진</div>`
-                    }
-                </div>
-                        <div class="therapist-info">
-                            <h4 class="text-xl font-semibold mb-2">${therapist.name}</h4>
-                            <p class="text-gray-600 mb-1">경력: ${therapist.experience}년</p>
-                            <p class="text-gray-600">전문 분야: ${therapist.specialty}</p>
+                        <div class="flex flex-col items-center space-y-4">
+                            <div class="therapist-photo">
+                                ${therapist.photo ? 
+                                    `<img src="${therapist.photo}" alt="${therapist.name}" class="w-full h-full object-cover">` :
+                                    `<div class="w-full h-full flex items-center justify-center text-gray-400">No Photo</div>`
+                                }
+                            </div>
+                            <div class="text-center">
+                                <h4 class="font-medium text-lg">${therapist.name}</h4>
+                                <p class="text-sm text-gray-600">경력 ${therapist.experience}년</p>
+                                <p class="text-sm text-gray-600">${therapist.specialty || '전문 분야 정보 없음'}</p>
+                            </div>
                         </div>
                     </div>
-                `).join('')}
-            </div>
-            <div class="scroll-indicator">
-                <i class="fas fa-arrow-right"></i> 옆으로 스크롤하여 더 보기
-            </div>
-        </div>`;
+                `;
+                therapistCards.appendChild(card);
+            });
+        } else {
+            therapistCards.innerHTML = '<div class="text-center text-gray-500 py-4">등록된 상담사가 없습니다</div>';
+        }
     }
+    
+    // 이미지 캐러셀 표시
+    const imageCarousel = document.getElementById('imageCarousel');
+    if (imageCarousel) {
+        imageCarousel.innerHTML = '';
+        if (center.images && center.images.length > 0) {
+            center.images.forEach(image => {
+                const slide = document.createElement('div');
+                slide.className = 'swiper-slide';
+                slide.innerHTML = `
+                    <img src="${image}" alt="상담소 이미지" class="w-full h-48 object-cover rounded-lg">
+                `;
+                imageCarousel.appendChild(slide);
+            });
+        } else {
+            imageCarousel.innerHTML = '<div class="text-center text-gray-500 py-4">등록된 이미지가 없습니다</div>';
+        }
+    }
+    
+    // 내부 리뷰 표시
+    displayReviews(center.reviews || []);
+    
+    // 외부 리뷰 표시
+    displayExternalReviews(center.external_reviews || []);
+    
+    // Swiper 초기화
+    initializeSwipers();
+    
+    // 초기 탭 설정
+    switchTab('info');
+}
 
-    // Add image slider if there are images
-    if (center.images && center.images.length > 0) {
-        content += `
-        <div class="swiper-container">
-            <div class="swiper-wrapper">
-                ${center.images.map(image => `
-                    <div class="swiper-slide">
-                        <img src="${image}" alt="상담소 이미지">
+function displayReviews(reviews, page = 1) {
+    const reviewsList = document.getElementById('reviewsList');
+    const noReviews = document.getElementById('noReviews');
+    const paginationContainer = document.getElementById('reviewsPagination');
+    
+    if (!reviewsList || !noReviews || !paginationContainer) return;
+    
+    if (!reviews || reviews.length === 0) {
+        noReviews.classList.remove('hidden');
+        reviewsList.innerHTML = '';
+        paginationContainer.innerHTML = '';
+        return;
+    }
+    
+    noReviews.classList.add('hidden');
+    
+    // 페이지당 10개씩 표시
+    const itemsPerPage = 10;
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageReviews = reviews.slice(startIndex, endIndex);
+    
+    // 리뷰 목록 표시
+    reviewsList.innerHTML = pageReviews.map(review => `
+        <div class="bg-white rounded-lg shadow p-4 space-y-2">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h4 class="font-medium">${review.title}</h4>
+                    <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
                 </div>
-                `).join('')}
+                <div class="flex items-center text-yellow-400">
+                    ${generateStars(review.rating)}
+                </div>
             </div>
-            <div class="swiper-button-prev"></div>
-            <div class="swiper-button-next"></div>
-            <div class="swiper-pagination"></div>
-        </div>`;
-    }
-
-    // Show overlay and bottom sheet immediately
-    overlay.classList.add('show');
-    bottomSheet.classList.add('show');
-
-    // 로그인 상태 확인을 위해 서버에 요청
-    fetch('/check-auth/')
-        .then(response => response.json())
-        .then(data => {
-            // Add review section with authentication check
-            const reviewSection = `
-                <div class="review-section">
-                    <h3>리뷰</h3>
-                    <div id="review-form-container">
-                        ${data.is_authenticated ? 
-                            `<button onclick="showReviewForm('${center.id}')" class="review-button">리뷰 작성하기</button>` :
-                            `<div class="login-message">
-                                <span>리뷰를 작성하시려면</span>
-                                <a href="/accounts/login/">로그인</a>
-                                <span>해주세요</span>
-                            </div>`
-                        }
-                    </div>
-                    <div class="reviews-list"></div>
-                </div>`;
-
-            content += reviewSection;
-            centerDetails.innerHTML = content;
-
-            // Initialize Swiper if there are images
-            if (center.images && center.images.length > 0) {
-                new Swiper('.swiper-container', {
-                    loop: true,
-                    navigation: {
-                        nextEl: '.swiper-button-next',
-                        prevEl: '.swiper-button-prev',
-                    },
-                    pagination: {
-                        el: '.swiper-pagination',
-                        clickable: true
-                    },
-                    observer: true,
-                    observeParents: true
-                });
-            }
-
-            // Load reviews for this center
-            loadReviews(center.id);
-
-            // Setup drag handles
-            setupDragHandles();
-        })
-        .catch(error => {
-            console.error('인증 상태 확인 오류:', error);
-            // 오류 발생 시 비로그인 상태로 처리
-            const reviewSection = `
-                <div class="review-section">
-                    <h3>리뷰</h3>
-                    <div id="review-form-container">
-                        <div class="login-message">
-                            <span>리뷰를 작성하시려면</span>
-                            <a href="/accounts/login/">로그인</a>
-                            <span>해주세요</span>
-                        </div>
+            <p class="text-gray-700">${review.content}</p>
         </div>
-                    <div class="reviews-list"></div>
-                </div>`;
-
-            content += reviewSection;
-            centerDetails.innerHTML = content;
-            
-            // Initialize Swiper if there are images
-            if (center.images && center.images.length > 0) {
-                new Swiper('.swiper-container', {
-                    loop: true,
-                    navigation: {
-                        nextEl: '.swiper-button-next',
-                        prevEl: '.swiper-button-prev',
-                    },
-                    pagination: {
-                        el: '.swiper-pagination',
-                        clickable: true
-                    },
-                    observer: true,
-                    observeParents: true
-                });
+    `).join('');
+    
+    // 페이지네이션 버튼 생성
+    const totalPages = Math.ceil(reviews.length / itemsPerPage);
+    if (totalPages > 1) {
+        let paginationHTML = '';
+        
+        // 이전 페이지 버튼
+        if (page > 1) {
+            paginationHTML += `
+                <button onclick="displayReviews(${JSON.stringify(reviews)}, ${page - 1})" 
+                        class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300">
+                    이전
+                </button>`;
+        }
+        
+        // 페이지 번호 버튼
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === page) {
+                paginationHTML += `
+                    <button class="px-3 py-1 bg-blue-500 text-white rounded-lg" disabled>
+                        ${i}
+                    </button>`;
+            } else {
+                paginationHTML += `
+                    <button onclick="displayReviews(${JSON.stringify(reviews)}, ${i})" 
+                            class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300">
+                        ${i}
+                    </button>`;
             }
+        }
+        
+        // 다음 페이지 버튼
+        if (page < totalPages) {
+            paginationHTML += `
+                <button onclick="displayReviews(${JSON.stringify(reviews)}, ${page + 1})" 
+                        class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300">
+                    다음
+                </button>`;
+        }
+        
+        paginationContainer.innerHTML = paginationHTML;
+    } else {
+        paginationContainer.innerHTML = '';
+    }
+}
 
-            // Load reviews for this center
-            loadReviews(center.id);
+function displayExternalReviews(reviews, page = 1) {
+    const externalReviewsList = document.getElementById('externalReviewsList');
+    const noExternalReviews = document.getElementById('noExternalReviews');
+    const paginationContainer = document.getElementById('externalReviewsPagination');
+    
+    if (!externalReviewsList || !noExternalReviews || !paginationContainer) {
+        console.warn('External reviews DOM elements not found');
+        return;
+    }
+    
+    if (!reviews || reviews.length === 0) {
+        noExternalReviews.classList.remove('hidden');
+        externalReviewsList.innerHTML = '';
+        paginationContainer.innerHTML = '';
+        return;
+    }
+    
+    noExternalReviews.classList.add('hidden');
+    
+    // 페이지당 10개씩 표시
+    const itemsPerPage = 10;
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageReviews = reviews.slice(startIndex, endIndex);
+    
+    // 외부 리뷰 목록 표시
+    externalReviewsList.innerHTML = pageReviews.map(review => `
+        <div class="bg-white rounded-lg shadow p-4 space-y-2">
+            <a href="${review.url}" target="_blank" rel="noopener noreferrer" 
+               class="block hover:text-blue-600 transition-colors">
+                <h4 class="font-medium">${review.title}</h4>
+            </a>
+            <p class="text-sm text-gray-700">${truncateText(review.summary, 200)}</p>
+            <div class="flex justify-between items-center text-sm text-gray-500">
+                <span>${review.source}</span>
+                <span>${formatDate(review.created_at)}</span>
+            </div>
+        </div>
+    `).join('');
+    
+    // 페이지네이션 버튼 생성
+    const totalPages = Math.ceil(reviews.length / itemsPerPage);
+    if (totalPages > 1) {
+        let paginationHTML = '';
+        
+        // 이전 페이지 버튼
+        if (page > 1) {
+            paginationHTML += `
+                <button onclick="displayExternalReviews(${JSON.stringify(reviews)}, ${page - 1})" 
+                        class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300">
+                    이전
+                </button>`;
+        }
+        
+        // 페이지 번호 버튼
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === page) {
+                paginationHTML += `
+                    <button class="px-3 py-1 bg-blue-500 text-white rounded-lg" disabled>
+                        ${i}
+                    </button>`;
+            } else {
+                paginationHTML += `
+                    <button onclick="displayExternalReviews(${JSON.stringify(reviews)}, ${i})" 
+                            class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300">
+                        ${i}
+                    </button>`;
+            }
+        }
+        
+        // 다음 페이지 버튼
+        if (page < totalPages) {
+            paginationHTML += `
+                <button onclick="displayExternalReviews(${JSON.stringify(reviews)}, ${page + 1})" 
+                        class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300">
+                    다음
+                </button>`;
+        }
+        
+        paginationContainer.innerHTML = paginationHTML;
+    } else {
+        paginationContainer.innerHTML = '';
+    }
+}
 
-            // Setup drag handles
-            setupDragHandles();
-        });
+// 유틸리티 함수들
+function generateStars(rating) {
+    return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+}
+
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+function initializeSwipers() {
+    // 상담사 카드 Swiper
+    new Swiper('.therapist-swiper-container', {
+        slidesPerView: 'auto',
+        spaceBetween: 16,
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+        breakpoints: {
+            320: { slidesPerView: 1.2 },
+            640: { slidesPerView: 2.2 },
+            1024: { slidesPerView: 3.2 }
+        }
+    });
+    
+    // 이미지 캐러셀 Swiper
+    new Swiper('.image-carousel .swiper-container', {
+        slidesPerView: 1,
+        spaceBetween: 16,
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        }
+    });
+}
+
+// 탭 전환 기능
+function switchTab(tabName) {
+    const tabs = ['info', 'internalReviews', 'externalReviews'];
+    const buttons = tabs.map(tab => document.getElementById(`${tab}Tab`));
+    const contents = tabs.map(tab => document.getElementById(`${tab}Content`));
+    
+    tabs.forEach((tab, index) => {
+        if (tab === tabName) {
+            buttons[index]?.classList.add('bg-blue-500', 'text-white');
+            buttons[index]?.classList.remove('bg-gray-200', 'text-gray-700');
+            contents[index]?.classList.remove('hidden');
+        } else {
+            buttons[index]?.classList.remove('bg-blue-500', 'text-white');
+            buttons[index]?.classList.add('bg-gray-200', 'text-gray-700');
+            contents[index]?.classList.add('hidden');
+        }
+    });
+}
+
+// 초기 탭 설정
+document.addEventListener('DOMContentLoaded', () => {
+    const infoTab = document.getElementById('infoTab');
+    if (infoTab) {
+        infoTab.click();
+    }
+});
+
+function setupDragHandles() {
+    const bottomSheet = document.getElementById('bottomSheet');
+    const dragHandle = document.getElementById('dragHandle');
+    const overlay = document.getElementById('overlay');
+    
+    if (!dragHandle || !bottomSheet || !overlay) return;
+    
+    let startY;
+    let startTranslateY;
+    let isDragging = false;
+
+    function handleStart(clientY) {
+        isDragging = true;
+        startY = clientY;
+        const transform = window.getComputedStyle(bottomSheet).transform;
+        const matrix = new DOMMatrix(transform);
+        startTranslateY = matrix.m42;
+        bottomSheet.style.transition = 'none';
+    }
+
+    function handleMove(clientY) {
+        if (!isDragging) return;
+        
+        const deltaY = clientY - startY;
+        const newTranslateY = Math.max(0, deltaY);
+        bottomSheet.style.transform = `translateY(${newTranslateY}px)`;
+    }
+
+    function handleEnd() {
+        if (!isDragging) return;
+        
+        isDragging = false;
+        bottomSheet.style.transition = 'transform 0.3s ease-in-out';
+        const transform = window.getComputedStyle(bottomSheet).transform;
+        const matrix = new DOMMatrix(transform);
+        const currentTranslateY = matrix.m42;
+        
+        if (currentTranslateY > bottomSheet.clientHeight * 0.3) {
+            closeBottomSheet();
+        } else {
+            bottomSheet.style.transform = 'translateY(0)';
+        }
+    }
+
+    // 터치 이벤트
+    dragHandle.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleStart(e.touches[0].clientY);
+    });
+
+    document.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+            e.preventDefault();
+            handleMove(e.touches[0].clientY);
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchend', handleEnd);
+
+    // 마우스 이벤트
+    dragHandle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        handleStart(e.clientY);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            e.preventDefault();
+            handleMove(e.clientY);
+        }
+    });
+
+    document.addEventListener('mouseup', handleEnd);
+
+    // Overlay 클릭 시 Bottom Sheet 닫기
+    overlay.addEventListener('click', closeBottomSheet);
 }
 
 function closeBottomSheet() {
-    const bottomSheet = document.getElementById('center-info-sheet');
+    const bottomSheet = document.getElementById('bottomSheet');
     const overlay = document.getElementById('overlay');
     
-    // Hide bottom sheet and overlay with transition
-    bottomSheet.classList.remove('show');
-    overlay.classList.remove('show');
-    
-    // Reset transform
-    bottomSheet.style.transform = '';
-    
-    currentCenterId = null;
+    if (bottomSheet && overlay) {
+        bottomSheet.classList.add('translate-y-full');
+        overlay.classList.add('hidden');
+    }
 }
 
-function setupDragHandles() {
-    const bottomSheet = document.getElementById('center-info-sheet');
-    const dragHandle = document.querySelector('.drag-handle');
-    const overlay = document.getElementById('overlay');
-    
-    if (!dragHandle) return;
-    
-    let startY;
-    let startTransform = 0;
-
-    // Handle overlay click
-    overlay.addEventListener('click', closeBottomSheet);
-
-    // Touch events
-    dragHandle.addEventListener('touchstart', (e) => {
-        startY = e.touches[0].clientY;
-        const transform = bottomSheet.style.transform;
-        if (transform) {
-            startTransform = parseInt(transform.replace('translateY(', '').replace('px)', ''));
-        }
-        bottomSheet.style.transition = 'none';
-    });
-    
-    dragHandle.addEventListener('touchmove', (e) => {
-        const currentY = e.touches[0].clientY;
-        const diff = currentY - startY;
-        
-        if (diff > 0) { // Only allow dragging down
-            bottomSheet.style.transform = `translateY(${startTransform + diff}px)`;
-        }
-    });
-    
-    dragHandle.addEventListener('touchend', () => {
-        bottomSheet.style.transition = 'transform 0.3s ease-in-out';
-        const transform = bottomSheet.style.transform;
-        if (transform) {
-            const currentY = parseInt(transform.replace('translateY(', '').replace('px)', ''));
-            
-            if (currentY > 100) { // If dragged down more than 100px
-                closeBottomSheet();
-            } else {
-                bottomSheet.style.transform = '';
-            }
-        }
-    });
-
-    // Mouse events (desktop support)
-    dragHandle.addEventListener('mousedown', (e) => {
-        startY = e.clientY;
-        const transform = bottomSheet.style.transform;
-        if (transform) {
-            startTransform = parseInt(transform.replace('translateY(', '').replace('px)', ''));
-        }
-        
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-    });
-    
-    function handleMouseMove(e) {
-        const currentY = e.clientY;
-        const diff = currentY - startY;
-        
-        if (diff > 0) { // Only allow dragging down
-            bottomSheet.style.transform = `translateY(${startTransform + diff}px)`;
-        }
+function openBottomSheet(center) {
+    const bottomSheet = document.getElementById('bottomSheet');
+    if (bottomSheet) {
+        bottomSheet.classList.remove('translate-y-full');
+        // 센터 정보 업데이트
+        updateCenterInfo(center);
+        // 리뷰 데이터 로드
+        loadReviews(center.id);
     }
+}
+
+function updateCenterInfo(center) {
+    const centerNameElement = document.getElementById('centerName');
+    const centerAddressElement = document.getElementById('centerAddress');
+    const centerPhoneElement = document.getElementById('centerPhone');
     
-    function handleMouseUp() {
-        const transform = bottomSheet.style.transform;
-        if (transform) {
-            const currentY = parseInt(transform.replace('translateY(', '').replace('px)', ''));
-            
-            if (currentY > 100) { // If dragged down more than 100px
-                closeBottomSheet();
-            } else {
-                bottomSheet.style.transform = '';
-            }
-        }
-        
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-    }
+    if (centerNameElement) centerNameElement.textContent = center.name;
+    if (centerAddressElement) centerAddressElement.textContent = center.address;
+    if (centerPhoneElement) centerPhoneElement.textContent = center.phone;
 }
 
 function loadReviews(centerId, page = 1) {
@@ -480,84 +644,101 @@ function cancelReviewForm() {
     loadReviews(currentCenterId);
 }
 
+// 리뷰 목록을 새로고침하는 함수
+function refreshReviews(centerId) {
+    fetch(`/reviews/${centerId}/`)
+        .then(response => response.json())
+        .then(data => {
+            const reviewsList = document.getElementById('reviewsList');
+            if (reviewsList && data.reviews) {
+                reviewsList.innerHTML = data.reviews.map(review => `
+                    <div class="bg-white rounded-lg shadow p-4 space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-medium">${review.title}</h4>
+                                <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
+                            </div>
+                            <div class="flex items-center text-yellow-400">
+                                ${generateStars(review.rating)}
+                            </div>
+                        </div>
+                        <p class="text-gray-700">${review.content}</p>
+                    </div>
+                `).join('');
+                
+                // "작성된 리뷰가 없습니다" 메시지 처리
+                const noReviews = document.getElementById('noReviews');
+                if (noReviews) {
+                    if (data.reviews.length > 0) {
+                        noReviews.classList.add('hidden');
+                    } else {
+                        noReviews.classList.remove('hidden');
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('리뷰 목록 새로고침 실패:', error);
+        });
+}
+
 function submitReview(event) {
     event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
     
     if (!currentCenterId) {
         alert('리뷰를 작성할 상담소가 선택되지 않았습니다.');
         return;
     }
     
-    const form = event.target;
-    const title = form.querySelector('[name="title"]').value;
-    const content = form.querySelector('[name="content"]').value;
+    const title = formData.get('title');
+    const content = formData.get('content');
+    const rating = formData.get('rating');
     
-    // Get CSRF token
-    const csrfToken = getCookie('csrftoken');
-    if (!csrfToken) {
-        alert('보안 토큰을 찾을 수 없습니다. 페이지를 새로고침하고 다시 시도해주세요.');
+    if (!title || !content || !rating) {
+        alert('제목, 내용, 평점을 모두 입력해주세요.');
         return;
     }
     
-    // Submit review to server
     fetch(`/reviews/${currentCenterId}/add/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
+            'X-CSRFToken': getCookie('csrftoken')
         },
         body: JSON.stringify({
             title: title,
-            content: content
+            content: content,
+            rating: parseInt(rating)
         })
     })
     .then(response => {
-        // 응답이 JSON이 아닌 경우 처리
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            return response.text().then(text => {
-                console.error('서버 응답 오류:', text.substring(0, 200) + '...');
-                throw new Error('로그인이 필요하거나 서버에서 오류가 발생했습니다.');
-            });
-        }
-        
         if (!response.ok) {
             return response.json().then(data => {
                 throw new Error(data.error || '리뷰 작성에 실패했습니다.');
             });
         }
-        
         return response.json();
     })
     .then(data => {
-        alert('리뷰가 성공적으로 등록되었습니다.');
-        // Reset review section to original state
-        const reviewSection = document.querySelector('.review-section');
-        reviewSection.innerHTML = `
-            <h3>리뷰</h3>
-            <div id="review-form-container">
-                <button onclick="showReviewForm()">리뷰 작성하기</button>
-            </div>
-            <div class="reviews-list"></div>
-        `;
-        // Reload reviews
-        loadReviews(currentCenterId);
+        if (data.success) {
+            alert('리뷰가 성공적으로 등록되었습니다.');
+            closeReviewModal();
+            
+            // 내부리뷰 탭으로 전환
+            switchTab('internalReviews');
+            
+            // 리뷰 목록 새로고침
+            refreshReviews(currentCenterId);
+        } else {
+            throw new Error(data.error || '리뷰 작성에 실패했습니다.');
+        }
     })
     .catch(error => {
         console.error('리뷰 제출 오류:', error);
-        alert('리뷰 작성 중 오류가 발생했습니다: ' + error.message);
-        
-        // 오류 발생 시 리뷰 폼을 다시 표시
-        const reviewSection = document.querySelector('.review-section');
-        reviewSection.innerHTML = `
-            <h3>리뷰 작성</h3>
-            <form class="review-form" onsubmit="submitReview(event)">
-                <input type="text" name="title" placeholder="제목을 입력해주세요" required>
-                <textarea name="content" placeholder="리뷰 내용을 입력해주세요" required></textarea>
-                <button type="submit">작성 완료</button>
-                <button type="button" onclick="cancelReviewForm()">취소</button>
-            </form>
-        `;
+        alert(error.message);
     });
 }
 
@@ -752,3 +933,41 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// 리뷰 모달 표시 함수
+function showReviewModal() {
+    const reviewModal = document.getElementById('reviewModal');
+    if (reviewModal) {
+        reviewModal.classList.remove('hidden');
+        document.getElementById('reviewCenterId').value = currentCenterId;
+        
+        // 별점 버튼 이벤트 설정
+        const starButtons = document.querySelectorAll('#starRating button');
+        starButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const rating = this.dataset.rating;
+                document.getElementById('rating').value = rating;
+                
+                // 별점 UI 업데이트
+                starButtons.forEach(btn => {
+                    const btnRating = btn.dataset.rating;
+                    btn.textContent = btnRating <= rating ? '★' : '☆';
+                });
+            });
+        });
+    }
+}
+
+// 리뷰 모달 닫기 함수
+function closeReviewModal() {
+    const reviewModal = document.getElementById('reviewModal');
+    if (reviewModal) {
+        reviewModal.classList.add('hidden');
+        // 폼 초기화
+        document.getElementById('reviewForm').reset();
+        // 별점 UI 초기화
+        document.querySelectorAll('#starRating button').forEach(btn => {
+            btn.textContent = '☆';
+        });
+    }
+}

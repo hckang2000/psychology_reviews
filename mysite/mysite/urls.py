@@ -12,8 +12,12 @@ urlpatterns = [
     path('reviews/<int:center_id>/', views.get_reviews, name='get_reviews'),
     path('reviews/<int:center_id>/add/', views.add_review, name='add_review'),
     path('<int:center_id>/', views.center_detail, name='center_detail'),
+    path('accounts/', include('allauth.urls')),  # django-allauth URLs
 ]
 
 # Add static files (media)
 if settings.DEBUG:  # Only serve media files in development mode
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
