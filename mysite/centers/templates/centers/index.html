@@ -27,34 +27,40 @@
     <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40" onclick="closeBottomSheet()"></div>
 
     <!-- Bottom Sheet -->
-    <div id="bottomSheet" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-[20px] shadow-lg transform transition-transform duration-300 translate-y-full h-[75vh] overflow-y-auto z-50">
-        <div class="p-4">
-            <!-- Drag Handle and Close Button -->
-            <div class="flex justify-between items-center mb-4 sticky top-0 bg-white rounded-t-[20px] z-[51]">
-                <div class="flex-grow flex justify-center">
-                    <div class="w-10 h-1 bg-gray-300 rounded-full cursor-grab" id="dragHandle"></div>
-                </div>
-                <button onclick="closeBottomSheet()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
+    <div id="bottomSheet" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-[20px] shadow-lg transform transition-transform duration-300 translate-y-full h-[75vh] z-50">
+        <!-- Header Section -->
+        <div class="sticky top-0 left-0 right-0 bg-white rounded-t-[20px] z-[60] border-b border-gray-100 shadow-sm">
+            <!-- Drag Handle Container -->
+            <div class="h-[40px] flex items-center justify-center">
+                <div id="dragHandle" class="w-[36px] h-[4px] bg-gray-300 rounded-full touch-none select-none"></div>
             </div>
+            
+            <!-- Close Button -->
+            <button onclick="closeBottomSheet()" class="absolute right-4 top-2 w-[28px] h-[28px] bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
 
+        <!-- Content Section -->
+        <div class="overflow-y-auto h-[calc(100%-40px)] px-4 pb-4">
             <!-- 탭 버튼 컨테이너 -->
-            <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-                <button id="infoTab" onclick="switchTab('info')" 
-                        class="flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors">
-                    상담센터 정보
-                </button>
-                <button id="internalReviewsTab" onclick="switchTab('internalReviews')" 
-                        class="flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors">
-                    내부리뷰
-                </button>
-                <button id="externalReviewsTab" onclick="switchTab('externalReviews')" 
-                        class="flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors">
-                    외부리뷰
-                </button>
+            <div class="sticky top-0 bg-white pt-4 pb-2 z-50">
+                <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                    <button id="infoTab" onclick="switchTab('info')" 
+                            class="flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors">
+                        상담센터 정보
+                    </button>
+                    <button id="internalReviewsTab" onclick="switchTab('internalReviews')" 
+                            class="flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors">
+                        내부리뷰
+                    </button>
+                    <button id="externalReviewsTab" onclick="switchTab('externalReviews')" 
+                            class="flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors">
+                        외부리뷰
+                    </button>
+                </div>
             </div>
 
             <!-- 탭 콘텐츠 -->

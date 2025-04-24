@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load account socialaccount %}
+
+{% block title %}회원가입 | MindScanner{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="content-wrapper p-8 max-w-md mx-auto">
+        <div class="bg-white rounded-xl shadow-sm p-8">
+            <h1 class="section-title mb-8 text-center">회원가입</h1>
+            
+            {% get_providers as socialaccount_providers %}
+            {% if socialaccount_providers %}
+            <div class="social-signup mb-6">
+                <p class="text-gray-600 mb-4 text-center">소셜 계정으로 회원가입</p>
+                <div class="socialaccount_ballot">
+                    <ul class="socialaccount_providers flex justify-center space-x-4">
+                        {% include "socialaccount/snippets/provider_list.html" with process="signup" %}
+                    </ul>
+                </div>
+                <div class="signup-or text-center my-6">
+                    <span class="text-gray-400">또는</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <form class="signup space-y-4" method="POST" action="{% url 'account_signup' %}">
+                {% csrf_token %}
+                {% if form.errors %}
+                <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            {{ error }}
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="form-group">
+                    <label for="id_email" class="block text-gray-700 mb-2">이메일</label>
+                    <input type="email" name="email" id="id_email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_username" class="block text-gray-700 mb-2">사용자 이름</label>
+                    <input type="text" name="username" id="id_username" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_password1" class="block text-gray-700 mb-2">비밀번호</label>
+                    <input type="password" name="password1" id="id_password1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_password2" class="block text-gray-700 mb-2">비밀번호 확인</label>
+                    <input type="password" name="password2" id="id_password2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                </div>
+                
+                {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                {% endif %}
+                
+                <button class="w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-primary-dark transition-colors duration-200" type="submit">회원가입</button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <p class="text-gray-600">이미 계정이 있으신가요? <a href="{% url 'account_login' %}" class="text-primary hover:text-primary-dark">로그인</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

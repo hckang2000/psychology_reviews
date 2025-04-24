@@ -398,77 +398,103 @@ function setupDragHandles() {
     const dragHandle = document.getElementById('dragHandle');
     const overlay = document.getElementById('overlay');
     
-    if (!dragHandle || !bottomSheet || !overlay) return;
-    
-    let startY;
-    let startTranslateY;
-    let isDragging = false;
-
-    function handleStart(clientY) {
-        isDragging = true;
-        startY = clientY;
-        const transform = window.getComputedStyle(bottomSheet).transform;
-        const matrix = new DOMMatrix(transform);
-        startTranslateY = matrix.m42;
-        bottomSheet.style.transition = 'none';
+    if (!bottomSheet || !dragHandle || !overlay) {
+        console.error('Required elements not found for drag functionality');
+        return;
     }
 
-    function handleMove(clientY) {
+    let startY = 0;
+    let currentY = 0;
+    let initialHeight = 0;
+    let isDragging = false;
+    
+    // 드래그 관련 기본 동작 방지
+    dragHandle.addEventListener('dragstart', (e) => e.preventDefault());
+    dragHandle.addEventListener('drop', (e) => e.preventDefault());
+    
+    function handleStart(event) {
+        if (event.button === 2) return; // 우클릭 방지
+        
+        isDragging = true;
+        startY = event.type.includes('mouse') ? event.clientY : event.touches[0].clientY;
+        initialHeight = bottomSheet.offsetHeight;
+        
+        // 드래그 시작시 트랜지션 제거
+        bottomSheet.style.transition = 'none';
+        
+        // 이벤트 캡처링 사용
+        if (event.type.includes('mouse')) {
+            document.addEventListener('mousemove', handleMove, { capture: true });
+            document.addEventListener('mouseup', handleEnd, { capture: true });
+        } else {
+            document.addEventListener('touchmove', handleMove, { capture: true, passive: false });
+            document.addEventListener('touchend', handleEnd, { capture: true });
+        }
+        
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    function handleMove(event) {
         if (!isDragging) return;
         
-        const deltaY = clientY - startY;
-        const newTranslateY = Math.max(0, deltaY);
-        bottomSheet.style.transform = `translateY(${newTranslateY}px)`;
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const clientY = event.type.includes('mouse') ? event.clientY : event.touches[0].clientY;
+        currentY = clientY - startY;
+        
+        // 위로 드래그할 때는 최대 85vh까지만
+        if (currentY < 0) {
+            currentY = Math.max(currentY, -(window.innerHeight * 0.85 - initialHeight));
+        }
+        
+        // RAF를 사용하여 성능 최적화
+        requestAnimationFrame(() => {
+            bottomSheet.style.transform = `translateY(${currentY}px)`;
+        });
     }
-
-    function handleEnd() {
+    
+    function handleEnd(event) {
         if (!isDragging) return;
         
         isDragging = false;
-        bottomSheet.style.transition = 'transform 0.3s ease-in-out';
-        const transform = window.getComputedStyle(bottomSheet).transform;
-        const matrix = new DOMMatrix(transform);
-        const currentTranslateY = matrix.m42;
         
-        if (currentTranslateY > bottomSheet.clientHeight * 0.3) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        // 트랜지션 다시 추가
+        bottomSheet.style.transition = 'transform 0.3s ease-out';
+        
+        // 150px 이상 아래로 드래그하면 닫기
+        if (currentY > 150) {
             closeBottomSheet();
         } else {
+            // 원래 위치로 돌아가기
             bottomSheet.style.transform = 'translateY(0)';
         }
+        
+        // 이벤트 리스너 제거
+        document.removeEventListener('mousemove', handleMove, { capture: true });
+        document.removeEventListener('touchmove', handleMove, { capture: true });
+        document.removeEventListener('mouseup', handleEnd, { capture: true });
+        document.removeEventListener('touchend', handleEnd, { capture: true });
     }
-
-    // 터치 이벤트
-    dragHandle.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        handleStart(e.touches[0].clientY);
-    });
-
-    document.addEventListener('touchmove', (e) => {
-        if (isDragging) {
-            e.preventDefault();
-            handleMove(e.touches[0].clientY);
-        }
-    }, { passive: false });
-
-    document.addEventListener('touchend', handleEnd);
-
-    // 마우스 이벤트
-    dragHandle.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        handleStart(e.clientY);
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            e.preventDefault();
-            handleMove(e.clientY);
-        }
-    });
-
-    document.addEventListener('mouseup', handleEnd);
-
-    // Overlay 클릭 시 Bottom Sheet 닫기
-    overlay.addEventListener('click', closeBottomSheet);
+    
+    // 이벤트 리스너 등록
+    dragHandle.addEventListener('mousedown', handleStart, { passive: false });
+    dragHandle.addEventListener('touchstart', handleStart, { passive: false });
+    
+    // 전역 이벤트 방지
+    document.addEventListener('dragstart', (e) => {
+        if (isDragging) e.preventDefault();
+    }, { capture: true });
+    
+    document.addEventListener('selectstart', (e) => {
+        if (isDragging) e.preventDefault();
+    }, { capture: true });
 }
 
 function closeBottomSheet() {

@@ -1,27 +1,41 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login
-from django.contrib.auth.views import LoginView
-from .forms import SignUpForm
-from .models import Profile
-from django.urls import reverse_lazy
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from .forms import CustomUserCreationForm
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib import messages
+from allauth.account.views import LoginView
 
-def signup(request):
+def login_view(request):
     if request.method == 'POST':
-        form = SignUpForm(request.POST)
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            login(request, form.get_user())
+            return redirect('centers:index')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'registration/login.html', {'form': form})
+
+def signup_view(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            nickname = form.cleaned_data.get('nickname')
-            user.profile.nickname = nickname  # Save nickname to profile
-            user.save()
             login(request, user)
             return redirect('centers:index')
     else:
-        form = SignUpForm()
+        form = CustomUserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
 
 class CustomLoginView(LoginView):
-    template_name = 'registration/login.html'
+    def form_valid(self, form):
+        user = form.user
+        if user.is_superuser:
+            login(self.request, user)
+            return redirect(self.get_success_url())
+        return super().form_valid(form)
 
-    def get_success_url(self):
-        # Using reverse_lazy ensures the URL is correctly resolved and handled
-        return reverse_lazy('centers:index')
+@login_required
+def logout_view(request):
+    logout(request)
+    return redirect('centers:index')
