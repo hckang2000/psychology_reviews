@@ -7,6 +7,137 @@
     <!-- Swiper.js CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <link rel="stylesheet" href="{% static 'centers/style.css' %}">
+    <style>
+        /* Therapist Card Styles */
+        .therapist-section {
+            padding: 1.5rem;
+            margin-top: 1rem;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .therapist-swiper-container {
+            width: 100%;
+            padding: 1rem 0;
+            overflow: hidden;
+        }
+
+        .therapist-swiper-container .swiper-wrapper {
+            display: flex;
+            align-items: stretch;
+        }
+
+        .therapist-card {
+            width: 280px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin: 0 auto;
+            transition: transform 0.2s ease;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .therapist-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .therapist-photo {
+            width: 100%;
+            height: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .therapist-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .therapist-card:hover .therapist-photo img {
+            transform: scale(1.05);
+        }
+
+        .therapist-info {
+            padding: 1.5rem;
+            background: white;
+        }
+
+        .therapist-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #1a1a1a;
+        }
+
+        .therapist-experience {
+            font-size: 1rem;
+            color: #4b5563;
+            margin-bottom: 0.5rem;
+        }
+
+        .therapist-specialty {
+            font-size: 1rem;
+            color: #4b5563;
+            margin-bottom: 0.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Swiper Navigation Styles */
+        .swiper-button-next,
+        .swiper-button-prev {
+            color: #4A90E2;
+            background: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .swiper-button-next:after,
+        .swiper-button-prev:after {
+            font-size: 20px;
+        }
+
+        .swiper-pagination-bullet-active {
+            background: #4A90E2;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 640px) {
+            .therapist-card {
+                width: 240px;
+            }
+            
+            .therapist-photo {
+                height: 180px;
+            }
+
+            .swiper-button-next,
+            .swiper-button-prev {
+                display: none;
+            }
+        }
+
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .therapist-card {
+                width: 260px;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .therapist-card {
+                width: 280px;
+            }
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -91,11 +222,12 @@
 
                         <!-- 상담사 카드 슬라이더 -->
                         <div class="therapist-section mt-6">
-                            <h3 class="text-lg font-semibold mb-4">상담사</h3>
-                            <div class="therapist-swiper-container overflow-hidden">
+                            <h3 class="text-lg font-semibold mb-4">추천 상담사</h3>
+                            <div class="therapist-swiper-container">
                                 <div class="swiper-wrapper" id="therapistCards"></div>
                                 <div class="swiper-button-next"></div>
                                 <div class="swiper-button-prev"></div>
+                                <div class="swiper-pagination"></div>
                             </div>
                         </div>
 
@@ -201,6 +333,22 @@
             </form>
         </div>
     </div>
+
+    <!-- 상담사 모달 -->
+    <div class="therapist-modal" id="therapistModal">
+        <div class="therapist-modal-content">
+            <span class="modal-close">&times;</span>
+            <div class="modal-therapist-photo">
+                <img id="modalTherapistPhoto" src="" alt="">
+            </div>
+            <div class="modal-therapist-info">
+                <h3 id="modalTherapistName" class="modal-therapist-name"></h3>
+                <p id="modalTherapistExperience" class="modal-therapist-experience"></p>
+                <p id="modalTherapistSpecialty" class="modal-therapist-specialty"></p>
+                <div id="modalTherapistDescription" class="modal-therapist-description"></div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block extra_js %}
@@ -251,6 +399,84 @@
                         window.location.href = `${searchResultsUrl}?q=${encodeURIComponent(searchTerm)}`;
                     }
                 });
+            }
+        });
+    </script>
+
+    <!-- Initialize Swiper for therapist cards -->
+    <script>
+        const therapistSwiper = new Swiper('.therapist-swiper-container', {
+            slidesPerView: 'auto',
+            spaceBetween: 20,
+            centeredSlides: false,
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            breakpoints: {
+                320: {
+                    slidesPerView: 1.2,
+                    spaceBetween: 10,
+                    centeredSlides: true
+                },
+                640: {
+                    slidesPerView: 2.2,
+                    spaceBetween: 15,
+                    centeredSlides: false
+                },
+                1024: {
+                    slidesPerView: 3.2,
+                    spaceBetween: 20,
+                    centeredSlides: false
+                },
+                1280: {
+                    slidesPerView: 4.2,
+                    spaceBetween: 20,
+                    centeredSlides: false
+                }
+            }
+        });
+
+        // 모달 관련 기능
+        const modal = document.getElementById('therapistModal');
+        const closeBtn = document.querySelector('.modal-close');
+
+        function showTherapistModal(therapist) {
+            document.getElementById('modalTherapistPhoto').src = therapist.photo || '';
+            document.getElementById('modalTherapistName').textContent = therapist.name;
+            document.getElementById('modalTherapistExperience').textContent = `경력 ${therapist.experience}년`;
+            document.getElementById('modalTherapistSpecialty').textContent = therapist.specialty;
+            document.getElementById('modalTherapistDescription').textContent = therapist.description || '';
+            modal.classList.add('active');
+        }
+
+        function closeTherapistModal() {
+            modal.classList.remove('active');
+        }
+
+        closeBtn.addEventListener('click', closeTherapistModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeTherapistModal();
+            }
+        });
+
+        // 상담사 카드 클릭 이벤트
+        document.addEventListener('click', (e) => {
+            const card = e.target.closest('.therapist-card');
+            if (card) {
+                const therapistData = {
+                    photo: card.querySelector('img')?.src || '',
+                    name: card.querySelector('.therapist-name')?.textContent || '',
+                    experience: card.querySelector('.therapist-experience')?.textContent?.match(/\d+/)?.[0] || '0',
+                    specialty: card.querySelector('.therapist-specialty')?.textContent || '',
+                    description: card.querySelector('.therapist-description')?.textContent || ''
+                };
+                showTherapistModal(therapistData);
             }
         });
     </script>

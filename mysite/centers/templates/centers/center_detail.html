@@ -150,43 +150,29 @@
         </div>
 
         <!-- Therapist Section with Swiper -->
-        <div class="therapist-section">
-            <h3 class="text-2xl font-semibold mb-4">상담사 소개</h3>
-            <div class="therapist-swiper swiper">
-                <div class="swiper-wrapper">
-                    {% for therapist in center.therapists.all %}
-                    <div class="swiper-slide">
-                        <div class="therapist-card">
-                            {% if therapist.photo %}
-                            <img src="{{ therapist.photo.url }}" alt="{{ therapist.name }}" class="therapist-photo">
-                            {% else %}
-                            <div class="therapist-photo bg-blue-500 flex items-center justify-center text-white text-2xl font-bold">
-                                상담사<br>사진
-                            </div>
-                            {% endif %}
-                            <div class="therapist-info">
-                                <h4 class="therapist-name">{{ therapist.name }}</h4>
-                                <p class="therapist-detail">
-                                    <i class="fas fa-history"></i>
-                                    경력: {{ therapist.experience }}년
-                                </p>
-                                <p class="therapist-detail">
-                                    <i class="fas fa-star"></i>
-                                    전문 분야: {{ therapist.specialty }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <p class="text-gray-500 text-center">등록된 상담사가 없습니다.</p>
-                    {% endfor %}
-                </div>
-                <!-- Swiper Navigation -->
+        <div class="therapist-section mt-6">
+            <h3 class="text-lg font-semibold mb-4">상담사</h3>
+            <div class="therapist-swiper-container">
+                <div class="swiper-wrapper" id="therapistCards"></div>
                 <div class="swiper-button-next"></div>
                 <div class="swiper-button-prev"></div>
-                <!-- Swiper Pagination -->
                 <div class="swiper-pagination"></div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- 상담사 모달 -->
+<div class="therapist-modal" id="therapistModal">
+    <div class="therapist-modal-content">
+        <span class="modal-close">&times;</span>
+        <div class="modal-therapist-photo">
+            <img id="modalTherapistPhoto" src="" alt="">
+        </div>
+        <div class="modal-therapist-info">
+            <h3 id="modalTherapistName" class="modal-therapist-name"></h3>
+            <p id="modalTherapistExperience" class="modal-therapist-experience"></p>
+            <p id="modalTherapistSpecialty" class="modal-therapist-specialty"></p>
         </div>
     </div>
 </div>
@@ -197,29 +183,29 @@
 <script src="https://kit.fontawesome.com/your-code.js" crossorigin="anonymous"></script>
 <script>
     // Initialize Swiper for therapist cards
-    const therapistSwiper = new Swiper('.therapist-swiper', {
+    const therapistSwiper = new Swiper('.therapist-swiper-container', {
         slidesPerView: 'auto',
         spaceBetween: 20,
         centeredSlides: false,
-        pagination: {
-            el: '.swiper-pagination',
-            clickable: true,
-        },
         navigation: {
             nextEl: '.swiper-button-next',
             prevEl: '.swiper-button-prev',
         },
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
         breakpoints: {
             320: {
-                slidesPerView: 1,
+                slidesPerView: 1.2,
                 spaceBetween: 10
             },
-            480: {
-                slidesPerView: 1,
+            640: {
+                slidesPerView: 2.2,
                 spaceBetween: 15
             },
-            768: {
-                slidesPerView: 2,
+            1024: {
+                slidesPerView: 4.2,
                 spaceBetween: 20
             }
         }
@@ -290,6 +276,43 @@
             bottomsheet.classList.add('closing');
             setTimeout(() => window.history.back(), 300);
         });
+    });
+
+    // 모달 관련 기능
+    const modal = document.getElementById('therapistModal');
+    const closeBtn = document.querySelector('.modal-close');
+
+    function showTherapistModal(therapist) {
+        document.getElementById('modalTherapistPhoto').src = therapist.photo || '';
+        document.getElementById('modalTherapistName').textContent = therapist.name;
+        document.getElementById('modalTherapistExperience').textContent = `경력 ${therapist.experience}년`;
+        document.getElementById('modalTherapistSpecialty').textContent = therapist.specialty;
+        modal.classList.add('active');
+    }
+
+    function closeTherapistModal() {
+        modal.classList.remove('active');
+    }
+
+    closeBtn.addEventListener('click', closeTherapistModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeTherapistModal();
+        }
+    });
+
+    // 상담사 카드 클릭 이벤트
+    document.addEventListener('click', (e) => {
+        const card = e.target.closest('.therapist-card');
+        if (card) {
+            const therapistData = {
+                photo: card.querySelector('img')?.src || '',
+                name: card.querySelector('.therapist-name')?.textContent || '',
+                experience: card.querySelector('.therapist-experience')?.textContent?.match(/\d+/)?.[0] || '0',
+                specialty: card.querySelector('.therapist-specialty')?.textContent || ''
+            };
+            showTherapistModal(therapistData);
+        }
     });
 </script>
 

@@ -57,6 +57,44 @@ function loadCenters(centersData) {
     }
 }
 
+function createTherapistCard(therapist) {
+    const card = document.createElement('div');
+    card.className = 'swiper-slide';
+    card.innerHTML = `
+        <div class="therapist-card">
+            <div class="therapist-photo">
+                ${therapist.photo ? 
+                    `<img src="${therapist.photo}" alt="${therapist.name}" class="w-full h-full object-cover">` :
+                    `<div class="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500">
+                        <span>사진 없음</span>
+                    </div>`
+                }
+            </div>
+            <div class="therapist-info">
+                <h4 class="therapist-name">${therapist.name}</h4>
+                <p class="therapist-experience">경력 ${therapist.experience}년</p>
+                <p class="therapist-specialty">${therapist.specialty || '전문 분야 정보 없음'}</p>
+            </div>
+        </div>
+    `;
+    return card;
+}
+
+function updateTherapistCards(therapists) {
+    const therapistCards = document.getElementById('therapistCards');
+    if (therapistCards) {
+        therapistCards.innerHTML = '';
+        if (therapists && therapists.length > 0) {
+            therapists.forEach(therapist => {
+                const card = createTherapistCard(therapist);
+                therapistCards.appendChild(card);
+            });
+        } else {
+            therapistCards.innerHTML = '<div class="text-center text-gray-500 py-4">등록된 상담사가 없습니다</div>';
+        }
+    }
+}
+
 function showCenterDetails(center) {
     console.log("Showing center details for:", center);
     
@@ -87,36 +125,12 @@ function showCenterDetails(center) {
     document.getElementById('centerPhone').textContent = center.phone;
     document.getElementById('centerDescription').textContent = center.description;
     
-    // 상담사 카드 표시
-    const therapistCards = document.getElementById('therapistCards');
-    if (therapistCards) {
-        therapistCards.innerHTML = '';
-        if (center.therapists && center.therapists.length > 0) {
-            center.therapists.forEach(therapist => {
-                const card = document.createElement('div');
-                card.className = 'swiper-slide';
-                card.innerHTML = `
-                    <div class="therapist-card">
-                        <div class="flex flex-col items-center space-y-4">
-                            <div class="therapist-photo">
-                                ${therapist.photo ? 
-                                    `<img src="${therapist.photo}" alt="${therapist.name}" class="w-full h-full object-cover">` :
-                                    `<div class="w-full h-full flex items-center justify-center text-gray-400">No Photo</div>`
-                                }
-                            </div>
-                            <div class="text-center">
-                                <h4 class="font-medium text-lg">${therapist.name}</h4>
-                                <p class="text-sm text-gray-600">경력 ${therapist.experience}년</p>
-                                <p class="text-sm text-gray-600">${therapist.specialty || '전문 분야 정보 없음'}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                therapistCards.appendChild(card);
-            });
-        } else {
-            therapistCards.innerHTML = '<div class="text-center text-gray-500 py-4">등록된 상담사가 없습니다</div>';
-        }
+    // 상담사 카드 업데이트
+    updateTherapistCards(center.therapists);
+    
+    // Swiper 초기화
+    if (window.therapistSwiper) {
+        window.therapistSwiper.update();
     }
     
     // 이미지 캐러셀 표시
