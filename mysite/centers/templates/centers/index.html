@@ -163,7 +163,7 @@
         <div class="sticky top-0 left-0 right-0 bg-white rounded-t-[20px] z-[60] border-b border-gray-100 shadow-sm">
             <!-- Drag Handle Container -->
             <div class="h-[40px] flex items-center justify-center">
-                <div id="dragHandle" class="w-[36px] h-[4px] bg-gray-300 rounded-full touch-none select-none"></div>
+                <div class="drag-handle w-[36px] h-[4px] bg-gray-300 rounded-full touch-none select-none"></div>
             </div>
             
             <!-- Close Button -->
@@ -380,6 +380,8 @@
                 initializeMap(37.5666805, 126.9784147, 11);
                 // Load centers data
                 loadCenters(centersData, selectedCenterId);
+                // 드래그 핸들 설정
+                setupDragHandles();
             };
             document.body.appendChild(script);
         }

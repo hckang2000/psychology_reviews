@@ -10,6 +10,78 @@ var map;
 var markers = [];
 var currentCenterId = null; // 현재 선택된 센터 ID를 저장할 변수
 
+let isDragging = false;
+let startY = 0;
+let startTranslateY = 0;
+
+function getTranslateY(element) {
+    const style = window.getComputedStyle(element);
+    const matrix = new DOMMatrixReadOnly(style.transform);
+    return matrix.m42;
+}
+
+function startDrag(event) {
+    const bottomSheet = document.getElementById('bottomSheet');
+    isDragging = true;
+    startY = event.type.startsWith('touch') ? event.touches[0].clientY : event.clientY;
+    startTranslateY = getTranslateY(bottomSheet) || 0;
+    bottomSheet.style.transition = 'none';
+    document.body.style.userSelect = 'none';
+
+    // document에 move/end 이벤트 연결
+    if (event.type.startsWith('touch')) {
+        document.addEventListener('touchmove', moveDrag, { passive: false });
+        document.addEventListener('touchend', endDrag);
+    } else {
+        document.addEventListener('mousemove', moveDrag);
+        document.addEventListener('mouseup', endDrag);
+    }
+}
+
+function moveDrag(event) {
+    if (!isDragging) return;
+    event.preventDefault();
+    const bottomSheet = document.getElementById('bottomSheet');
+    const clientY = event.type.startsWith('touch') ? event.touches[0].clientY : event.clientY;
+    const deltaY = clientY - startY;
+    let nextY = startTranslateY + deltaY;
+    // 위로는 -50px까지만, 아래로는 제한 없음
+    if (nextY < -50) nextY = -50;
+    bottomSheet.style.transform = `translateY(${nextY}px)`;
+}
+
+function endDrag(event) {
+    if (!isDragging) return;
+    isDragging = false;
+    const bottomSheet = document.getElementById('bottomSheet');
+    document.body.style.userSelect = '';
+    bottomSheet.style.transition = 'transform 0.3s ease-out';
+
+    // 최종 위치 계산
+    let clientY;
+    if (event.type.startsWith('touch')) {
+        clientY = event.changedTouches[0].clientY;
+    } else {
+        clientY = event.clientY;
+    }
+    const deltaY = clientY - startY + startTranslateY;
+    // 150px 이상 아래로 드래그하면 닫기
+    if (deltaY > 150) {
+        closeBottomSheet();
+    } else {
+        bottomSheet.style.transform = 'translateY(0)';
+    }
+
+    // document 이벤트 해제
+    if (event.type.startsWith('touch')) {
+        document.removeEventListener('touchmove', moveDrag);
+        document.removeEventListener('touchend', endDrag);
+    } else {
+        document.removeEventListener('mousemove', moveDrag);
+        document.removeEventListener('mouseup', endDrag);
+    }
+}
+
 function loadCenters(centersData) {
     console.log("Loading centers:", centersData);
     
@@ -408,116 +480,23 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupDragHandles() {
-    const bottomSheet = document.getElementById('bottomSheet');
-    const dragHandle = document.getElementById('dragHandle');
-    const overlay = document.getElementById('overlay');
-    
-    if (!bottomSheet || !dragHandle || !overlay) {
-        console.error('Required elements not found for drag functionality');
-        return;
-    }
-
-    let startY = 0;
-    let currentY = 0;
-    let initialHeight = 0;
-    let isDragging = false;
-    
-    // 드래그 관련 기본 동작 방지
-    dragHandle.addEventListener('dragstart', (e) => e.preventDefault());
-    dragHandle.addEventListener('drop', (e) => e.preventDefault());
-    
-    function handleStart(event) {
-        if (event.button === 2) return; // 우클릭 방지
-        
-        isDragging = true;
-        startY = event.type.includes('mouse') ? event.clientY : event.touches[0].clientY;
-        initialHeight = bottomSheet.offsetHeight;
-        
-        // 드래그 시작시 트랜지션 제거
-        bottomSheet.style.transition = 'none';
-        
-        // 이벤트 캡처링 사용
-        if (event.type.includes('mouse')) {
-            document.addEventListener('mousemove', handleMove, { capture: true });
-            document.addEventListener('mouseup', handleEnd, { capture: true });
-        } else {
-            document.addEventListener('touchmove', handleMove, { capture: true, passive: false });
-            document.addEventListener('touchend', handleEnd, { capture: true });
-        }
-        
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    
-    function handleMove(event) {
-        if (!isDragging) return;
-        
-        event.preventDefault();
-        event.stopPropagation();
-        
-        const clientY = event.type.includes('mouse') ? event.clientY : event.touches[0].clientY;
-        currentY = clientY - startY;
-        
-        // 위로 드래그할 때는 최대 85vh까지만
-        if (currentY < 0) {
-            currentY = Math.max(currentY, -(window.innerHeight * 0.85 - initialHeight));
-        }
-        
-        // RAF를 사용하여 성능 최적화
-        requestAnimationFrame(() => {
-            bottomSheet.style.transform = `translateY(${currentY}px)`;
-        });
-    }
-    
-    function handleEnd(event) {
-        if (!isDragging) return;
-        
-        isDragging = false;
-        
-        if (event) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
-        
-        // 트랜지션 다시 추가
-        bottomSheet.style.transition = 'transform 0.3s ease-out';
-        
-        // 150px 이상 아래로 드래그하면 닫기
-        if (currentY > 150) {
-            closeBottomSheet();
-        } else {
-            // 원래 위치로 돌아가기
-            bottomSheet.style.transform = 'translateY(0)';
-        }
-        
-        // 이벤트 리스너 제거
-        document.removeEventListener('mousemove', handleMove, { capture: true });
-        document.removeEventListener('touchmove', handleMove, { capture: true });
-        document.removeEventListener('mouseup', handleEnd, { capture: true });
-        document.removeEventListener('touchend', handleEnd, { capture: true });
-    }
-    
-    // 이벤트 리스너 등록
-    dragHandle.addEventListener('mousedown', handleStart, { passive: false });
-    dragHandle.addEventListener('touchstart', handleStart, { passive: false });
-    
-    // 전역 이벤트 방지
-    document.addEventListener('dragstart', (e) => {
-        if (isDragging) e.preventDefault();
-    }, { capture: true });
-    
-    document.addEventListener('selectstart', (e) => {
-        if (isDragging) e.preventDefault();
-    }, { capture: true });
+    const dragHandles = document.querySelectorAll('.drag-handle');
+    dragHandles.forEach(handle => {
+        handle.addEventListener('selectstart', e => e.preventDefault());
+        handle.addEventListener('dragstart', e => e.preventDefault());
+        handle.addEventListener('touchstart', startDrag, { passive: false });
+        handle.addEventListener('mousedown', startDrag);
+    });
 }
 
 function closeBottomSheet() {
     const bottomSheet = document.getElementById('bottomSheet');
     const overlay = document.getElementById('overlay');
-    
     if (bottomSheet && overlay) {
         bottomSheet.classList.add('translate-y-full');
+        bottomSheet.style.transform = '';
         overlay.classList.add('hidden');
+        // X 버튼 등 다른 상태도 정상화 필요시 추가
     }
 }
 

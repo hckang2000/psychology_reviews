@@ -283,6 +283,17 @@ body {
     background: var(--border-color);
     border-radius: 2px;
     margin: 0 auto;
+    cursor: grab;
+    touch-action: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    pointer-events: auto;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
 }
 
 .close-button {
