@@ -448,11 +448,12 @@
         const closeBtn = document.querySelector('.modal-close');
 
         function showTherapistModal(therapist) {
+            console.log('Showing therapist modal with data:', therapist); // 디버깅용 로그
             document.getElementById('modalTherapistPhoto').src = therapist.photo || '';
             document.getElementById('modalTherapistName').textContent = therapist.name;
             document.getElementById('modalTherapistExperience').textContent = `경력 ${therapist.experience}년`;
-            document.getElementById('modalTherapistSpecialty').textContent = therapist.specialty;
-            document.getElementById('modalTherapistDescription').textContent = therapist.description || '';
+            document.getElementById('modalTherapistSpecialty').textContent = therapist.specialty || '전문 분야 정보 없음';
+            document.getElementById('modalTherapistDescription').textContent = therapist.description || '상세 설명이 없습니다.';
             modal.classList.add('active');
         }
 

@@ -27,7 +27,8 @@ def index(request):
             'name': therapist.name,
             'photo': therapist.photo.url if therapist.photo else None,
             'experience': therapist.experience,
-            'specialty': therapist.specialty
+            'specialty': therapist.specialty,
+            'description': therapist.description
         } for therapist in center.therapists.all()]
         
         # 내부 리뷰 정보 추가

@@ -559,23 +559,47 @@ body {
 /* Swiper Container */
 .swiper-container {
     width: 100%;
-    max-width: 1200px;
     margin: 0 auto;
     position: relative;
     overflow: hidden;
 }
 
-.swiper-wrapper {
-    display: flex;
-    align-items: stretch;
+.swiper-container .swiper-slide {
+    position: relative;
+    width: 100%;
+    padding-top: 66.67%; /* 3:2 비율 (2/3 * 100%) */
 }
 
-.swiper-slide {
-    width: auto;
-    flex-shrink: 0;
-    position: relative;
-    margin: 0;
-    padding: 0;
+.swiper-container .swiper-slide img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* 데스크탑 뷰에서도 동일한 비율 유지 */
+@media screen and (min-width: 768px) {
+    .swiper-container {
+        max-width: 100%;
+    }
+    
+    .swiper-container .swiper-slide {
+        padding-top: 66.67%; /* 3:2 비율 유지 */
+    }
+}
+
+/* 모바일 뷰에서도 동일한 비율 유지 */
+@media screen and (max-width: 767px) {
+    .swiper-container {
+        max-width: 100%;
+    }
+    
+    .swiper-container .swiper-slide {
+        padding-top: 66.67%; /* 3:2 비율 유지 */
+    }
 }
 
 /* 상담사 카드 슬라이더 영역 */
@@ -595,7 +619,6 @@ body {
 .swiper-wrapper {
     display: flex;
     align-items: stretch;
-    overflow: visible;
 }
 
 .swiper-slide {
@@ -604,7 +627,6 @@ body {
     position: relative;
     margin: 0;
     padding: 0;
-    overflow: visible;
 }
 
 .therapist-card {
@@ -1702,6 +1724,7 @@ body.sidebar-open {
     font-size: 1.5rem;
     cursor: pointer;
     color: #666;
+    z-index: 1;
 }
 
 .modal-therapist-photo {
@@ -1710,6 +1733,7 @@ body.sidebar-open {
     border-radius: 50%;
     margin: 0 auto 1.5rem;
     overflow: hidden;
+    background: #f3f4f6;
 }
 
 .modal-therapist-photo img {
@@ -1720,12 +1744,14 @@ body.sidebar-open {
 
 .modal-therapist-info {
     text-align: center;
+    width: 100%;
 }
 
 .modal-therapist-name {
     font-size: 1.5rem;
     font-weight: 600;
     margin-bottom: 0.5rem;
+    color: #1a1a1a;
 }
 
 .modal-therapist-experience {
@@ -1739,6 +1765,7 @@ body.sidebar-open {
     color: #666;
     line-height: 1.5;
     margin-bottom: 1.5rem;
+    padding: 0 1rem;
 }
 
 .modal-therapist-description {
@@ -1746,9 +1773,57 @@ body.sidebar-open {
     color: #444;
     margin-top: 1.5rem;
     line-height: 1.6;
-    word-break: break-all;
+    text-align: left;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    width: 100%;
     max-height: 200px;
     overflow-y: auto;
-    width: 100%;
-    text-align: left;
+    white-space: pre-line;
+}
+
+/* 스크롤바 스타일링 */
+.modal-therapist-description::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-therapist-description::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.modal-therapist-description::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.modal-therapist-description::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
+
+@media (max-width: 640px) {
+    .therapist-modal-content {
+        width: 95%;
+        padding: 1.5rem;
+    }
+
+    .modal-therapist-photo {
+        width: 120px;
+        height: 120px;
+    }
+
+    .modal-therapist-name {
+        font-size: 1.25rem;
+    }
+
+    .modal-therapist-experience,
+    .modal-therapist-specialty {
+        font-size: 1rem;
+    }
+
+    .modal-therapist-description {
+        font-size: 0.9rem;
+        padding: 1rem;
+    }
 }

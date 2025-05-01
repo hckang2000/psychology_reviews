@@ -146,9 +146,23 @@ function createTherapistCard(therapist) {
                 <h4 class="therapist-name">${therapist.name}</h4>
                 <p class="therapist-experience">경력 ${therapist.experience}년</p>
                 <p class="therapist-specialty">${therapist.specialty || '전문 분야 정보 없음'}</p>
+                <div class="therapist-description hidden">${therapist.description || ''}</div>
             </div>
         </div>
     `;
+    
+    // 카드 클릭 이벤트 리스너 추가
+    const therapistCard = card.querySelector('.therapist-card');
+    therapistCard.addEventListener('click', () => {
+        showTherapistModal({
+            photo: therapist.photo || '',
+            name: therapist.name,
+            experience: therapist.experience,
+            specialty: therapist.specialty || '전문 분야 정보 없음',
+            description: therapist.description || ''
+        });
+    });
+    
     return card;
 }
 
