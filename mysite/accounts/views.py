@@ -4,14 +4,22 @@ from django.contrib.auth.decorators import login_required
 from .forms import CustomUserCreationForm
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
-from allauth.account.views import LoginView
+from allauth.account.views import LoginView, SignupView
+from allauth.account.utils import send_email_confirmation
+from django.contrib.auth.models import User
 
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            login(request, form.get_user())
-            return redirect('centers:index')
+            user = form.get_user()
+            # admin 계정이거나 이미 이메일이 인증된 경우 바로 로그인
+            if user.is_superuser or user.emailaddress_set.filter(verified=True).exists():
+                login(request, user)
+                return redirect('centers:index')
+            # 일반 사용자이고 이메일이 인증되지 않은 경우
+            messages.warning(request, '이메일 인증이 필요합니다. 이메일을 확인해주세요.')
+            return redirect('account_login')
     else:
         form = AuthenticationForm()
     return render(request, 'registration/login.html', {'form': form})
@@ -21,8 +29,19 @@ def signup_view(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)
-            return redirect('centers:index')
+            # admin 계정인 경우 이메일 인증 없이 바로 로그인
+            if user.is_superuser or user.username in ['admin', 'administrator']:
+                user.emailaddress_set.create(
+                    email=user.email,
+                    primary=True,
+                    verified=True
+                )
+                login(request, user)
+                return redirect('centers:index')
+            # 일반 사용자인 경우 이메일 인증 진행
+            send_email_confirmation(request, user)
+            messages.info(request, '이메일 인증 메일을 발송했습니다. 이메일을 확인해주세요.')
+            return redirect('account_login')
     else:
         form = CustomUserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
