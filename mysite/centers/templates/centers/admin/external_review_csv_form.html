@@ -1,0 +1,190 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <style>
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .error-list {
+            color: red;
+            margin-top: 10px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .message.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+        .message.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div id="content-main">
+        <form method="post" enctype="multipart/form-data" id="csv-import-form">
+            {% csrf_token %}
+            <div>
+                <fieldset class="module aligned">
+                    <h2>CSV 파일로 외부 리뷰 등록</h2>
+                    <div class="form-row">
+                        {{ form.center.errors }}
+                        <label for="{{ form.center.id_for_label }}">{{ form.center.label }}:</label>
+                        {{ form.center }}
+                        <div class="help">{{ form.center.help_text }}</div>
+                    </div>
+                    <div class="form-row">
+                        {{ form.csv_file.errors }}
+                        <label for="{{ form.csv_file.id_for_label }}">{{ form.csv_file.label }}:</label>
+                        {{ form.csv_file }}
+                    </div>
+                </fieldset>
+                
+                <div class="submit-row">
+                    <input type="submit" value="업로드" class="default" name="_save">
+                </div>
+            </div>
+        </form>
+
+        <div id="message-container"></div>
+
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-bar-fill"></div>
+            </div>
+            <div class="progress-text">처리 중: <span class="processed">0</span> / <span class="total">0</span></div>
+            <div class="error-list"></div>
+        </div>
+
+        <div class="help-text" style="margin-top: 20px;">
+            <h3>CSV 파일 형식</h3>
+            <p>CSV 파일은 다음 형식을 따라야 합니다:</p>
+            <pre>title,url,summary,source,likes,dislikes,created_at
+네이버 블로그 리뷰,https://blog.naver.com/review1,좋은 상담소입니다,네이버 블로그,10,2,2024-03-15 14:30:00
+카카오 리뷰,https://kakao.com/review2,친절한 상담사,카카오,5,1,2024-03-14 09:15:00</pre>
+            <p>필수 필드: title, url</p>
+            <p>선택 필드: summary, source, likes, dislikes, created_at</p>
+            <p>날짜 형식: YYYY-MM-DD HH:MM:SS (예: 2024-03-15 14:30:00)</p>
+            <p>참고: created_at을 입력하지 않으면 현재 시간으로 자동 설정됩니다.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('csv-import-form');
+            const progressContainer = document.querySelector('.progress-container');
+            const progressBar = document.querySelector('.progress-bar-fill');
+            const processedText = document.querySelector('.processed');
+            const totalText = document.querySelector('.total');
+            const errorList = document.querySelector('.error-list');
+            const messageContainer = document.getElementById('message-container');
+            let isUploading = false;
+
+            function showMessage(message, type) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+                messageDiv.textContent = message;
+                messageContainer.innerHTML = '';
+                messageContainer.appendChild(messageDiv);
+            }
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                if (isUploading) return;
+                isUploading = true;
+
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                processedText.textContent = '0';
+                totalText.textContent = '0';
+                errorList.innerHTML = '';
+                messageContainer.innerHTML = '';
+                
+                const formData = new FormData(form);
+                
+                try {
+                    const response = await fetch(window.location.href, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || '업로드 중 오류가 발생했습니다.');
+                    }
+
+                    if (data.success) {
+                        showMessage(data.message, 'success');
+                        setTimeout(() => {
+                            window.location.href = data.redirect;
+                        }, 2000);
+                    }
+                } catch (error) {
+                    showMessage(error.message, 'error');
+                    progressContainer.style.display = 'none';
+                } finally {
+                    isUploading = false;
+                }
+
+                // Progress polling
+                const progressInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch('import-csv/progress/');
+                        const data = await response.json();
+
+                        if (data.total > 0) {
+                            const progress = (data.processed / data.total) * 100;
+                            progressBar.style.width = `${progress}%`;
+                            processedText.textContent = data.processed;
+                            totalText.textContent = data.total;
+
+                            if (data.errors && data.errors.length > 0) {
+                                errorList.innerHTML = data.errors.map(error => 
+                                    `<div>행 ${error.row}: ${error.error}</div>`
+                                ).join('');
+                            }
+
+                            if (data.processed >= data.total) {
+                                clearInterval(progressInterval);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Progress polling error:', error);
+                        clearInterval(progressInterval);
+                    }
+                }, 1000);
+            });
+        });
+    </script>
+{% endblock %} 

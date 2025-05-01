@@ -1,0 +1,11 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+
+{% block object-tools-items %}
+    <li>
+        <a href="import-csv/" class="import-csv-link">
+            CSV 파일로 외부 리뷰 등록
+        </a>
+    </li>
+    {{ block.super }}
+{% endblock %} 
