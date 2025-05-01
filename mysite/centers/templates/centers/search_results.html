@@ -19,7 +19,9 @@
                         {% endif %}
                         <div class="card-buttons">
                             <a href="/?center_id={{ center.id }}" class="center-link">지도에서 보기</a>
-                            <a href="/centers/{{ center.id }}/" class="center-link">상세 정보</a>
+                            {% if center.url %}
+                                <a href="{{ center.url }}" target="_blank" class="center-link">웹사이트 방문</a>
+                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}

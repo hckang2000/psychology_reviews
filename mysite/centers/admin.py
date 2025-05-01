@@ -80,7 +80,7 @@ class ExternalReviewCsvImportForm(forms.Form):
 @admin.register(Center)
 class CenterAdmin(admin.ModelAdmin):
     form = CenterAdminForm
-    list_display = ('name', 'address', 'phone', 'created_at')
+    list_display = ('name', 'address', 'phone', 'url', 'created_at')
     search_fields = ('name', 'address')
     list_filter = ('created_at',)
     inlines = [TherapistInline, CenterImageInline]  # Display therapists and images inline
@@ -88,7 +88,7 @@ class CenterAdmin(admin.ModelAdmin):
     change_list_template = 'centers/admin/center_changelist.html'
     fieldsets = (
         ('기본 정보', {
-            'fields': ('name', 'address', 'phone')
+            'fields': ('name', 'address', 'phone', 'url')
         }),
         ('위치 정보', {
             'fields': ('latitude', 'longitude'),
