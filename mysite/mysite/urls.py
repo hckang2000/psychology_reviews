@@ -6,8 +6,9 @@ from centers import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/', include('allauth.urls')),
+    path('accounts/', include('accounts.urls', namespace='accounts')),
     path('', include('centers.urls', namespace='centers')),
-    path('accounts/', include('accounts.urls')),
     path('board/', include('boards.urls', namespace='boards')),
     path('reviews/<int:center_id>/', views.get_reviews, name='get_reviews'),
     path('reviews/<int:center_id>/add/', views.add_review, name='add_review'),

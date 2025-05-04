@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'centers',
     'accounts',
     'boards',
+    'crispy_forms',
+    'crispy_bootstrap5',
 ]
 
 MIDDLEWARE = [
@@ -62,9 +64,9 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
+            os.path.join(BASE_DIR, 'accounts/templates'),  # 최우선
             os.path.join(BASE_DIR, 'templates'),
             os.path.join(BASE_DIR, 'centers/templates'),
-            os.path.join(BASE_DIR, 'accounts/templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -153,10 +155,12 @@ ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = 'centers:index'
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = 'account_login'
-ACCOUNT_EMAIL_VERIFICATION_BYPASS = ['admin', 'administrator']
 ACCOUNT_EMAIL_SUBJECT_PREFIX = '[마인드스캐너] '
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
-ACCOUNT_ADAPTER = 'accounts.adapter.CustomAccountAdapter'
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http'
+ACCOUNT_FORMS = {
+    'login': 'accounts.forms.CustomLoginForm',
+    'signup': 'accounts.forms.CustomSignupForm',
+}
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -177,7 +181,7 @@ NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET')
 
 # Login and logout redirects
 LOGIN_REDIRECT_URL = 'centers:index'
-LOGIN_URL = 'accounts:login'
+LOGIN_URL = 'accounts:account_login'
 LOGOUT_REDIRECT_URL = 'centers:index'
 
 # Security settings

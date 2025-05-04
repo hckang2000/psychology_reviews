@@ -1,0 +1,11 @@
+{% autoescape off %}
+{{ user.username }}님, MindScanner 회원가입을 환영합니다!
+
+아래 링크를 클릭하여 이메일 인증을 완료해 주세요:
+{{ activate_url }}
+
+링크가 동작하지 않으면 주소를 복사해서 브라우저에 붙여넣어 주세요.
+
+감사합니다!
+MindScanner 드림
+{% endautoescape %} 

@@ -4,9 +4,11 @@ from django.contrib.auth.decorators import login_required
 from .forms import CustomUserCreationForm
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
-from allauth.account.views import LoginView, SignupView
+from allauth.account.views import LoginView, SignupView, ConfirmEmailView
 from allauth.account.utils import send_email_confirmation
 from django.contrib.auth.models import User
+from django.urls import reverse_lazy
+from .forms import CustomLoginForm, CustomSignupForm
 
 def login_view(request):
     if request.method == 'POST':
@@ -22,7 +24,7 @@ def login_view(request):
             return redirect('account_login')
     else:
         form = AuthenticationForm()
-    return render(request, 'registration/login.html', {'form': form})
+    return render(request, 'account/login.html', {'form': form})
 
 def signup_view(request):
     if request.method == 'POST':
@@ -44,17 +46,33 @@ def signup_view(request):
             return redirect('account_login')
     else:
         form = CustomUserCreationForm()
-    return render(request, 'registration/signup.html', {'form': form})
+    return render(request, 'account/signup.html', {'form': form})
 
 class CustomLoginView(LoginView):
+    form_class = CustomLoginForm
+    template_name = 'account/login.html'
+    success_url = reverse_lazy('centers:index')
+
     def form_valid(self, form):
-        user = form.user
-        if user.is_superuser:
-            login(self.request, user)
-            return redirect(self.get_success_url())
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        messages.success(self.request, '로그인되었습니다.')
+        return response
+
+class CustomSignupView(SignupView):
+    form_class = CustomSignupForm
+    template_name = 'account/signup.html'
+    success_url = reverse_lazy('centers:index')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, '회원가입이 완료되었습니다. 이메일 인증을 완료해주세요.')
+        return response
+
+class CustomConfirmEmailView(ConfirmEmailView):
+    template_name = 'account/email_confirm.html'
 
 @login_required
-def logout_view(request):
-    logout(request)
+def logout(request):
+    auth_logout(request)
+    messages.success(request, '로그아웃되었습니다.')
     return redirect('centers:index')
