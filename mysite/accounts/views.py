@@ -70,6 +70,10 @@ class CustomSignupView(SignupView):
 
 class CustomConfirmEmailView(ConfirmEmailView):
     template_name = 'account/email_confirm.html'
+    
+    def get(self, *args, **kwargs):
+        print('[디버그] CustomConfirmEmailView.get() 호출됨 - account/email_confirm.html 사용')
+        return super().get(*args, **kwargs)
 
 @login_required
 def logout(request):

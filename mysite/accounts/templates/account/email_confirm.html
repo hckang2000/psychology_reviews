@@ -8,6 +8,7 @@
     <div class="content-wrapper p-8 max-w-md mx-auto">
         <div class="bg-white rounded-xl shadow-sm p-8">
             <h1 class="section-title mb-8 text-center">이메일 인증</h1>
+            <p style="color:red; text-align:center;">[디버그] 이 문구가 보이면 커스텀 템플릿이 적용된 것입니다.</p>
             
             {% if confirmation %}
                 <div class="bg-gray-50 rounded-lg p-6 mb-6">
@@ -42,4 +43,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>console.log('커스텀 email_confirm.html 적용됨');</script>
 {% endblock %} 

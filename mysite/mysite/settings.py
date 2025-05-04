@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     
     # Third party apps
+    'accounts',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -40,7 +41,6 @@ INSTALLED_APPS = [
     
     # Local apps
     'centers',
-    'accounts',
     'boards',
     'crispy_forms',
     'crispy_bootstrap5',
