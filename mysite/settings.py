@@ -1,3 +1,6 @@
+# 중복된 settings.py
+
+"""
 LOGIN_URL = 'account_login'
 LOGIN_REDIRECT_URL = 'centers:index'
 LOGOUT_REDIRECT_URL = 'centers:index'
@@ -16,3 +19,4 @@ ACCOUNT_FORMS = {
     'login': 'accounts.forms.CustomLoginForm',
     'signup': 'accounts.forms.CustomSignupForm',
 } 
+"""

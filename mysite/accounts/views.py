@@ -80,3 +80,7 @@ def logout(request):
     auth_logout(request)
     messages.success(request, '로그아웃되었습니다.')
     return redirect('centers:index')
+
+def custom_email_verification_sent(request):
+    print("==== [디버그] custom_email_verification_sent 뷰가 호출됨 ====")
+    return render(request, 'account/email_verification_sent.html')
