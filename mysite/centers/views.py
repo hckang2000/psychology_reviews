@@ -121,6 +121,7 @@ def get_reviews(request, center_id):
             'title': review.title, 
             'content': review.content,  # summary 대신 content 사용
             'author': review.user.username if review.user else '익명',
+            'rating': review.rating,
             'created_at': review.created_at.isoformat() if hasattr(review.created_at, 'isoformat') else review.created_at.strftime('%Y-%m-%d')
         }
         for review in page_obj
@@ -292,6 +293,7 @@ def review_form(request, center_id):
             review = form.save(commit=False)
             review.center = center
             review.user = request.user
+            review.rating = form.cleaned_data['rating']
             review.save()
             return JsonResponse({'success': True})
         return JsonResponse({'success': False, 'errors': form.errors})

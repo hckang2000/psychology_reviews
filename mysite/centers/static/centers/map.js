@@ -273,20 +273,25 @@ function displayReviews(reviews, page = 1) {
     const pageReviews = reviews.slice(startIndex, endIndex);
     
     // 리뷰 목록 표시
-    reviewsList.innerHTML = pageReviews.map(review => `
-        <div class="bg-white rounded-lg shadow p-4 space-y-2">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h4 class="font-medium">${review.title}</h4>
-                    <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
+    reviewsList.innerHTML = pageReviews.map(review => {
+        // rating이 undefined/null이면 5점으로 fallback (임시)
+        const rating = (review.rating !== undefined && review.rating !== null) ? Number(review.rating) : 5;
+        console.log('리뷰 rating:', review.rating, '-> 변환 후:', rating); // 디버깅용
+        return `
+            <div class="bg-white rounded-lg shadow p-4 space-y-2">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h4 class="font-medium">${review.title}</h4>
+                        <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
+                    </div>
+                    <div class="flex items-center text-yellow-400">
+                        ${generateStars(rating)}
+                    </div>
                 </div>
-                <div class="flex items-center text-yellow-400">
-                    ${generateStars(review.rating)}
-                </div>
+                <p class="text-gray-700">${review.content}</p>
             </div>
-            <p class="text-gray-700">${review.content}</p>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     
     // 페이지네이션 버튼 생성
     const totalPages = Math.ceil(reviews.length / itemsPerPage);
@@ -420,7 +425,16 @@ function displayExternalReviews(reviews, page = 1) {
 
 // 유틸리티 함수들
 function generateStars(rating) {
-    return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+    rating = Number(rating) || 0;
+    let stars = '';
+    for (let i = 1; i <= 5; i++) {
+        if (i <= rating) {
+            stars += '<span class="text-yellow-400">★</span>';
+        } else {
+            stars += '<span class="text-gray-300">☆</span>';
+        }
+    }
+    return stars;
 }
 
 function truncateText(text, maxLength) {
@@ -684,20 +698,25 @@ function refreshReviews(centerId) {
         .then(data => {
             const reviewsList = document.getElementById('reviewsList');
             if (reviewsList && data.reviews) {
-                reviewsList.innerHTML = data.reviews.map(review => `
-                    <div class="bg-white rounded-lg shadow p-4 space-y-2">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-medium">${review.title}</h4>
-                                <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
+                reviewsList.innerHTML = data.reviews.map(review => {
+                    // rating이 undefined/null이면 5점으로 fallback (임시)
+                    const rating = (review.rating !== undefined && review.rating !== null) ? Number(review.rating) : 5;
+                    console.log('리뷰 rating:', review.rating, '-> 변환 후:', rating); // 디버깅용
+                    return `
+                        <div class="bg-white rounded-lg shadow p-4 space-y-2">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-medium">${review.title}</h4>
+                                    <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
+                                </div>
+                                <div class="flex items-center text-yellow-400">
+                                    ${generateStars(rating)}
+                                </div>
                             </div>
-                            <div class="flex items-center text-yellow-400">
-                                ${generateStars(review.rating)}
-                            </div>
+                            <p class="text-gray-700">${review.content}</p>
                         </div>
-                        <p class="text-gray-700">${review.content}</p>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
                 
                 // "작성된 리뷰가 없습니다" 메시지 처리
                 const noReviews = document.getElementById('noReviews');
@@ -715,12 +734,58 @@ function refreshReviews(centerId) {
         });
 }
 
+function showReviewModal() {
+    const reviewModal = document.getElementById('reviewModal');
+    if (reviewModal) {
+        reviewModal.classList.remove('hidden');
+        document.getElementById('reviewCenterId').value = currentCenterId;
+        document.getElementById('rating').value = 5; // 기본값 5점
+
+        // 별점 버튼 새로 생성 및 이벤트 리스너 fresh하게 등록
+        const starRatingDiv = document.getElementById('starRating');
+        starRatingDiv.innerHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'text-2xl';
+            btn.dataset.rating = i;
+            btn.textContent = '★';
+            btn.addEventListener('click', function() {
+                document.getElementById('rating').value = i;
+                // 별점 UI 업데이트
+                Array.from(starRatingDiv.children).forEach((starBtn, idx) => {
+                    starBtn.textContent = idx < i ? '★' : '☆';
+                });
+            });
+            starRatingDiv.appendChild(btn);
+        }
+    }
+}
+
+function closeReviewModal() {
+    const reviewModal = document.getElementById('reviewModal');
+    if (reviewModal) {
+        reviewModal.classList.add('hidden');
+        // 폼 초기화
+        document.getElementById('reviewForm').reset();
+        // 별점 UI 초기화
+        document.querySelectorAll('#starRating button').forEach(btn => {
+            btn.textContent = '☆';
+        });
+    }
+}
+
 function submitReview(event) {
     event.preventDefault();
-    
     const form = event.target;
     const formData = new FormData(form);
-    
+
+    const rating = formData.get('rating');
+    if (!rating) {
+        alert('평점을 선택해주세요.');
+        return;
+    }
+
     if (!currentCenterId) {
         alert('리뷰를 작성할 상담소가 선택되지 않았습니다.');
         return;
@@ -728,10 +793,9 @@ function submitReview(event) {
     
     const title = formData.get('title');
     const content = formData.get('content');
-    const rating = formData.get('rating');
     
-    if (!title || !content || !rating) {
-        alert('제목, 내용, 평점을 모두 입력해주세요.');
+    if (!title || !content) {
+        alert('제목과 내용을 모두 입력해주세요.');
         return;
     }
     
@@ -764,7 +828,45 @@ function submitReview(event) {
             switchTab('internalReviews');
             
             // 리뷰 목록 새로고침
-            refreshReviews(currentCenterId);
+            fetch(`/reviews/${currentCenterId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const reviewsList = document.getElementById('reviewsList');
+                    if (reviewsList && data.reviews) {
+                        reviewsList.innerHTML = data.reviews.map(review => {
+                            // rating이 undefined/null이면 5점으로 fallback (임시)
+                            const rating = (review.rating !== undefined && review.rating !== null) ? Number(review.rating) : 5;
+                            console.log('리뷰 rating:', review.rating, '-> 변환 후:', rating); // 디버깅용
+                            return `
+                                <div class="bg-white rounded-lg shadow p-4 space-y-2">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h4 class="font-medium">${review.title}</h4>
+                                            <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
+                                        </div>
+                                        <div class="flex items-center text-yellow-400">
+                                            ${generateStars(rating)}
+                                        </div>
+                                    </div>
+                                    <p class="text-gray-700">${review.content}</p>
+                                </div>
+                            `;
+                        }).join('');
+                        
+                        // "작성된 리뷰가 없습니다" 메시지 처리
+                        const noReviews = document.getElementById('noReviews');
+                        if (noReviews) {
+                            if (data.reviews.length > 0) {
+                                noReviews.classList.add('hidden');
+                            } else {
+                                noReviews.classList.remove('hidden');
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('리뷰 목록 새로고침 실패:', error);
+                });
         } else {
             throw new Error(data.error || '리뷰 작성에 실패했습니다.');
         }
@@ -845,6 +947,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // API가 이미 로드된 경우 바로 초기화
         initializeMap(initialLat, initialLng, initialZoom);
     }
+
+    // 별점 버튼 이벤트 리스너 최초 1회만 등록
+    const starButtons = document.querySelectorAll('#starRating button');
+    starButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const rating = this.dataset.rating;
+            document.getElementById('rating').value = rating;
+            // 별점 UI 업데이트
+            starButtons.forEach(btn => {
+                const btnRating = btn.dataset.rating;
+                btn.textContent = btnRating <= rating ? '★' : '☆';
+            });
+        });
+    });
 });
 
 // 지도 초기화 함수
@@ -966,41 +1082,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-// 리뷰 모달 표시 함수
-function showReviewModal() {
-    const reviewModal = document.getElementById('reviewModal');
-    if (reviewModal) {
-        reviewModal.classList.remove('hidden');
-        document.getElementById('reviewCenterId').value = currentCenterId;
-        
-        // 별점 버튼 이벤트 설정
-        const starButtons = document.querySelectorAll('#starRating button');
-        starButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const rating = this.dataset.rating;
-                document.getElementById('rating').value = rating;
-                
-                // 별점 UI 업데이트
-                starButtons.forEach(btn => {
-                    const btnRating = btn.dataset.rating;
-                    btn.textContent = btnRating <= rating ? '★' : '☆';
-                });
-            });
-        });
-    }
-}
-
-// 리뷰 모달 닫기 함수
-function closeReviewModal() {
-    const reviewModal = document.getElementById('reviewModal');
-    if (reviewModal) {
-        reviewModal.classList.add('hidden');
-        // 폼 초기화
-        document.getElementById('reviewForm').reset();
-        // 별점 UI 초기화
-        document.querySelectorAll('#starRating button').forEach(btn => {
-            btn.textContent = '☆';
-        });
-    }
-}
