@@ -237,8 +237,8 @@ function showCenterDetails(center) {
         }
     }
     
-    // 내부 리뷰 표시
-    displayReviews(center.reviews || []);
+    // 내부 리뷰 표시 (항상 서버에서 첫 페이지 fetch)
+    fetchAndDisplayReviews(1);
     
     // 외부 리뷰 표시
     displayExternalReviews(center.external_reviews || []);
@@ -250,7 +250,19 @@ function showCenterDetails(center) {
     switchTab('info');
 }
 
-function displayReviews(reviews, page = 1) {
+function fetchAndDisplayReviews(page) {
+    fetch(`/reviews/${currentCenterId}/?page=${page}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('서버에서 받은 리뷰 데이터:', data); // 진단용
+            displayReviews(data.reviews, page, data.pagination); // pagination도 전달
+        })
+        .catch(error => {
+            alert('리뷰를 불러오는데 실패했습니다.');
+        });
+}
+
+function displayReviews(reviews, page = 1, pagination = null) {
     const reviewsList = document.getElementById('reviewsList');
     const noReviews = document.getElementById('noReviews');
     const paginationContainer = document.getElementById('reviewsPagination');
@@ -258,6 +270,7 @@ function displayReviews(reviews, page = 1) {
     if (!reviewsList || !noReviews || !paginationContainer) return;
     
     if (!reviews || reviews.length === 0) {
+        console.log('displayReviews: reviews가 비어있음. reviews:', reviews); // 진단용
         noReviews.classList.remove('hidden');
         reviewsList.innerHTML = '';
         paginationContainer.innerHTML = '';
@@ -266,17 +279,11 @@ function displayReviews(reviews, page = 1) {
     
     noReviews.classList.add('hidden');
     
-    // 페이지당 10개씩 표시
-    const itemsPerPage = 10;
-    const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const pageReviews = reviews.slice(startIndex, endIndex);
-    
+    const pageReviews = reviews;
+
     // 리뷰 목록 표시
     reviewsList.innerHTML = pageReviews.map(review => {
-        // rating이 undefined/null이면 5점으로 fallback (임시)
         const rating = (review.rating !== undefined && review.rating !== null) ? Number(review.rating) : 5;
-        console.log('리뷰 rating:', review.rating, '-> 변환 후:', rating); // 디버깅용
         return `
             <div class="bg-white rounded-lg shadow p-4 space-y-2">
                 <div class="flex justify-between items-start">
@@ -292,46 +299,38 @@ function displayReviews(reviews, page = 1) {
             </div>
         `;
     }).join('');
-    
-    // 페이지네이션 버튼 생성
-    const totalPages = Math.ceil(reviews.length / itemsPerPage);
-    if (totalPages > 1) {
+
+    // 페이지네이션 버튼 생성 (pagination 정보 활용)
+    if (pagination && pagination.total_pages > 1) {
         let paginationHTML = '';
-        
-        // 이전 페이지 버튼
-        if (page > 1) {
+        if (pagination.has_previous) {
             paginationHTML += `
-                <button onclick="displayReviews(${JSON.stringify(reviews)}, ${page - 1})" 
+                <button onclick="fetchAndDisplayReviews(${pagination.previous_page})" 
                         class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300">
                     이전
                 </button>`;
         }
-        
-        // 페이지 번호 버튼
-        for (let i = 1; i <= totalPages; i++) {
-            if (i === page) {
+        for (let i = 1; i <= pagination.total_pages; i++) {
+            if (i === pagination.current_page) {
                 paginationHTML += `
                     <button class="px-3 py-1 bg-blue-500 text-white rounded-lg" disabled>
                         ${i}
                     </button>`;
             } else {
                 paginationHTML += `
-                    <button onclick="displayReviews(${JSON.stringify(reviews)}, ${i})" 
+                    <button onclick="fetchAndDisplayReviews(${i})" 
                             class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300">
                         ${i}
                     </button>`;
             }
         }
-        
-        // 다음 페이지 버튼
-        if (page < totalPages) {
+        if (pagination.has_next) {
             paginationHTML += `
-                <button onclick="displayReviews(${JSON.stringify(reviews)}, ${page + 1})" 
+                <button onclick="fetchAndDisplayReviews(${pagination.next_page})" 
                         class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300">
                     다음
                 </button>`;
         }
-        
         paginationContainer.innerHTML = paginationHTML;
     } else {
         paginationContainer.innerHTML = '';
@@ -701,7 +700,6 @@ function refreshReviews(centerId) {
                 reviewsList.innerHTML = data.reviews.map(review => {
                     // rating이 undefined/null이면 5점으로 fallback (임시)
                     const rating = (review.rating !== undefined && review.rating !== null) ? Number(review.rating) : 5;
-                    console.log('리뷰 rating:', review.rating, '-> 변환 후:', rating); // 디버깅용
                     return `
                         <div class="bg-white rounded-lg shadow p-4 space-y-2">
                             <div class="flex justify-between items-start">
@@ -836,7 +834,6 @@ function submitReview(event) {
                         reviewsList.innerHTML = data.reviews.map(review => {
                             // rating이 undefined/null이면 5점으로 fallback (임시)
                             const rating = (review.rating !== undefined && review.rating !== null) ? Number(review.rating) : 5;
-                            console.log('리뷰 rating:', review.rating, '-> 변환 후:', rating); // 디버깅용
                             return `
                                 <div class="bg-white rounded-lg shadow p-4 space-y-2">
                                     <div class="flex justify-between items-start">
