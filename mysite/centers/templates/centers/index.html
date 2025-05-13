@@ -722,4 +722,51 @@
             }
         });
     </script>
+
+    <!-- 리뷰 작성 스크립트 -->
+    <script>
+        async function submitReview(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const centerId = formData.get('center_id');
+            const title = formData.get('title');
+            const rating = formData.get('rating');
+            const content = formData.get('content');
+            
+            console.log('리뷰 작성 요청 데이터:', { center_id: centerId, title, rating, content });
+            
+            try {
+                const csrfToken = getCookie('csrftoken');
+                const response = await fetch(reviewFormUrl.replace('0', centerId), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ title, rating, content })
+                });
+                
+                console.log('서버 응답 상태:', response.status);
+                const data = await response.json();
+                console.log('서버 응답 데이터:', data);
+                
+                if (data.success) {
+                    alert('리뷰가 성공적으로 등록되었습니다.');
+                    closeReviewModal();
+                    switchTab('internalReviews');
+                    if (window.fetchAndDisplayReviews && window.currentCenterId) {
+                        window.fetchAndDisplayReviews(1);
+                    } else {
+                        location.reload(); // fallback
+                    }
+                } else {
+                    throw new Error(data.error || '리뷰 작성에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('리뷰 작성 오류:', error);
+                alert(error.message);
+            }
+        }
+    </script>
 {% endblock %}

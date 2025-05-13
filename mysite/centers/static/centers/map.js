@@ -251,6 +251,7 @@ function showCenterDetails(center) {
 }
 
 function fetchAndDisplayReviews(page) {
+    console.log('fetchAndDisplayReviews 호출, currentCenterId:', currentCenterId, 'page:', page);
     fetch(`/reviews/${currentCenterId}/?page=${page}`)
         .then(response => response.json())
         .then(data => {
@@ -263,6 +264,7 @@ function fetchAndDisplayReviews(page) {
 }
 
 function displayReviews(reviews, page = 1, pagination = null) {
+    console.log('displayReviews 호출, reviews:', reviews);
     const reviewsList = document.getElementById('reviewsList');
     const noReviews = document.getElementById('noReviews');
     const paginationContainer = document.getElementById('reviewsPagination');
@@ -500,6 +502,10 @@ function switchTab(tabName) {
             buttons[index]?.classList.add('bg-blue-500', 'text-white');
             buttons[index]?.classList.remove('bg-gray-200', 'text-gray-700');
             contents[index]?.classList.remove('hidden');
+            // 내부리뷰 탭 전환 시 항상 서버에서 최신 리뷰 목록을 받아와서 렌더링
+            if (tab === 'internalReviews') {
+                fetchAndDisplayReviews(1);
+            }
         } else {
             buttons[index]?.classList.remove('bg-blue-500', 'text-white');
             buttons[index]?.classList.add('bg-gray-200', 'text-gray-700');
