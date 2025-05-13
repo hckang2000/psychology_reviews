@@ -119,10 +119,11 @@ def get_reviews(request, center_id):
         {
             'id': review.id,
             'title': review.title, 
-            'content': review.content,  # summary 대신 content 사용
+            'content': review.content,
             'author': review.user.username if review.user else '익명',
             'rating': review.rating,
-            'created_at': review.created_at.isoformat() if hasattr(review.created_at, 'isoformat') else review.created_at.strftime('%Y-%m-%d')
+            'created_at': review.created_at.isoformat() if hasattr(review.created_at, 'isoformat') else review.created_at.strftime('%Y-%m-%d'),
+            'is_owner': request.user.is_authenticated and review.user == request.user
         }
         for review in page_obj
     ]
@@ -335,3 +336,68 @@ def get_external_reviews(request, center_id):
         'reviews': reviews_data,
         'pagination': pagination_data
     })
+
+@login_required
+def update_review(request, review_id):
+    review = get_object_or_404(Review, pk=review_id)
+    
+    # 리뷰 작성자만 수정 가능
+    if review.user != request.user:
+        return JsonResponse({'error': '리뷰 수정 권한이 없습니다.'}, status=403)
+    
+    if request.method == 'PATCH':
+        try:
+            data = json.loads(request.body)
+            title = data.get('title')
+            content = data.get('content')
+            rating = data.get('rating')
+            
+            if not title or not content or not rating:
+                return JsonResponse({'error': '제목, 내용, 평점은 필수입니다.'}, status=400)
+            
+            try:
+                rating = int(rating)
+                if not (1 <= rating <= 5):
+                    raise ValueError
+            except (TypeError, ValueError):
+                return JsonResponse({'error': '평점은 1에서 5 사이의 숫자여야 합니다.'}, status=400)
+            
+            review.title = title
+            review.content = content
+            review.rating = rating
+            review.save()
+            
+            return JsonResponse({
+                'success': True,
+                'review': {
+                    'id': review.id,
+                    'title': review.title,
+                    'content': review.content,
+                    'author': request.user.username,
+                    'rating': review.rating,
+                    'created_at': review.created_at.isoformat()
+                }
+            })
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '잘못된 JSON 형식입니다.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'PATCH 요청만 허용됩니다.'}, status=405)
+
+@login_required
+def delete_review(request, review_id):
+    review = get_object_or_404(Review, pk=review_id)
+    
+    # 리뷰 작성자만 삭제 가능
+    if review.user != request.user:
+        return JsonResponse({'error': '리뷰 삭제 권한이 없습니다.'}, status=403)
+    
+    if request.method == 'DELETE':
+        try:
+            review.delete()
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'DELETE 요청만 허용됩니다.'}, status=405)

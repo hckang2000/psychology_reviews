@@ -7,6 +7,7 @@
     <!-- Swiper.js CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <link rel="stylesheet" href="{% static 'centers/style.css' %}">
+    {% csrf_token %}
     <style>
         /* Therapist Card Styles */
         .therapist-section {
@@ -334,6 +335,43 @@
         </div>
     </div>
 
+    <!-- 리뷰 수정 모달 -->
+    <div id="editReviewModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">리뷰 수정</h3>
+            <form id="editReviewForm" onsubmit="updateReview(event)">
+                <input type="hidden" name="review_id" id="editReviewId">
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editTitle">제목</label>
+                    <input type="text" name="title" id="editTitle" class="w-full px-3 py-2 border rounded-lg" required>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editContent">내용</label>
+                    <textarea name="content" id="editContent" class="w-full px-3 py-2 border rounded-lg" rows="4" required></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editRating">평점</label>
+                    <div class="flex items-center space-x-2" id="editStarRating">
+                        <button type="button" class="text-2xl" data-rating="1">☆</button>
+                        <button type="button" class="text-2xl" data-rating="2">☆</button>
+                        <button type="button" class="text-2xl" data-rating="3">☆</button>
+                        <button type="button" class="text-2xl" data-rating="4">☆</button>
+                        <button type="button" class="text-2xl" data-rating="5">☆</button>
+                    </div>
+                    <input type="hidden" name="rating" id="editRating" required>
+                </div>
+                
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeEditReviewModal()" class="px-4 py-2 bg-gray-200 rounded-lg">취소</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- 상담사 모달 -->
     <div class="therapist-modal" id="therapistModal">
         <div class="therapist-modal-content">
@@ -480,6 +518,207 @@
                     description: card.querySelector('.therapist-description')?.textContent || ''
                 };
                 showTherapistModal(therapistData);
+            }
+        });
+    </script>
+
+    <!-- 리뷰 관련 JavaScript -->
+    <script>
+        // CSRF 토큰 가져오기
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function displayReviews(reviews, pagination) {
+            const reviewsContainer = document.getElementById('reviewsList');
+            reviewsContainer.innerHTML = '';
+            
+            reviews.forEach(review => {
+                const reviewElement = document.createElement('div');
+                reviewElement.className = 'bg-white p-4 rounded-lg shadow mb-4';
+                reviewElement.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold">${review.title}</h4>
+                            <p class="text-gray-600 text-sm">${review.author}</p>
+                            <div class="flex items-center mt-2">
+                                ${generateStars(review.rating)}
+                                <span class="ml-2 text-sm text-gray-500">${review.created_at}</span>
+                            </div>
+                        </div>
+                        ${review.is_owner ? `
+                            <div class="flex space-x-2">
+                                <button onclick="openEditReviewModal(${review.id}, '${review.title.replace(/'/g, "\\'")}', ${review.rating}, '${review.content.replace(/'/g, "\\'")}')" 
+                                        class="text-gray-500 hover:text-blue-500">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </button>
+                                <button onclick="deleteReview(${review.id})" 
+                                        class="text-gray-500 hover:text-red-500">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <p class="mt-2 text-gray-700">${review.content}</p>
+                `;
+                reviewsContainer.appendChild(reviewElement);
+            });
+
+            // 페이지네이션 버튼 생성
+            const paginationContainer = document.getElementById('reviewsPagination');
+            paginationContainer.innerHTML = '';
+            
+            if (pagination && pagination.total_pages > 1) {
+                for (let i = 1; i <= pagination.total_pages; i++) {
+                    const button = document.createElement('button');
+                    button.className = `px-3 py-1 mx-1 rounded ${i === pagination.current_page ? 'bg-blue-500 text-white' : 'bg-gray-200'}`;
+                    button.textContent = i;
+                    button.onclick = () => fetchAndDisplayReviews(i);
+                    paginationContainer.appendChild(button);
+                }
+            }
+        }
+
+        function openEditReviewModal(reviewId, title, rating, content) {
+            document.getElementById('editReviewId').value = reviewId;
+            document.getElementById('editTitle').value = title;
+            document.getElementById('editContent').value = content.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/'/g, "\\'");
+            document.getElementById('editRating').value = rating;
+            
+            // 별점 UI 업데이트
+            const stars = document.querySelectorAll('#editStarRating button');
+            stars.forEach(star => {
+                const starRating = parseInt(star.dataset.rating);
+                star.textContent = starRating <= rating ? '★' : '☆';
+            });
+            
+            document.getElementById('editReviewModal').classList.remove('hidden');
+        }
+
+        function closeEditReviewModal() {
+            document.getElementById('editReviewModal').classList.add('hidden');
+        }
+
+        async function updateReview(event) {
+            event.preventDefault();
+            
+            const reviewId = document.getElementById('editReviewId').value;
+            const formData = new FormData(event.target);
+            
+            const requestData = {
+                title: formData.get('title'),
+                content: formData.get('content'),
+                rating: parseInt(formData.get('rating'))
+            };
+            
+            console.log('리뷰 수정 요청 데이터:', requestData);
+            console.log('리뷰 ID:', reviewId);
+            
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const response = await fetch(`/reviews/${reviewId}/update/`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log('서버 응답 상태:', response.status);
+                const responseData = await response.json();
+                console.log('서버 응답 데이터:', responseData);
+                
+                if (!response.ok) {
+                    throw new Error(responseData.error || '리뷰 수정에 실패했습니다.');
+                }
+                
+                closeEditReviewModal();
+                alert('리뷰가 성공적으로 수정되었습니다.');
+                fetchAndDisplayReviews(1); // 첫 페이지로 돌아가서 새로고침
+            } catch (error) {
+                console.error('리뷰 수정 오류:', error);
+                alert(error.message);
+            }
+        }
+
+        async function deleteReview(reviewId) {
+            if (!confirm('정말로 이 리뷰를 삭제하시겠습니까?')) {
+                return;
+            }
+            
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const response = await fetch(`/reviews/${reviewId}/delete/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('리뷰 삭제에 실패했습니다.');
+                }
+                
+                alert('리뷰가 성공적으로 삭제되었습니다.');
+                fetchAndDisplayReviews(1); // 첫 페이지로 돌아가서 새로고침
+            } catch (error) {
+                console.error('리뷰 삭제 오류:', error);
+                alert(error.message);
+            }
+        }
+    </script>
+
+    <!-- 리뷰 작성 모달의 별점 UI -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 리뷰 작성 모달의 별점 UI
+            const starRating = document.getElementById('starRating');
+            if (starRating) {
+                starRating.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'BUTTON') {
+                        const rating = parseInt(e.target.dataset.rating);
+                        document.getElementById('rating').value = rating;
+                        
+                        const stars = starRating.querySelectorAll('button');
+                        stars.forEach(star => {
+                            const starRating = parseInt(star.dataset.rating);
+                            star.textContent = starRating <= rating ? '★' : '☆';
+                        });
+                    }
+                });
+            }
+
+            // 리뷰 수정 모달의 별점 UI
+            const editStarRating = document.getElementById('editStarRating');
+            if (editStarRating) {
+                editStarRating.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'BUTTON') {
+                        const rating = parseInt(e.target.dataset.rating);
+                        document.getElementById('editRating').value = rating;
+                        
+                        const stars = editStarRating.querySelectorAll('button');
+                        stars.forEach(star => {
+                            const starRating = parseInt(star.dataset.rating);
+                            star.textContent = starRating <= rating ? '★' : '☆';
+                        });
+                    }
+                });
             }
         });
     </script>

@@ -284,18 +284,28 @@ function displayReviews(reviews, page = 1, pagination = null) {
     // 리뷰 목록 표시
     reviewsList.innerHTML = pageReviews.map(review => {
         const rating = (review.rating !== undefined && review.rating !== null) ? Number(review.rating) : 5;
+        const safeTitle = String(review.title).replace(/'/g, "&#39;");
+        const safeContent = String(review.content).replace(/'/g, "&#39;");
         return `
             <div class="bg-white rounded-lg shadow p-4 space-y-2">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h4 class="font-medium">${review.title}</h4>
+                        <h4 class="font-medium">${safeTitle}</h4>
                         <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
                     </div>
-                    <div class="flex items-center text-yellow-400">
-                        ${generateStars(rating)}
+                    <div class="flex items-center min-w-[120px] ml-4" style="min-width:120px;">
+                        ${review.is_owner ? `
+                            <button onclick="openEditReviewModal(${review.id}, '${safeTitle}', ${review.rating}, '${safeContent}')" class="text-gray-500 hover:text-blue-500 mr-2" title="수정">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteReview(${review.id})" class="text-gray-500 hover:text-red-500 mr-2" title="삭제">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        ` : ''}
+                        <span class="flex items-center text-yellow-400 ml-auto">${generateStars(rating)}</span>
                     </div>
                 </div>
-                <p class="text-gray-700">${review.content}</p>
+                <p class="text-gray-700">${safeContent}</p>
             </div>
         `;
     }).join('');
