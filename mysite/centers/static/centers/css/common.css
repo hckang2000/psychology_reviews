@@ -9,7 +9,7 @@
 
 .main-content {
     flex: 1 !important;
-    height: calc(100vh - 64px) !important;
+    /* height: calc(100vh - 64px) !important; */
     min-height: 0 !important;
     padding: 0 !important;
     margin: 0 !important;
