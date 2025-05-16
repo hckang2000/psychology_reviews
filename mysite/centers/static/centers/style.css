@@ -20,6 +20,12 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
+html, body, .app-container {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
@@ -31,10 +37,6 @@ body {
 .app-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    width: 100vw;
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
     position: relative;
     overflow: hidden;
 }
@@ -211,11 +213,12 @@ body {
 }
 
 /* Map container */
-.map-container {
+#map, .map-container {
+    height: calc(100vh - 64px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
     flex: 1;
     width: 100%;
-    height: calc(100vh - 64px);
-    margin-top: 64px;
     position: relative;
     z-index: 1;
 }
