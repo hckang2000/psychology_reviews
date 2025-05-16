@@ -1,4 +1,0 @@
-{% load i18n %}
-{% autoescape off %}
-{% blocktrans %}[{{ site_name }}] 이메일 인증을 완료해 주세요{% endblocktrans %}
-{% endautoescape %} 
