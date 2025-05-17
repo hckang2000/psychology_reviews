@@ -181,32 +181,23 @@ class CenterAdmin(admin.ModelAdmin):
                 return HttpResponseRedirect("..")
             
             try:
-                # CSV 파일 내용을 직접 읽어서 확인
+                # CSV 파일을 바이트로 읽기
                 csv_content = csv_file.read().decode('utf-8-sig')
-                print("CSV 파일 내용:")
-                print(csv_content)
                 
-                # 빈 행을 제외하고 CSV 파일 읽기
-                lines = [line for line in csv_content.splitlines() if line.strip()]
-                if not lines:
-                    raise ValueError('CSV 파일이 비어있습니다.')
+                # CSV 리더 설정 - 따옴표로 묶인 데이터 처리
+                csv_reader = csv.DictReader(
+                    csv_content.splitlines(),
+                    quoting=csv.QUOTE_ALL,  # 모든 필드를 따옴표로 처리
+                    skipinitialspace=True  # 따옴표 안의 공백 유지
+                )
                 
-                # 첫 번째 행이 헤더인지 확인
-                header = lines[0].strip().split(',')
-                if not all(field.strip() for field in header):
-                    raise ValueError('CSV 파일의 헤더가 올바르지 않습니다.')
-                
-                # 데이터 행만 필터링
-                data_rows = []
-                for line in lines[1:]:  # 헤더를 제외한 나머지 행
-                    values = line.strip().split(',')
-                    if any(value.strip() for value in values):  # 적어도 하나의 값이 있는 행만 포함
-                        data_rows.append(dict(zip(header, values)))
+                # 데이터 행 읽기
+                data_rows = list(csv_reader)
                 
                 if not data_rows:
                     raise ValueError('CSV 파일에 유효한 데이터가 없습니다.')
                 
-                print("CSV 필드명:", header)
+                print("CSV 필드명:", csv_reader.fieldnames)
                 print("첫 번째 행 데이터:", data_rows[0])
                 
                 # 필수 필드 확인
@@ -413,38 +404,25 @@ class TherapistAdmin(admin.ModelAdmin):
                 center = Center.objects.get(id=center_id)
                 print(f"선택된 상담소: {center.name}")
                 
-                # CSV 파일 내용을 직접 읽어서 확인
+                # CSV 파일을 바이트로 읽기
                 csv_content = csv_file.read().decode('utf-8-sig')
-                print("=== CSV 파일 내용 ===")
-                print(csv_content)
                 
-                # 빈 행을 제외하고 CSV 파일 읽기
-                lines = [line for line in csv_content.splitlines() if line.strip()]
-                if not lines:
-                    print("오류: CSV 파일이 비어있습니다.")
-                    return JsonResponse({'error': 'CSV 파일이 비어있습니다.'}, status=400)
+                # CSV 리더 설정 - 따옴표로 묶인 데이터 처리
+                csv_reader = csv.DictReader(
+                    csv_content.splitlines(),
+                    quoting=csv.QUOTE_ALL,  # 모든 필드를 따옴표로 처리
+                    skipinitialspace=True  # 따옴표 안의 공백 유지
+                )
                 
-                # 첫 번째 행이 헤더인지 확인
-                header = lines[0].strip().split(',')
-                print(f"헤더: {header}")
-                if not all(field.strip() for field in header):
-                    print("오류: CSV 파일의 헤더가 올바르지 않습니다.")
-                    return JsonResponse({'error': 'CSV 파일의 헤더가 올바르지 않습니다.'}, status=400)
+                # 데이터 행 읽기
+                data_rows = list(csv_reader)
                 
-                # 데이터 행만 필터링
-                data_rows = []
-                for line in lines[1:]:  # 헤더를 제외한 나머지 행
-                    values = line.strip().split(',')
-                    if any(value.strip() for value in values):  # 적어도 하나의 값이 있는 행만 포함
-                        data_rows.append(dict(zip(header, values)))
-                
-                print(f"유효한 데이터 행 수: {len(data_rows)}")
                 if not data_rows:
                     print("오류: CSV 파일에 유효한 데이터가 없습니다.")
                     return JsonResponse({'error': 'CSV 파일에 유효한 데이터가 없습니다.'}, status=400)
                 
-                print("=== 첫 번째 행 데이터 ===")
-                print(data_rows[0])
+                print("CSV 필드명:", csv_reader.fieldnames)
+                print("첫 번째 행 데이터:", data_rows[0])
                 
                 # 필수 필드 확인
                 required_fields = ['name']
@@ -587,38 +565,25 @@ class ExternalReviewAdmin(admin.ModelAdmin):
                 center = Center.objects.get(id=center_id)
                 print(f"선택된 상담소: {center.name}")
                 
-                # CSV 파일 내용을 직접 읽어서 확인
+                # CSV 파일을 바이트로 읽기
                 csv_content = csv_file.read().decode('utf-8-sig')
-                print("=== CSV 파일 내용 ===")
-                print(csv_content)
                 
-                # 빈 행을 제외하고 CSV 파일 읽기
-                lines = [line for line in csv_content.splitlines() if line.strip()]
-                if not lines:
-                    print("오류: CSV 파일이 비어있습니다.")
-                    return JsonResponse({'error': 'CSV 파일이 비어있습니다.'}, status=400)
+                # CSV 리더 설정 - 따옴표로 묶인 데이터 처리
+                csv_reader = csv.DictReader(
+                    csv_content.splitlines(),
+                    quoting=csv.QUOTE_ALL,  # 모든 필드를 따옴표로 처리
+                    skipinitialspace=True  # 따옴표 안의 공백 유지
+                )
                 
-                # 첫 번째 행이 헤더인지 확인
-                header = lines[0].strip().split(',')
-                print(f"헤더: {header}")
-                if not all(field.strip() for field in header):
-                    print("오류: CSV 파일의 헤더가 올바르지 않습니다.")
-                    return JsonResponse({'error': 'CSV 파일의 헤더가 올바르지 않습니다.'}, status=400)
+                # 데이터 행 읽기
+                data_rows = list(csv_reader)
                 
-                # 데이터 행만 필터링
-                data_rows = []
-                for line in lines[1:]:  # 헤더를 제외한 나머지 행
-                    values = line.strip().split(',')
-                    if any(value.strip() for value in values):  # 적어도 하나의 값이 있는 행만 포함
-                        data_rows.append(dict(zip(header, values)))
-                
-                print(f"유효한 데이터 행 수: {len(data_rows)}")
                 if not data_rows:
                     print("오류: CSV 파일에 유효한 데이터가 없습니다.")
                     return JsonResponse({'error': 'CSV 파일에 유효한 데이터가 없습니다.'}, status=400)
                 
-                print("=== 첫 번째 행 데이터 ===")
-                print(data_rows[0])
+                print("CSV 필드명:", csv_reader.fieldnames)
+                print("첫 번째 행 데이터:", data_rows[0])
                 
                 # 필수 필드 확인
                 required_fields = ['title', 'url']
