@@ -12,6 +12,8 @@ from decimal import Decimal
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 import requests
+import csv
+from django.utils.safestring import mark_safe
 
 def index(request):
     centers = Center.objects.all().prefetch_related('images', 'therapists', 'reviews', 'external_reviews')
@@ -49,20 +51,44 @@ def index(request):
             'created_at': review.created_at.isoformat() if hasattr(review.created_at, 'isoformat') else review.created_at.strftime('%Y-%m-%d')
         } for review in center.external_reviews.all().order_by('-created_at')]
         
+        # 문자열 필드에서 따옴표 처리
+        def escape_quotes(text):
+            if text is None:
+                return ""
+            return str(text).replace('"', '\\"').replace("'", "\\'")
+        
         center_data = {
             'id': center.id,
-            'name': center.name,
+            'name': escape_quotes(center.name),
             'lat': lat,
             'lng': lng,
-            'address': center.address,
-            'phone': center.phone,
-            'url': center.url,
-            'operating_hours': center.operating_hours,
-            'description': center.description,
-            'images': [image.image.url for image in center.images.all()],
-            'therapists': therapists_data,
-            'reviews': reviews_data,
-            'external_reviews': external_reviews_data,
+            'address': escape_quotes(center.address),
+            'phone': escape_quotes(center.phone),
+            'url': escape_quotes(center.url),
+            'operating_hours': escape_quotes(center.operating_hours),
+            'description': escape_quotes(center.description),
+            'images': [escape_quotes(image.image.url) for image in center.images.all()],
+            'therapists': [{
+                'name': escape_quotes(t['name']),
+                'photo': escape_quotes(t['photo']),
+                'experience': t['experience'],
+                'specialty': escape_quotes(t['specialty']),
+                'description': escape_quotes(t['description'])
+            } for t in therapists_data],
+            'reviews': [{
+                'title': escape_quotes(r['title']),
+                'content': escape_quotes(r['content']),
+                'author': escape_quotes(r['author']),
+                'rating': r['rating'],
+                'created_at': escape_quotes(r['created_at'])
+            } for r in reviews_data],
+            'external_reviews': [{
+                'title': escape_quotes(r['title']),
+                'summary': escape_quotes(r['summary']),
+                'source': escape_quotes(r['source']),
+                'url': escape_quotes(r['url']),
+                'created_at': escape_quotes(r['created_at'])
+            } for r in external_reviews_data],
             'is_authenticated': request.user.is_authenticated
         }
         center_list.append(center_data)
@@ -70,7 +96,7 @@ def index(request):
     selected_center_id = request.GET.get('center_id')
     
     # JSON 형식으로 데이터 전달
-    centers_json = json.dumps(center_list)
+    centers_json = json.dumps(center_list, ensure_ascii=False)
     selected_center_id_json = json.dumps(selected_center_id) if selected_center_id else 'null'
     is_authenticated_json = json.dumps(request.user.is_authenticated)
     
@@ -401,3 +427,53 @@ def delete_review(request, review_id):
             return JsonResponse({'error': str(e)}, status=500)
     
     return JsonResponse({'error': 'DELETE 요청만 허용됩니다.'}, status=405)
+
+def upload_centers(request):
+    if request.method == 'POST' and request.FILES.get('csv_file'):
+        csv_file = request.FILES['csv_file']
+        decoded_file = csv_file.read().decode('utf-8')
+        
+        # CSV 파서 설정 - 따옴표 처리를 위한 옵션 추가
+        csv_reader = csv.DictReader(
+            decoded_file.splitlines(),
+            quotechar='"',  # 큰따옴표를 인용 문자로 사용
+            escapechar='\\',  # 이스케이프 문자 설정
+            doublequote=True  # 큰따옴표를 두 번 사용하여 이스케이프
+        )
+        
+        for row in csv_reader:
+            try:
+                # 주소로 위도/경도 가져오기
+                geocode_result = geocode_address(row['address'])
+                if not geocode_result:
+                    continue
+                
+                # description에서 작은따옴표 처리
+                description = row['description'].replace("'", "''") if row['description'] else ""
+                
+                # Center 객체 생성
+                center = Center.objects.create(
+                    name=row['name'],
+                    address=row['address'],
+                    phone=row['phone'],
+                    url=row['url'],
+                    description=description,
+                    latitude=geocode_result['latitude'],
+                    longitude=geocode_result['longitude']
+                )
+                
+                # 이미지 URL이 있는 경우 처리
+                if row.get('image_url'):
+                    CenterImage.objects.create(
+                        center=center,
+                        image_url=row['image_url']
+                    )
+                    
+            except Exception as e:
+                print(f"Error processing row: {row}")
+                print(f"Error details: {str(e)}")
+                continue
+        
+        return redirect('centers:index')
+    
+    return render(request, 'centers/upload.html')

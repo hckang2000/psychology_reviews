@@ -398,9 +398,10 @@
     
     <!-- 데이터를 JavaScript 변수로 전달 -->
     <script>
-        const centersData = JSON.parse('{{ centers_json|safe }}');
-        const selectedCenterId = JSON.parse('{{ selected_center_id_json|safe }}');
-        const isAuthenticated = JSON.parse('{{ is_authenticated_json|safe }}');
+        // Django에서 전달받은 데이터를 JavaScript 변수로 초기화
+        const centersData = JSON.parse('{{ centers_json|escapejs }}');
+        const selectedCenterId = JSON.parse('{{ selected_center_id_json|escapejs }}');
+        const isAuthenticated = JSON.parse('{{ is_authenticated_json|escapejs }}');
         const searchResultsUrl = "{% url 'centers:search_results' %}";
         const reviewFormUrl = "{% url 'centers:review_form' 0 %}";
         const getReviewsUrl = "{% url 'centers:get_reviews' 0 %}";
@@ -417,7 +418,11 @@
                 // 지도 초기화 (서울시청 좌표로 초기화)
                 initializeMap(37.5666805, 126.9784147, 11);
                 // Load centers data
-                loadCenters(centersData, selectedCenterId);
+                if (typeof centersData !== 'undefined') {
+                    loadCenters(centersData);
+                } else {
+                    console.error('centersData is not defined');
+                }
                 // 드래그 핸들 설정
                 setupDragHandles();
             };
