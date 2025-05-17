@@ -282,19 +282,19 @@ function displayReviews(reviews, page = 1, pagination = null) {
     noReviews.classList.add('hidden');
     
     const pageReviews = reviews;
-
+    
     // 리뷰 목록 표시
     reviewsList.innerHTML = pageReviews.map(review => {
         const rating = (review.rating !== undefined && review.rating !== null) ? Number(review.rating) : 5;
         const safeTitle = String(review.title).replace(/'/g, "&#39;");
         const safeContent = String(review.content).replace(/'/g, "&#39;");
         return `
-            <div class="bg-white rounded-lg shadow p-4 space-y-2">
-                <div class="flex justify-between items-start">
-                    <div>
+        <div class="bg-white rounded-lg shadow p-4 space-y-2">
+            <div class="flex justify-between items-start">
+                <div>
                         <h4 class="font-medium">${safeTitle}</h4>
-                        <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
-                    </div>
+                    <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
+                </div>
                     <div class="flex items-center min-w-[120px] ml-4" style="min-width:120px;">
                         ${review.is_owner ? `
                             <button onclick="openEditReviewModal(${review.id}, '${safeTitle}', ${review.rating}, '${safeContent}')" class="text-gray-500 hover:text-blue-500 mr-2" title="수정">
@@ -305,13 +305,13 @@ function displayReviews(reviews, page = 1, pagination = null) {
                             </button>
                         ` : ''}
                         <span class="flex items-center text-yellow-400 ml-auto">${generateStars(rating)}</span>
-                    </div>
                 </div>
-                <p class="text-gray-700">${safeContent}</p>
             </div>
+                <p class="text-gray-700">${safeContent}</p>
+        </div>
         `;
     }).join('');
-
+    
     // 페이지네이션 버튼 생성 (pagination 정보 활용)
     if (pagination && pagination.total_pages > 1) {
         let paginationHTML = '';
@@ -717,18 +717,18 @@ function refreshReviews(centerId) {
                     // rating이 undefined/null이면 5점으로 fallback (임시)
                     const rating = (review.rating !== undefined && review.rating !== null) ? Number(review.rating) : 5;
                     return `
-                        <div class="bg-white rounded-lg shadow p-4 space-y-2">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 class="font-medium">${review.title}</h4>
-                                    <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
-                                </div>
-                                <div class="flex items-center text-yellow-400">
-                                    ${generateStars(rating)}
-                                </div>
+                    <div class="bg-white rounded-lg shadow p-4 space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-medium">${review.title}</h4>
+                                <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
                             </div>
-                            <p class="text-gray-700">${review.content}</p>
+                            <div class="flex items-center text-yellow-400">
+                                    ${generateStars(rating)}
+                            </div>
                         </div>
+                        <p class="text-gray-700">${review.content}</p>
+                    </div>
                     `;
                 }).join('');
                 
@@ -799,7 +799,7 @@ function submitReview(event) {
         alert('평점을 선택해주세요.');
         return;
     }
-
+    
     if (!currentCenterId) {
         alert('리뷰를 작성할 상담소가 선택되지 않았습니다.');
         return;

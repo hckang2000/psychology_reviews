@@ -1,4 +1,12 @@
-/* Auth pages (Login & Sign Up) */
+/* ==========================================================================
+   Authentication Pages Styles
+   Login & Sign Up pages
+   ========================================================================== */
+
+/* Auth Container
+   - 인증 페이지의 최상위 컨테이너
+   - 전체 화면 높이와 중앙 정렬
+   ========================================================================== */
 .auth-container {
     min-height: 100vh;
     display: flex;
@@ -8,6 +16,10 @@
     padding: 20px;
 }
 
+/* Auth Box
+   - 로그인/회원가입 폼을 담는 컨테이너
+   - 흰색 배경과 그림자 효과
+   ========================================================================== */
 .auth-box {
     background: white;
     padding: 2rem;
@@ -17,6 +29,9 @@
     max-width: 400px;
 }
 
+/* Auth Header
+   - 인증 페이지의 제목과 설명
+   ========================================================================== */
 .auth-header {
     text-align: center;
     margin-bottom: 2rem;
@@ -33,12 +48,18 @@
     font-size: 0.9rem;
 }
 
+/* Auth Form
+   - 로그인/회원가입 폼 스타일
+   ========================================================================== */
 .auth-form {
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
+/* Form Group
+   - 입력 필드 그룹
+   ========================================================================== */
 .form-group {
     display: flex;
     flex-direction: column;
@@ -65,6 +86,9 @@
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
 }
 
+/* Auth Button
+   - 로그인/회원가입 버튼
+   ========================================================================== */
 .auth-button {
     background-color: #007bff;
     color: white;
@@ -81,6 +105,9 @@
     background-color: #0056b3;
 }
 
+/* Auth Links
+   - 추가 링크 (회원가입, 비밀번호 찾기 등)
+   ========================================================================== */
 .auth-links {
     margin-top: 1.5rem;
     text-align: center;
@@ -96,6 +123,9 @@
     text-decoration: underline;
 }
 
+/* Error Message
+   - 폼 에러 메시지
+   ========================================================================== */
 .error-message {
     background-color: #fff5f5;
     color: #e53e3e;
@@ -105,13 +135,18 @@
     font-size: 0.9rem;
 }
 
+/* Help Text
+   - 입력 필드 도움말
+   ========================================================================== */
 .help-text {
     font-size: 0.8rem;
     color: #666;
     margin-top: 0.25rem;
 }
 
-/* Responsive adjustments */
+/* ==========================================================================
+   Responsive Styles
+   ========================================================================== */
 @media (max-width: 480px) {
     .auth-box {
         padding: 1.5rem;
