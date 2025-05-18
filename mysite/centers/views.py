@@ -20,78 +20,82 @@ def index(request):
 
     center_list = []
     for center in centers:
-        # Decimal 타입을 float로 변환
-        lat = float(center.latitude) if isinstance(center.latitude, Decimal) else center.latitude
-        lng = float(center.longitude) if isinstance(center.longitude, Decimal) else center.longitude
-        
-        # 상담사 정보 추가
-        therapists_data = [{
-            'name': therapist.name,
-            'photo': therapist.photo.url if therapist.photo else None,
-            'experience': therapist.experience,
-            'specialty': therapist.specialty,
-            'description': therapist.description
-        } for therapist in center.therapists.all()]
-        
-        # 내부 리뷰 정보 추가
-        reviews_data = [{
-            'title': review.title,
-            'content': review.content,
-            'author': review.user.username if review.user else '익명',
-            'rating': review.rating,
-            'created_at': review.created_at.isoformat() if hasattr(review.created_at, 'isoformat') else review.created_at.strftime('%Y-%m-%d')
-        } for review in center.reviews.all().order_by('-created_at')]
-        
-        # 외부 리뷰 정보 추가
-        external_reviews_data = [{
-            'title': review.title,
-            'summary': review.summary,
-            'source': review.source,
-            'url': review.url,
-            'created_at': review.created_at.isoformat() if hasattr(review.created_at, 'isoformat') else review.created_at.strftime('%Y-%m-%d')
-        } for review in center.external_reviews.all().order_by('-created_at')]
-        
-        # 문자열 필드에서 따옴표 처리
-        def escape_quotes(text):
-            if text is None:
-                return ""
-            return str(text).replace('"', '\\"').replace("'", "\\'")
-        
-        center_data = {
-            'id': center.id,
-            'name': escape_quotes(center.name),
-            'lat': lat,
-            'lng': lng,
-            'address': escape_quotes(center.address),
-            'phone': escape_quotes(center.phone),
-            'url': escape_quotes(center.url),
-            'operating_hours': escape_quotes(center.operating_hours),
-            'description': escape_quotes(center.description),
-            'images': [escape_quotes(image.image.url) for image in center.images.all()],
-            'therapists': [{
-                'name': escape_quotes(t['name']),
-                'photo': escape_quotes(t['photo']),
-                'experience': t['experience'],
-                'specialty': escape_quotes(t['specialty']),
-                'description': escape_quotes(t['description'])
-            } for t in therapists_data],
-            'reviews': [{
-                'title': escape_quotes(r['title']),
-                'content': escape_quotes(r['content']),
-                'author': escape_quotes(r['author']),
-                'rating': r['rating'],
-                'created_at': escape_quotes(r['created_at'])
-            } for r in reviews_data],
-            'external_reviews': [{
-                'title': escape_quotes(r['title']),
-                'summary': escape_quotes(r['summary']),
-                'source': escape_quotes(r['source']),
-                'url': escape_quotes(r['url']),
-                'created_at': escape_quotes(r['created_at'])
-            } for r in external_reviews_data],
-            'is_authenticated': request.user.is_authenticated
-        }
-        center_list.append(center_data)
+        try:
+            # Decimal 타입을 float로 변환
+            lat = float(center.latitude) if isinstance(center.latitude, Decimal) else center.latitude
+            lng = float(center.longitude) if isinstance(center.longitude, Decimal) else center.longitude
+            
+            # 상담사 정보 추가
+            therapists_data = [{
+                'name': therapist.name,
+                'photo': therapist.photo.url if therapist.photo else None,
+                'experience': therapist.experience,
+                'specialty': therapist.specialty,
+                'description': therapist.description
+            } for therapist in center.therapists.all()]
+            
+            # 내부 리뷰 정보 추가
+            reviews_data = [{
+                'title': review.title,
+                'content': review.content,
+                'author': review.user.username if review.user else '익명',
+                'rating': review.rating,
+                'created_at': review.created_at.isoformat() if hasattr(review.created_at, 'isoformat') else review.created_at.strftime('%Y-%m-%d')
+            } for review in center.reviews.all().order_by('-created_at')]
+            
+            # 외부 리뷰 정보 추가
+            external_reviews_data = [{
+                'title': review.title,
+                'summary': review.summary,
+                'source': review.source,
+                'url': review.url,
+                'created_at': review.created_at.isoformat() if hasattr(review.created_at, 'isoformat') else review.created_at.strftime('%Y-%m-%d')
+            } for review in center.external_reviews.all().order_by('-created_at')]
+            
+            # 문자열 필드에서 따옴표 처리
+            def escape_quotes(text):
+                if text is None:
+                    return ""
+                return str(text).replace('"', '\\"').replace("'", "\\'")
+            
+            center_data = {
+                'id': center.id,
+                'name': escape_quotes(center.name),
+                'lat': lat,
+                'lng': lng,
+                'address': escape_quotes(center.address),
+                'phone': escape_quotes(center.phone),
+                'url': escape_quotes(center.url),
+                'operating_hours': escape_quotes(center.operating_hours),
+                'description': escape_quotes(center.description),
+                'images': [escape_quotes(image.image.url) for image in center.images.all()],
+                'therapists': [{
+                    'name': escape_quotes(t['name']),
+                    'photo': escape_quotes(t['photo']),
+                    'experience': t['experience'],
+                    'specialty': escape_quotes(t['specialty']),
+                    'description': escape_quotes(t['description'])
+                } for t in therapists_data],
+                'reviews': [{
+                    'title': escape_quotes(r['title']),
+                    'content': escape_quotes(r['content']),
+                    'author': escape_quotes(r['author']),
+                    'rating': r['rating'],
+                    'created_at': escape_quotes(r['created_at'])
+                } for r in reviews_data],
+                'external_reviews': [{
+                    'title': escape_quotes(r['title']),
+                    'summary': escape_quotes(r['summary']),
+                    'source': escape_quotes(r['source']),
+                    'url': escape_quotes(r['url']),
+                    'created_at': escape_quotes(r['created_at'])
+                } for r in external_reviews_data],
+                'is_authenticated': request.user.is_authenticated
+            }
+            center_list.append(center_data)
+        except Exception as e:
+            print(f"Error processing center {center.id}: {str(e)}")
+            continue
 
     selected_center_id = request.GET.get('center_id')
     

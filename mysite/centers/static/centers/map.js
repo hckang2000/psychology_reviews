@@ -82,35 +82,36 @@ function endDrag(event) {
     }
 }
 
-function loadCenters(centersData) {
-    console.log("Loading centers:", centersData);
-    
-    // Clear existing markers
+function loadCenters(centers) {
+    // 기존 마커 제거
     markers.forEach(marker => marker.setMap(null));
     markers = [];
     
-    centersData.forEach(center => {
-        const lat = parseFloat(center.lat);
-        const lng = parseFloat(center.lng);
-        
-        if (isNaN(lat) || isNaN(lng)) {
-            console.error("Invalid coordinates for center:", center);
-            return;
+    // 각 센터에 대한 마커 생성
+    centers.forEach(center => {
+        try {
+            // 필수 데이터 검증
+            if (!center.id || !center.name || !center.lat || !center.lng) {
+                console.warn(`Invalid center data: ${JSON.stringify(center)}`);
+                return;
+            }
+
+            // 마커 생성
+            const marker = new naver.maps.Marker({
+                position: new naver.maps.LatLng(center.lat, center.lng),
+                map: map,
+                title: center.name
+            });
+
+            // 마커 클릭 이벤트
+            naver.maps.Event.addListener(marker, 'click', function() {
+                showCenterDetails(center);
+            });
+
+            markers.push(marker);
+        } catch (error) {
+            console.error(`Error creating marker for center ${center.id}:`, error);
         }
-        
-        console.log("Creating marker for center:", center.name, "at coordinates:", lat, lng);
-        
-        const marker = new naver.maps.Marker({
-            position: new naver.maps.LatLng(lat, lng),
-            map: map
-        });
-        
-        markers.push(marker);
-        
-        naver.maps.Event.addListener(marker, 'click', function() {
-            console.log("Marker clicked for center:", center.name);
-            showCenterDetails(center);
-        });
     });
     
     // URL에서 center_id 파라미터 확인
@@ -119,7 +120,7 @@ function loadCenters(centersData) {
     
     if (centerId) {
         console.log("Found center_id in URL:", centerId);
-        const center = centersData.find(c => c.id === parseInt(centerId));
+        const center = centers.find(c => c.id === parseInt(centerId));
         if (center) {
             console.log("Found matching center:", center);
             showCenterDetails(center);
