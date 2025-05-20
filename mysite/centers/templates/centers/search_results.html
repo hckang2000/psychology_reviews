@@ -126,7 +126,13 @@
                     <div class="card-buttons">
                         <a href="/?center_id={{ center.id }}" class="center-link">지도에서 보기</a>
                         {% if center.url %}
-                            <a href="{{ center.url }}" target="_blank" class="center-link">웹사이트 방문</a>
+                            {% with url=center.url %}
+                                {% if not url|slice:":4" == 'http' %}
+                                    <a href="http://{{ url }}" target="_blank" class="center-link">웹사이트 방문</a>
+                                {% else %}
+                                    <a href="{{ url }}" target="_blank" class="center-link">웹사이트 방문</a>
+                                {% endif %}
+                            {% endwith %}
                         {% endif %}
                     </div>
                 </div>

@@ -6,7 +6,6 @@ app_name = 'centers'
 urlpatterns = [
     path('', views.index, name='index'),
     path('search/', views.search_results, name='search_results'),
-    path('api/centers/', views.center_list, name='center_list'),
     path('api/geocode/', views.geocode_address, name='geocode_address'),
     path('reviews/<int:center_id>/', views.get_reviews, name='get_reviews'),
     path('reviews/<int:review_id>/update/', views.update_review, name='update_review'),

@@ -111,31 +111,6 @@ def index(request):
         'naver_client_id': settings.NAVER_CLIENT_ID
     })
 
-def center_list(request):
-    centers = Center.objects.all().prefetch_related('images')
-    center_list = []
-    
-    for center in centers:
-        lat = float(center.latitude) if isinstance(center.latitude, Decimal) else center.latitude
-        lng = float(center.longitude) if isinstance(center.longitude, Decimal) else center.longitude
-        
-        center_data = {
-            'id': center.id,
-            'name': center.name,
-            'lat': lat,
-            'lng': lng,
-            'address': center.address,
-            'phone': center.phone,
-            'url': center.url,
-            'operating_hours': center.operating_hours,
-            'description': center.description,
-            'images': [image.image.url for image in center.images.all()],
-            'is_authenticated': request.user.is_authenticated
-        }
-        center_list.append(center_data)
-    
-    return JsonResponse({'centers': center_list})
-
 def get_reviews(request, center_id):
     center = get_object_or_404(Center, pk=center_id)
     reviews = Review.objects.filter(center=center).order_by('-created_at')
