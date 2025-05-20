@@ -29,7 +29,7 @@
    - 지도 컨테이너 스타일
    ========================================================================== */
 #map, .map-container {
-    height: calc(100vh - 64px);
+    height: calc(100vh - 62px);
     margin: 0;
     padding: 0;
     position: relative;
