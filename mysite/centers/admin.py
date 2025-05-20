@@ -350,35 +350,6 @@ class TherapistAdmin(admin.ModelAdmin):
             return JsonResponse(progress)
         return JsonResponse({'error': 'Invalid request method'})
 
-    def process_image_zip(self, zip_file, center_name, therapist_name):
-        try:
-            with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                for filename in zip_ref.namelist():
-                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                        # 이미지 파일 읽기
-                        image_data = zip_ref.read(filename)
-                        
-                        # 이미지 유효성 검사
-                        try:
-                            Image.open(io.BytesIO(image_data))
-                        except:
-                            continue
-                            
-                        # 파일 저장 경로 설정
-                        file_path = f'therapists/{center_name}/{therapist_name}/{filename}'
-                            
-                        # 디렉토리 생성
-                        os.makedirs(os.path.dirname(os.path.join(settings.MEDIA_ROOT, file_path)), exist_ok=True)
-                        
-                        # 파일 저장
-                        default_storage.save(file_path, ContentFile(image_data))
-                        
-                        return file_path
-            return None
-        except Exception as e:
-            print(f"이미지 처리 중 오류: {str(e)}")
-            return None
-
     def import_csv(self, request):
         if request.method == "POST":
             csv_file = request.FILES.get("csv_file")
@@ -435,6 +406,15 @@ class TherapistAdmin(admin.ModelAdmin):
                             print(f"행 데이터: {row}")
                             return JsonResponse({'error': f'필수 필드 {field}가 누락되었습니다.'}, status=400)
                 
+                # 이미지 ZIP을 한 번만 열어서 딕셔너리로 저장
+                image_dict = {}
+                if image_zip:
+                    with zipfile.ZipFile(image_zip, 'r') as zip_ref:
+                        for filename in zip_ref.namelist():
+                            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                                image_data = zip_ref.read(filename)
+                                image_dict[os.path.basename(filename)] = image_data
+                
                 # Initialize progress tracking
                 request.session['import_progress'] = {
                     'total': len(data_rows),
@@ -465,19 +445,18 @@ class TherapistAdmin(admin.ModelAdmin):
                                 print(f"상담사 생성 성공: {therapist.name}")
                                 
                                 # Process therapist image if exists
-                                if image_zip and row.get('image_filename'):
-                                    print(f"이미지 처리 시도: {row['image_filename']}")
-                                    image_path = self.process_image_zip(
-                                        image_zip, 
-                                        center.name, 
-                                        therapist.name
-                                    )
-                                    if image_path:
-                                        therapist.photo = image_path
+                                if row.get('image_filename') and image_dict:
+                                    image_filename = row['image_filename']
+                                    image_data = image_dict.get(image_filename)
+                                    if image_data:
+                                        file_path = f'therapists/{center.name}/{therapist.name}/{image_filename}'
+                                        os.makedirs(os.path.dirname(os.path.join(settings.MEDIA_ROOT, file_path)), exist_ok=True)
+                                        default_storage.save(file_path, ContentFile(image_data))
+                                        therapist.photo = file_path
                                         therapist.save()
-                                        print(f"이미지 처리 성공: {image_path}")
+                                        print(f"이미지 처리 성공: {file_path}")
                                     else:
-                                        print(f"이미지 처리 실패: {row['image_filename']}")
+                                        print(f"이미지 처리 실패: {image_filename}")
                                 
                                 request.session['import_progress']['success'] += 1
                             except Exception as e:
