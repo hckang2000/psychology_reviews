@@ -163,8 +163,8 @@
         <!-- Header Section -->
         <div class="sticky top-0 left-0 right-0 bg-white rounded-t-[20px] z-[60] border-b border-gray-100 shadow-sm">
             <!-- Drag Handle Container -->
-            <div class="h-[40px] flex items-center justify-center">
-                <div class="drag-handle w-[36px] h-[4px] bg-gray-300 rounded-full touch-none select-none"></div>
+            <div id="dragHandle" class="h-[40px] flex items-center justify-center cursor-grab active:cursor-grabbing touch-none select-none">
+                <div class="drag-handle w-[36px] h-[4px] bg-gray-300 rounded-full"></div>
             </div>
             
             <!-- Close Button -->
@@ -416,15 +416,14 @@
             script.onload = function() {
                 console.log('Map script loaded - Initializing map');
                 // 지도 초기화 (서울시청 좌표로 초기화)
-                initializeMap(37.5666805, 126.9784147, 11);
-                // Load centers data
-                if (typeof centersData !== 'undefined') {
-                    loadCenters(centersData);
-                } else {
-                    console.error('centersData is not defined');
-                }
-                // 드래그 핸들 설정
-                setupDragHandles();
+                initializeMap(37.5666805, 126.9784147, 11).then(() => {
+                    // Load centers data after map is initialized
+                    if (typeof centersData !== 'undefined') {
+                        loadCenters(centersData);
+                    }
+                    // 드래그 핸들 설정
+                    setupDragHandles();
+                });
             };
             document.body.appendChild(script);
         }

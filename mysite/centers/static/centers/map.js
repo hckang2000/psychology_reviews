@@ -10,6 +10,7 @@ var map;
 var markers = [];
 var currentCenterId = null; // 현재 선택된 센터 ID를 저장할 변수
 
+// 드래그 핸들 관련 변수들
 let isDragging = false;
 let startY = 0;
 let startTranslateY = 0;
@@ -22,13 +23,14 @@ function getTranslateY(element) {
 
 function startDrag(event) {
     const bottomSheet = document.getElementById('bottomSheet');
+    if (!bottomSheet) return;
+    
     isDragging = true;
     startY = event.type.startsWith('touch') ? event.touches[0].clientY : event.clientY;
     startTranslateY = getTranslateY(bottomSheet) || 0;
     bottomSheet.style.transition = 'none';
     document.body.style.userSelect = 'none';
 
-    // document에 move/end 이벤트 연결
     if (event.type.startsWith('touch')) {
         document.addEventListener('touchmove', moveDrag, { passive: false });
         document.addEventListener('touchend', endDrag);
@@ -41,10 +43,14 @@ function startDrag(event) {
 function moveDrag(event) {
     if (!isDragging) return;
     event.preventDefault();
+    
     const bottomSheet = document.getElementById('bottomSheet');
+    if (!bottomSheet) return;
+    
     const clientY = event.type.startsWith('touch') ? event.touches[0].clientY : event.clientY;
     const deltaY = clientY - startY;
     let nextY = startTranslateY + deltaY;
+    
     // 위로는 -50px까지만, 아래로는 제한 없음
     if (nextY < -50) nextY = -50;
     bottomSheet.style.transform = `translateY(${nextY}px)`;
@@ -53,18 +59,16 @@ function moveDrag(event) {
 function endDrag(event) {
     if (!isDragging) return;
     isDragging = false;
+    
     const bottomSheet = document.getElementById('bottomSheet');
+    if (!bottomSheet) return;
+    
     document.body.style.userSelect = '';
     bottomSheet.style.transition = 'transform 0.3s ease-out';
 
-    // 최종 위치 계산
-    let clientY;
-    if (event.type.startsWith('touch')) {
-        clientY = event.changedTouches[0].clientY;
-    } else {
-        clientY = event.clientY;
-    }
+    const clientY = event.type.startsWith('touch') ? event.changedTouches[0].clientY : event.clientY;
     const deltaY = clientY - startY + startTranslateY;
+    
     // 150px 이상 아래로 드래그하면 닫기
     if (deltaY > 150) {
         closeBottomSheet();
@@ -72,7 +76,6 @@ function endDrag(event) {
         bottomSheet.style.transform = 'translateY(0)';
     }
 
-    // document 이벤트 해제
     if (event.type.startsWith('touch')) {
         document.removeEventListener('touchmove', moveDrag);
         document.removeEventListener('touchend', endDrag);
@@ -81,6 +84,27 @@ function endDrag(event) {
         document.removeEventListener('mouseup', endDrag);
     }
 }
+
+function setupDragHandles() {
+    const dragHandle = document.getElementById('dragHandle');
+    if (!dragHandle) {
+        console.error('Drag handle element not found');
+        return;
+    }
+
+    // 기존 이벤트 리스너 제거
+    dragHandle.removeEventListener('mousedown', startDrag);
+    dragHandle.removeEventListener('touchstart', startDrag);
+
+    // 새로운 이벤트 리스너 추가
+    dragHandle.addEventListener('mousedown', startDrag);
+    dragHandle.addEventListener('touchstart', startDrag, { passive: false });
+}
+
+// DOM이 로드된 후 드래그 핸들 설정
+document.addEventListener('DOMContentLoaded', function() {
+    setupDragHandles();
+});
 
 // 거리 계산 함수 추가
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -107,6 +131,11 @@ function findNearestCenters(centers, centerLat, centerLng, count = 10) {
 }
 
 function loadCenters(centers) {
+    if (!map) {
+        console.error('Map is not initialized yet');
+        return;
+    }
+
     // 기존 마커 제거
     markers.forEach(marker => marker.setMap(null));
     markers = [];
@@ -561,16 +590,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function setupDragHandles() {
-    const dragHandles = document.querySelectorAll('.drag-handle');
-    dragHandles.forEach(handle => {
-        handle.addEventListener('selectstart', e => e.preventDefault());
-        handle.addEventListener('dragstart', e => e.preventDefault());
-        handle.addEventListener('touchstart', startDrag, { passive: false });
-        handle.addEventListener('mousedown', startDrag);
-    });
-}
-
 function closeBottomSheet() {
     const bottomSheet = document.getElementById('bottomSheet');
     const overlay = document.getElementById('overlay');
@@ -578,7 +597,6 @@ function closeBottomSheet() {
         bottomSheet.classList.add('translate-y-full');
         bottomSheet.style.transform = '';
         overlay.classList.add('hidden');
-        // X 버튼 등 다른 상태도 정상화 필요시 추가
     }
 }
 
@@ -1117,11 +1135,15 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
     // 지도 이벤트 리스너 추가
     naver.maps.Event.addListener(map, 'idle', function() {
         // 지도 이동이나 확대/축소가 끝났을 때 마커 업데이트
-        loadCenters(centersData);
+        if (typeof centersData !== 'undefined') {
+            loadCenters(centersData);
+        }
     });
 
     // 센터 데이터 로드
-    loadCenters(centersData);
+    if (typeof centersData !== 'undefined') {
+        loadCenters(centersData);
+    }
 
     // 선택된 센터가 있는 경우 상세 정보 표시
     const urlParams = new URLSearchParams(window.location.search);

@@ -137,6 +137,7 @@ class CenterAdmin(admin.ModelAdmin):
 
     def process_image_zip(self, zip_file, center_name, therapist_name=None):
         try:
+            processed_files = []
             with zipfile.ZipFile(zip_file, 'r') as zip_ref:
                 for filename in zip_ref.namelist():
                     if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
@@ -160,12 +161,13 @@ class CenterAdmin(admin.ModelAdmin):
                         
                         # 파일 저장
                         default_storage.save(file_path, ContentFile(image_data))
-                        
-                        return file_path
-            return None
+                        processed_files.append(file_path)
+                        print(f"이미지 처리 성공: {file_path}")
+            
+            return processed_files
         except Exception as e:
             print(f"이미지 처리 중 오류: {str(e)}")
-            return None
+            return []
 
     def import_csv(self, request):
         if request.method == "POST":
@@ -253,9 +255,9 @@ class CenterAdmin(admin.ModelAdmin):
                                 print(f"상담소 생성 성공: {center.name}")
                                 
                                 # Process center images if zip file is provided
-                                if image_zip and row.get('image_filename'):
-                                    image_path = self.process_image_zip(image_zip, center.name)
-                                    if image_path:
+                                if image_zip:
+                                    image_paths = self.process_image_zip(image_zip, center.name)
+                                    for image_path in image_paths:
                                         CenterImage.objects.create(
                                             center=center,
                                             image=image_path
