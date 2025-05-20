@@ -210,7 +210,13 @@ function showCenterDetails(center) {
     document.getElementById('centerName').textContent = center.name;
     document.getElementById('centerAddress').textContent = center.address;
     document.getElementById('centerPhone').textContent = center.phone;
-    document.getElementById('centerDescription').textContent = center.description;
+    
+    // 설명 텍스트에서 이스케이프된 따옴표를 원래 따옴표로 변환
+    const description = center.description
+        .replace(/\\"/g, '"')  // \" 를 " 로 변환
+        .replace(/\\'/g, "'")  // \' 를 ' 로 변환
+        .replace(/\\\\/g, "\\");  // \\ 를 \ 로 변환
+    document.getElementById('centerDescription').textContent = description;
     
     // 상담사 카드 업데이트
     updateTherapistCards(center.therapists);

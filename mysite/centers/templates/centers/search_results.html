@@ -108,6 +108,23 @@
     .center-description::-webkit-scrollbar-thumb:hover {
         background: #555;
     }
+
+    /* 전화번호 링크 스타일 */
+    .phone-link {
+        color: #666;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .phone-link:hover {
+        color: #3498db;
+    }
+
+    .phone-link i {
+        font-size: 0.9em;
+    }
 </style>
 
 <div class="search-results-container">
@@ -119,7 +136,13 @@
                 <div class="center-card">
                     <h3>{{ center.name }}</h3>
                     <p><strong>주소:</strong> {{ center.address }}</p>
-                    <p><strong>연락처:</strong> {{ center.phone }}</p>
+                    <p>
+                        <strong>연락처:</strong> 
+                        <a href="tel:{{ center.phone|cut:'-' }}" class="phone-link">
+                            <i class="fas fa-phone"></i>
+                            {{ center.phone }}
+                        </a>
+                    </p>
                     {% if center.description %}
                         <p class="center-description" title="{{ center.description }}">{{ center.description|truncatechars:20 }}</p>
                     {% endif %}
