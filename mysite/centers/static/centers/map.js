@@ -1015,10 +1015,41 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// 지도 초기화 함수
-function initializeMap(initialLat, initialLng, initialZoom) {
-    // 지도 초기화
-    console.log("Initializing map with coordinates:", initialLat, initialLng);
+// 현재 위치 가져오기 함수
+function getCurrentLocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('Geolocation is not supported by your browser'));
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                resolve({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                });
+            },
+            (error) => {
+                console.warn('위치 정보를 가져오는데 실패했습니다:', error.message);
+                // 위치 정보 가져오기 실패 시 서울시청 좌표 반환
+                resolve({
+                    lat: 37.5665,
+                    lng: 126.9780
+                });
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            }
+        );
+    });
+}
+
+// 지도 초기화 함수 수정
+async function initializeMap(initialLat, initialLng, initialZoom) {
+    console.log("Initializing map...");
     
     // 지도 컨테이너의 크기 설정
     const mapContainer = document.getElementById('map');
@@ -1032,7 +1063,38 @@ function initializeMap(initialLat, initialLng, initialZoom) {
     const windowHeight = window.innerHeight;
     mapContainer.style.height = `${windowHeight - headerHeight}px`;
     mapContainer.style.width = '100%';
+
+    try {
+        // 현재 위치 가져오기
+        const currentLocation = await getCurrentLocation();
+        console.log("Current location:", currentLocation);
+        
+        // URL에서 center_id 파라미터가 있는 경우 해당 센터의 좌표 사용
+        const urlParams = new URLSearchParams(window.location.search);
+        const centerId = urlParams.get('center_id');
+        
+        if (centerId) {
+            const center = centersData.find(c => c.id === parseInt(centerId));
+            if (center) {
+                initialLat = parseFloat(center.lat);
+                initialLng = parseFloat(center.lng);
+                initialZoom = 15;
+            }
+        } else {
+            // center_id가 없는 경우 현재 위치 사용
+            initialLat = currentLocation.lat;
+            initialLng = currentLocation.lng;
+            initialZoom = 15;
+        }
+    } catch (error) {
+        console.warn('위치 정보를 가져오는데 실패했습니다:', error);
+        // 실패 시 기본값(서울시청) 사용
+        initialLat = 37.5665;
+        initialLng = 126.9780;
+        initialZoom = 13;
+    }
     
+    // 지도 초기화
     map = new naver.maps.Map(mapContainer, {
         center: new naver.maps.LatLng(initialLat, initialLng),
         zoom: initialZoom,
