@@ -82,13 +82,45 @@ function endDrag(event) {
     }
 }
 
+// 거리 계산 함수 추가
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // 지구의 반경 (km)
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+// 가까운 센터 10개 찾기
+function findNearestCenters(centers, centerLat, centerLng, count = 10) {
+    return centers
+        .map(center => ({
+            ...center,
+            distance: calculateDistance(centerLat, centerLng, center.lat, center.lng)
+        }))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, count);
+}
+
 function loadCenters(centers) {
     // 기존 마커 제거
     markers.forEach(marker => marker.setMap(null));
     markers = [];
     
+    // 지도의 현재 중심점 가져오기
+    const center = map.getCenter();
+    const centerLat = center.y;
+    const centerLng = center.x;
+    
+    // 가까운 센터 10개 찾기
+    const nearestCenters = findNearestCenters(centers, centerLat, centerLng);
+    
     // 각 센터에 대한 마커 생성
-    centers.forEach(center => {
+    nearestCenters.forEach(center => {
         try {
             // 필수 데이터 검증
             if (!center.id || !center.name || !center.lat || !center.lng) {
@@ -1018,6 +1050,12 @@ function initializeMap(initialLat, initialLng, initialZoom) {
         mapContainer.style.height = `${newHeight}px`;
         mapContainer.style.width = '100%';
         map.setSize(new naver.maps.Size(window.innerWidth, newHeight));
+    });
+
+    // 지도 이벤트 리스너 추가
+    naver.maps.Event.addListener(map, 'idle', function() {
+        // 지도 이동이나 확대/축소가 끝났을 때 마커 업데이트
+        loadCenters(centersData);
     });
 
     // 센터 데이터 로드
