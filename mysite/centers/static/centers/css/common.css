@@ -7,11 +7,10 @@
    - 100vh 높이와 flex 레이아웃 설정
    ========================================================================== */
 .app-container {
-    height: 100vh !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-    background: none !important;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: none;
 }
 
 /* Main Content Area
@@ -19,20 +18,28 @@
    - flex: 1로 남은 공간을 모두 차지
    ========================================================================== */
 .main-content {
-    flex: 1 !important;
-    /* height: calc(100vh - 64px) !important; */
-    min-height: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: hidden !important;
-    background: none !important;
+    flex: 1;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    background: none;
+}
+
+/* Map Container
+   - 지도 컨테이너 스타일
+   ========================================================================== */
+#map, .map-container {
+    height: calc(100vh - 64px);
+    margin: 0;
+    padding: 0;
+    position: relative;
 }
 
 /* Scrollable Content
    - 스크롤이 필요한 컨텐츠 영역
    ========================================================================== */
 .main-content.scrollable {
-    overflow-y: auto !important;
+    overflow-y: auto;
 }
 
 /* ==========================================================================

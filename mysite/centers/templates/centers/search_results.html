@@ -4,30 +4,136 @@
 {% block title %}검색 결과 - MindScanner{% endblock %}
 
 {% block content %}
-    <div class="search-results-container">
-        <h2 class="search-results-title">"{{ query }}" 검색 결과</h2>
-        
-        {% if centers %}
-            <div class="centers-grid">
-                {% for center in centers %}
-                    <div class="center-card">
-                        <h3>{{ center.name }}</h3>
-                        <p><strong>주소:</strong> {{ center.address }}</p>
-                        <p><strong>연락처:</strong> {{ center.phone }}</p>
-                        {% if center.description %}
-                            <p class="center-description">{{ center.description }}</p>
+<style>
+    .search-results-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        height: 100%;
+    }
+
+    .search-results-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .centers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        padding-bottom: 40px;
+    }
+
+    .center-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+
+    .center-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .center-card h3 {
+        margin: 0 0 15px 0;
+        color: #2c3e50;
+        font-size: 1.2em;
+    }
+
+    .center-card p {
+        margin: 8px 0;
+        color: #666;
+        font-size: 0.9em;
+    }
+
+    .center-description {
+        font-size: 0.85em;
+        color: #777;
+        margin: 10px 0;
+        padding: 5px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .card-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .center-link {
+        display: inline-block;
+        padding: 8px 15px;
+        background-color: #3498db;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 0.9em;
+        transition: background-color 0.2s;
+    }
+
+    .center-link:hover {
+        background-color: #2980b9;
+    }
+
+    .no-results {
+        text-align: center;
+        color: #666;
+        font-size: 1.1em;
+        margin-top: 40px;
+    }
+
+    /* 설명 텍스트 스크롤바 스타일링 */
+    .center-description::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .center-description::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    .center-description::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+
+    .center-description::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+</style>
+
+<div class="search-results-container">
+    <h2 class="search-results-title">"{{ query }}" 검색 결과</h2>
+    
+    {% if centers %}
+        <div class="centers-grid">
+            {% for center in centers %}
+                <div class="center-card">
+                    <h3>{{ center.name }}</h3>
+                    <p><strong>주소:</strong> {{ center.address }}</p>
+                    <p><strong>연락처:</strong> {{ center.phone }}</p>
+                    {% if center.description %}
+                        <p class="center-description" title="{{ center.description }}">{{ center.description|truncatechars:20 }}</p>
+                    {% endif %}
+                    <div class="card-buttons">
+                        <a href="/?center_id={{ center.id }}" class="center-link">지도에서 보기</a>
+                        {% if center.url %}
+                            <a href="{{ center.url }}" target="_blank" class="center-link">웹사이트 방문</a>
                         {% endif %}
-                        <div class="card-buttons">
-                            <a href="/?center_id={{ center.id }}" class="center-link">지도에서 보기</a>
-                            {% if center.url %}
-                                <a href="{{ center.url }}" target="_blank" class="center-link">웹사이트 방문</a>
-                            {% endif %}
-                        </div>
                     </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="no-results">검색 결과가 없습니다.</p>
-        {% endif %}
-    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="no-results">검색 결과가 없습니다.</p>
+    {% endif %}
+</div>
 {% endblock %}
