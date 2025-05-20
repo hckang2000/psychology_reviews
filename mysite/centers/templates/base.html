@@ -246,5 +246,13 @@
     <!-- JavaScript -->
     <script src="{% static 'centers/script.js' %}"></script>
     {% block extra_js %}{% endblock %}
+    <script>
+    function setRealVh() {
+        document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
+    }
+    window.addEventListener('resize', setRealVh);
+    window.addEventListener('orientationchange', setRealVh);
+    setRealVh();
+    </script>
 </body>
 </html> 
