@@ -21,6 +21,102 @@ import io
 import tempfile
 from datetime import datetime
 
+# CSV Import Mixin - 공통 로직 분리
+class CSVImportMixin:
+    """CSV 업로드 공통 기능을 제공하는 Mixin"""
+    
+    def init_progress_tracking(self, request, total_rows):
+        """진행 상황 추적 초기화"""
+        request.session['import_progress'] = {
+            'total': total_rows,
+            'processed': 0,
+            'success': 0,
+            'errors': []
+        }
+    
+    def update_progress(self, request, success=True, error_msg=None, row_num=None):
+        """진행 상황 업데이트"""
+        if success:
+            request.session['import_progress']['success'] += 1
+        else:
+            request.session['import_progress']['errors'].append({
+                'row': row_num,
+                'error': error_msg
+            })
+        request.session['import_progress']['processed'] += 1
+        request.session.modified = True
+    
+    def clear_progress(self, request):
+        """진행 상황 데이터 정리"""
+        if 'import_progress' in request.session:
+            del request.session['import_progress']
+    
+    def validate_csv_file(self, csv_file):
+        """CSV 파일 유효성 검사"""
+        if not csv_file:
+            raise ValueError('CSV 파일을 선택해주세요.')
+        if not csv_file.name.endswith('.csv'):
+            raise ValueError('CSV 파일만 업로드 가능합니다.')
+    
+    def read_csv_data(self, csv_file):
+        """CSV 데이터 읽기"""
+        csv_content = csv_file.read().decode('utf-8-sig')
+        csv_reader = csv.DictReader(
+            csv_content.splitlines(),
+            quoting=csv.QUOTE_ALL,
+            skipinitialspace=True
+        )
+        data_rows = list(csv_reader)
+        if not data_rows:
+            raise ValueError('CSV 파일에 유효한 데이터가 없습니다.')
+        return data_rows, csv_reader.fieldnames
+    
+    def validate_required_fields(self, data_rows, required_fields):
+        """필수 필드 검증"""
+        for row in data_rows:
+            for field in required_fields:
+                if field not in row or not row[field].strip():
+                    raise ValueError(f'필수 필드 {field}가 누락되었습니다.')
+    
+    def extract_images_from_zip(self, zip_file):
+        """ZIP 파일에서 이미지를 딕셔너리로 추출"""
+        image_dict = {}
+        if zip_file:
+            with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+                for filename in zip_ref.namelist():
+                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                        image_data = zip_ref.read(filename)
+                        # 이미지 유효성 검사
+                        try:
+                            Image.open(io.BytesIO(image_data))
+                            image_dict[os.path.basename(filename)] = image_data
+                        except:
+                            continue
+        return image_dict
+    
+    def save_image(self, image_data, file_path):
+        """이미지 파일 저장"""
+        os.makedirs(os.path.dirname(os.path.join(settings.MEDIA_ROOT, file_path)), exist_ok=True)
+        default_storage.save(file_path, ContentFile(image_data))
+        return file_path
+    
+    def process_batch(self, data_rows, batch_size=10):
+        """배치 단위로 데이터 처리"""
+        for i in range(0, len(data_rows), batch_size):
+            yield i, data_rows[i:i + batch_size]
+    
+    def get_success_response(self, request):
+        """성공 응답 생성"""
+        progress = request.session.get('import_progress', {})
+        success_count = progress.get('success', 0)
+        error_count = len(progress.get('errors', []))
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'CSV 파일이 성공적으로 업로드되었습니다. (성공: {success_count}, 실패: {error_count})',
+            'redirect': '../'
+        })
+
 # Inline for managing images within the Center admin
 class CenterImageInline(admin.TabularInline):
     model = CenterImage
@@ -330,7 +426,7 @@ class ReviewAdmin(admin.ModelAdmin):
     list_filter = ('center', 'user', 'rating', 'date')
 
 @admin.register(Therapist)
-class TherapistAdmin(admin.ModelAdmin):
+class TherapistAdmin(CSVImportMixin, admin.ModelAdmin):
     list_display = ('name', 'center', 'specialty', 'created_at')
     search_fields = ('name', 'specialty')
     list_filter = ('center', 'created_at')
@@ -350,155 +446,78 @@ class TherapistAdmin(admin.ModelAdmin):
             return JsonResponse(progress)
         return JsonResponse({'error': 'Invalid request method'})
 
+    def create_therapist_from_row(self, row, center, image_dict):
+        """CSV 행에서 상담사 객체 생성"""
+        therapist = Therapist(
+            center=center,
+            name=row['name'].strip(),
+            specialty=row.get('specialty', '').strip(),
+            description=row.get('description', '').strip(),
+            experience=int(row.get('experience', 0) or 0)
+        )
+        therapist.save()
+        
+        # 이미지 처리
+        if row.get('image_filename') and image_dict:
+            image_filename = row['image_filename']
+            image_data = image_dict.get(image_filename)
+            if image_data:
+                file_path = f'therapists/{center.name}/{therapist.name}/{image_filename}'
+                self.save_image(image_data, file_path)
+                therapist.photo = file_path
+                therapist.save()
+                print(f"이미지 처리 성공: {file_path}")
+            else:
+                print(f"이미지 처리 실패: {image_filename}")
+        
+        return therapist
+
     def import_csv(self, request):
-        if request.method == "POST":
+        if request.method != "POST":
+            form = TherapistCsvImportForm()
+            return render(request, "centers/admin/therapist_csv_form.html", {"form": form})
+        
+        try:
+            # 파일 및 센터 검증
             csv_file = request.FILES.get("csv_file")
             image_zip = request.FILES.get("image_zip")
             center_id = request.POST.get("center")
             
-            print("=== CSV 업로드 시작 ===")
-            print(f"CSV 파일: {csv_file}")
-            print(f"이미지 ZIP: {image_zip}")
-            print(f"상담소 ID: {center_id}")
-            
-            if not csv_file:
-                print("오류: CSV 파일이 없습니다.")
-                return JsonResponse({'error': 'CSV 파일을 선택해주세요.'}, status=400)
-                
-            if not csv_file.name.endswith('.csv'):
-                print("오류: CSV 파일 형식이 아닙니다.")
-                return JsonResponse({'error': 'CSV 파일만 업로드 가능합니다.'}, status=400)
-            
+            self.validate_csv_file(csv_file)
             if not center_id:
-                print("오류: 상담소가 선택되지 않았습니다.")
-                return JsonResponse({'error': '상담소를 선택해주세요.'}, status=400)
+                raise ValueError('상담소를 선택해주세요.')
             
-            try:
-                center = Center.objects.get(id=center_id)
-                print(f"선택된 상담소: {center.name}")
-                
-                # CSV 파일을 바이트로 읽기
-                csv_content = csv_file.read().decode('utf-8-sig')
-                
-                # CSV 리더 설정 - 따옴표로 묶인 데이터 처리
-                csv_reader = csv.DictReader(
-                    csv_content.splitlines(),
-                    quoting=csv.QUOTE_ALL,  # 모든 필드를 따옴표로 처리
-                    skipinitialspace=True  # 따옴표 안의 공백 유지
-                )
-                
-                # 데이터 행 읽기
-                data_rows = list(csv_reader)
-                
-                if not data_rows:
-                    print("오류: CSV 파일에 유효한 데이터가 없습니다.")
-                    return JsonResponse({'error': 'CSV 파일에 유효한 데이터가 없습니다.'}, status=400)
-                
-                print("CSV 필드명:", csv_reader.fieldnames)
-                print("첫 번째 행 데이터:", data_rows[0])
-                
-                # 필수 필드 확인
-                required_fields = ['name']
-                for row in data_rows:
-                    for field in required_fields:
-                        if field not in row or not row[field].strip():
-                            print(f"오류: 필수 필드 {field}가 누락되었습니다.")
-                            print(f"행 데이터: {row}")
-                            return JsonResponse({'error': f'필수 필드 {field}가 누락되었습니다.'}, status=400)
-                
-                # 이미지 ZIP을 한 번만 열어서 딕셔너리로 저장
-                image_dict = {}
-                if image_zip:
-                    with zipfile.ZipFile(image_zip, 'r') as zip_ref:
-                        for filename in zip_ref.namelist():
-                            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                                image_data = zip_ref.read(filename)
-                                image_dict[os.path.basename(filename)] = image_data
-                
-                # Initialize progress tracking
-                request.session['import_progress'] = {
-                    'total': len(data_rows),
-                    'processed': 0,
-                    'success': 0,
-                    'errors': []
-                }
-                print(f"처리할 총 행 수: {len(data_rows)}")
-                
-                # Process rows in batches
-                batch_size = 10
-                for i in range(0, len(data_rows), batch_size):
-                    batch = data_rows[i:i + batch_size]
-                    print(f"=== 배치 처리 시작 (행 {i+1} ~ {i+len(batch)}) ===")
-                    with transaction.atomic():
-                        for row in batch:
-                            try:
-                                print(f"상담사 생성 시도: {row['name']}")
-                                # Create therapist
-                                therapist = Therapist(
-                                    center=center,
-                                    name=row['name'].strip(),
-                                    specialty=row.get('specialty', '').strip(),
-                                    description=row.get('description', '').strip(),
-                                    experience=int(row.get('experience', 0) or 0)
-                                )
-                                therapist.save()
-                                print(f"상담사 생성 성공: {therapist.name}")
-                                
-                                # Process therapist image if exists
-                                if row.get('image_filename') and image_dict:
-                                    image_filename = row['image_filename']
-                                    image_data = image_dict.get(image_filename)
-                                    if image_data:
-                                        file_path = f'therapists/{center.name}/{therapist.name}/{image_filename}'
-                                        os.makedirs(os.path.dirname(os.path.join(settings.MEDIA_ROOT, file_path)), exist_ok=True)
-                                        default_storage.save(file_path, ContentFile(image_data))
-                                        therapist.photo = file_path
-                                        therapist.save()
-                                        print(f"이미지 처리 성공: {file_path}")
-                                    else:
-                                        print(f"이미지 처리 실패: {image_filename}")
-                                
-                                request.session['import_progress']['success'] += 1
-                            except Exception as e:
-                                print(f"오류 발생: {str(e)}")
-                                print(f"오류가 발생한 행: {row}")
-                                request.session['import_progress']['errors'].append({
-                                    'row': i + batch.index(row) + 1,
-                                    'error': str(e)
-                                })
-                            
-                            request.session['import_progress']['processed'] += 1
-                            request.session.modified = True
-                            print(f"진행 상황: {request.session['import_progress']['processed']}/{request.session['import_progress']['total']}")
-                
-                # Final success message
-                success_count = request.session['import_progress']['success']
-                error_count = len(request.session['import_progress']['errors'])
-                print(f"처리 완료: 성공 {success_count}, 실패 {error_count}")
-                
-                response_data = {
-                    'success': True,
-                    'message': f'CSV 파일이 성공적으로 업로드되었습니다. (성공: {success_count}, 실패: {error_count})',
-                    'redirect': '../'
-                }
-                
-                # Clear progress data
-                del request.session['import_progress']
-                
-                return JsonResponse(response_data)
-                
-            except Exception as e:
-                print(f"전체 처리 중 오류 발생: {str(e)}")
-                print(f"오류 상세 정보: {type(e).__name__}")
-                import traceback
-                print(traceback.format_exc())
-                return JsonResponse({'error': f'CSV 파일 처리 중 오류가 발생했습니다: {str(e)}'}, status=500)
-        
-        form = TherapistCsvImportForm()
-        payload = {"form": form}
-        return render(
-            request, "centers/admin/therapist_csv_form.html", payload
-        )
+            center = Center.objects.get(id=center_id)
+            
+            # CSV 데이터 읽기 및 검증
+            data_rows, fieldnames = self.read_csv_data(csv_file)
+            self.validate_required_fields(data_rows, ['name'])
+            
+            # 이미지 추출
+            image_dict = self.extract_images_from_zip(image_zip)
+            
+            # 진행 상황 추적 초기화
+            self.init_progress_tracking(request, len(data_rows))
+            
+            # 배치 처리
+            for i, batch in self.process_batch(data_rows):
+                with transaction.atomic():
+                    for row in batch:
+                        try:
+                            self.create_therapist_from_row(row, center, image_dict)
+                            self.update_progress(request, success=True)
+                        except Exception as e:
+                            self.update_progress(request, success=False, 
+                                               error_msg=str(e), 
+                                               row_num=i + batch.index(row) + 1)
+            
+            # 성공 응답
+            response = self.get_success_response(request)
+            self.clear_progress(request)
+            return response
+            
+        except Exception as e:
+            return JsonResponse({'error': f'CSV 파일 처리 중 오류가 발생했습니다: {str(e)}'}, status=500)
 
 @admin.register(ExternalReview)
 class ExternalReviewAdmin(admin.ModelAdmin):

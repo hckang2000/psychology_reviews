@@ -53,17 +53,17 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 64px;
-    background: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
+    height: var(--header-height);
+    background: var(--background-white);
+    box-shadow: var(--shadow-md);
+    z-index: var(--z-header);
 }
 
 .header-content {
     max-width: 1200px;
     height: 100%;
     margin: 0 auto;
-    padding: 0 1rem;
+    padding: 0 var(--spacing-md);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -77,20 +77,20 @@ body {
     font-family: 'Poppins', sans-serif;
     font-size: 1.5rem;
     font-weight: 600;
-    color: #4a90e2;
+    color: var(--primary-color);
     text-decoration: none;
     letter-spacing: -0.5px;
-    transition: color 0.2s ease;
+    transition: color var(--transition-fast);
 }
 
 .logo:hover {
-    color: #357abd;
+    color: var(--primary-hover);
 }
 
 .header-right {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--spacing-sm);
 }
 
 /* Icon button styles */
@@ -100,18 +100,18 @@ body {
     padding: 0;
     border: none;
     background: none;
-    color: #666;
+    color: var(--text-gray);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 .icon-button:hover {
     background-color: rgba(0, 0, 0, 0.05);
-    color: #4a90e2;
+    color: var(--primary-color);
 }
 
 .icon-button i {
@@ -125,11 +125,11 @@ body {
     left: 0;
     right: 0;
     height: 100%;
-    background: white;
-    padding: 0 1rem;
+    background: var(--background-white);
+    padding: 0 var(--spacing-md);
     display: none;
     align-items: center;
-    animation: fadeIn 0.2s ease;
+    animation: fadeIn var(--transition-fast);
 }
 
 .search-container.active {
@@ -152,14 +152,14 @@ body {
     border: 1px solid #ddd;
     border-radius: 20px;
     font-size: 1rem;
-    background: #f8f9fa;
-    transition: all 0.2s ease;
+    background: var(--background-gray);
+    transition: all var(--transition-fast);
 }
 
 .search-input:focus {
     outline: none;
-    border-color: #4a90e2;
-    background: white;
+    border-color: var(--primary-color);
+    background: var(--background-white);
     box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
 }
 
@@ -188,10 +188,46 @@ body {
     }
 }
 
+/* Loading Spinner */
+.loading-spinner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--z-loading);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-normal), visibility var(--transition-normal);
+}
+
+.loading-spinner.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* Mobile styles */
 @media (max-width: 768px) {
     .header {
-        height: 56px;
+        height: var(--header-height-mobile);
     }
 
     .logo {
@@ -1825,42 +1861,4 @@ body.sidebar-open {
         font-size: 0.9rem;
         padding: 1rem;
     }
-}
-
-/* Loading Spinner
-   - 페이지 로딩 중 표시되는 스피너
-   ========================================================================== */
-.loading-spinner {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.9);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-.loading-spinner.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-.spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #4A90E2;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
 }
