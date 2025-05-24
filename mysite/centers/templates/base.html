@@ -2,7 +2,12 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- iOS Safari 호환성을 위한 메타태그 추가 -->
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-touch-fullscreen" content="yes">
     {% load static %}
     
     <!-- 기본 메타 태그 -->
@@ -253,54 +258,5 @@
     <!-- JavaScript -->
     <script src="{% static 'centers/script.js' %}"></script>
     {% block extra_js %}{% endblock %}
-    <script>
-    function setRealVh() {
-        document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
-    }
-    window.addEventListener('resize', setRealVh);
-    window.addEventListener('orientationchange', setRealVh);
-    setRealVh();
-
-    // iOS Safari에서 스크롤/터치/포커스 시에도 vh 갱신
-    function isIOS() {
-        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    }
-    if (isIOS()) {
-        window.addEventListener('focusin', setRealVh);   // 키보드 올라올 때
-        window.addEventListener('focusout', setRealVh);  // 키보드 내려갈 때
-        window.addEventListener('scroll', setRealVh);    // 스크롤 할 때
-        window.addEventListener('touchmove', setRealVh); // 터치 이동할 때
-    }
-
-    // 로딩 스피너 제어
-    const loadingSpinner = document.querySelector('.loading-spinner');
-    
-    // 페이지 로딩 시작
-    window.addEventListener('loadstart', () => {
-        loadingSpinner.classList.add('active');
-    });
-
-    // 페이지 로딩 완료
-    window.addEventListener('load', () => {
-        loadingSpinner.classList.remove('active');
-    });
-
-    // AJAX 요청 시 로딩 스피너 표시
-    document.addEventListener('DOMContentLoaded', () => {
-        const originalFetch = window.fetch;
-        window.fetch = function() {
-            loadingSpinner.classList.add('active');
-            return originalFetch.apply(this, arguments)
-                .then(response => {
-                    loadingSpinner.classList.remove('active');
-                    return response;
-                })
-                .catch(error => {
-                    loadingSpinner.classList.remove('active');
-                    throw error;
-                });
-        };
-    });
-    </script>
 </body>
 </html> 
