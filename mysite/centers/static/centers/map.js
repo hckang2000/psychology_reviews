@@ -119,6 +119,38 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
+// 센터 유형에 따른 마커 아이콘 생성 함수
+function getMarkerIcon(centerType) {
+    let color = '#6B7280'; // 기본 회색 (gray-500)
+    
+    switch(centerType) {
+        case 'counseling':
+            color = '#3B82F6'; // 파란색 (blue-500)
+            break;
+        case 'clinic':
+            color = '#10B981'; // 초록색 (green-500) 
+            break;
+        default:
+            color = '#6B7280'; // 회색 (gray-500)
+    }
+    
+    return {
+        content: `
+            <div style="
+                background-color: ${color};
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                border: 3px solid white;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                position: relative;
+            "></div>
+        `,
+        size: new naver.maps.Size(30, 30),
+        anchor: new naver.maps.Point(15, 15)
+    };
+}
+
 // 가까운 센터 10개 찾기
 function findNearestCenters(centers, centerLat, centerLng, count = 10) {
     return centers
@@ -161,7 +193,8 @@ function loadCenters(centers) {
             const marker = new naver.maps.Marker({
                 position: new naver.maps.LatLng(center.lat, center.lng),
                 map: map,
-                title: center.name
+                title: center.name,
+                icon: getMarkerIcon(center.type)
             });
 
             // 마커 클릭 이벤트
@@ -206,7 +239,6 @@ function createTherapistCard(therapist) {
             </div>
             <div class="therapist-info">
                 <h4 class="therapist-name">${therapist.name}</h4>
-                <p class="therapist-experience">경력 ${therapist.experience}년</p>
                 <p class="therapist-specialty">${therapist.specialty || '전문 분야 정보 없음'}</p>
                 <div class="therapist-description hidden">${therapist.description || ''}</div>
             </div>
@@ -219,7 +251,6 @@ function createTherapistCard(therapist) {
         showTherapistModal({
             photo: therapist.photo || '',
             name: therapist.name,
-            experience: therapist.experience,
             specialty: therapist.specialty || '전문 분야 정보 없음',
             description: therapist.description || ''
         });
@@ -269,6 +300,29 @@ function showCenterDetails(center) {
     
     // 상담센터 정보 표시
     document.getElementById('centerName').textContent = center.name;
+    
+    // Type 배지 설정
+    const typeBadge = document.getElementById('centerTypeBadge');
+    
+    console.log('center type:', center.type);
+    console.log('typeBadge element:', typeBadge);
+    
+    if (typeBadge) {
+        if (center.type === 'counseling') {
+            typeBadge.textContent = '심리상담센터';
+            typeBadge.className = 'inline-block px-3 py-1 text-sm font-medium text-white bg-blue-500 rounded-full';
+        } else if (center.type === 'clinic') {
+            typeBadge.textContent = '정신건강의학과';
+            typeBadge.className = 'inline-block px-3 py-1 text-sm font-medium text-white bg-green-500 rounded-full';
+        } else {
+            typeBadge.textContent = '미분류';
+            typeBadge.className = 'inline-block px-3 py-1 text-sm font-medium text-white bg-gray-500 rounded-full';
+        }
+        console.log('Type badge set to:', typeBadge.textContent, typeBadge.className);
+    } else {
+        console.error('Type badge element not found');
+    }
+    
     document.getElementById('centerAddress').textContent = center.address;
     document.getElementById('centerPhone').textContent = center.phone;
     

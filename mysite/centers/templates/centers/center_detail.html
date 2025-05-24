@@ -139,7 +139,27 @@
 
     <!-- Main Center Information -->
     <div id="center-info" class="max-w-screen-md mx-auto p-6">
-        <h2 class="text-3xl font-bold mb-4">{{ center.name }}</h2>
+        <h2 class="text-3xl font-bold mb-4">
+            {% if center.type == 'counseling' %}
+                <span class="inline-block px-3 py-1 mr-2 text-sm font-medium text-white bg-blue-500 rounded-full">심리상담센터</span>
+            {% elif center.type == 'clinic' %}
+                <span class="inline-block px-3 py-1 mr-2 text-sm font-medium text-white bg-green-500 rounded-full">정신건강의학과</span>
+            {% endif %}
+            {{ center.name }}
+        </h2>
+        
+        <!-- 기관유형 정보 추가 -->
+        <div class="mb-2">
+            <strong>기관유형:</strong> 
+            {% if center.type == 'counseling' %}
+                심리상담센터
+            {% elif center.type == 'clinic' %}
+                정신건강의학과
+            {% else %}
+                미분류
+            {% endif %}
+        </div>
+        
         <div class="mb-6">
             <p class="mb-2"><strong>주소:</strong> {{ center.address }}</p>
             <p class="mb-2"><strong>연락처:</strong> {{ center.contact }}</p>
@@ -171,7 +191,6 @@
         </div>
         <div class="modal-therapist-info">
             <h3 id="modalTherapistName" class="modal-therapist-name"></h3>
-            <p id="modalTherapistExperience" class="modal-therapist-experience"></p>
             <p id="modalTherapistSpecialty" class="modal-therapist-specialty"></p>
         </div>
     </div>
@@ -285,7 +304,6 @@
     function showTherapistModal(therapist) {
         document.getElementById('modalTherapistPhoto').src = therapist.photo || '';
         document.getElementById('modalTherapistName').textContent = therapist.name;
-        document.getElementById('modalTherapistExperience').textContent = `경력 ${therapist.experience}년`;
         document.getElementById('modalTherapistSpecialty').textContent = therapist.specialty;
         modal.classList.add('active');
     }
@@ -308,7 +326,6 @@
             const therapistData = {
                 photo: card.querySelector('img')?.src || '',
                 name: card.querySelector('.therapist-name')?.textContent || '',
-                experience: card.querySelector('.therapist-experience')?.textContent?.match(/\d+/)?.[0] || '0',
                 specialty: card.querySelector('.therapist-specialty')?.textContent || ''
             };
             showTherapistModal(therapistData);

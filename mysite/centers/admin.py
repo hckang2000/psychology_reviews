@@ -176,15 +176,18 @@ class ExternalReviewCsvImportForm(forms.Form):
 @admin.register(Center)
 class CenterAdmin(admin.ModelAdmin):
     form = CenterAdminForm
-    list_display = ('name', 'address', 'phone', 'url', 'created_at')
+    list_display = ('name', 'type', 'address', 'phone', 'url', 'created_at')
     search_fields = ('name', 'address')
-    list_filter = ('created_at',)
+    list_filter = ('type', 'created_at',)
     inlines = [TherapistInline, CenterImageInline]  # Display therapists and images inline
     readonly_fields = ('latitude', 'longitude')
     change_list_template = 'centers/admin/center_changelist.html'
     fieldsets = (
         ('기본 정보', {
-            'fields': ('name', 'address', 'phone', 'url')
+            'fields': ('name', 'type', 'address', 'phone', 'url')
+        }),
+        ('운영 정보', {
+            'fields': ('operating_hours',)
         }),
         ('위치 정보', {
             'fields': ('latitude', 'longitude'),
@@ -336,9 +339,17 @@ class CenterAdmin(admin.ModelAdmin):
                                 # Get geocode
                                 latitude, longitude = self.get_geocode(row['address'])
                                 
+                                # Process type field
+                                type_value = row.get('type', '').strip()
+                                if type_value == '정신건강의학과':
+                                    center_type = 'clinic'
+                                else:
+                                    center_type = 'counseling'  # 기본값 또는 "심리상담센터"인 경우
+                                
                                 # Create center
                                 center = Center(
                                     name=row['name'].strip(),
+                                    type=center_type,
                                     address=row['address'].strip(),
                                     phone=row.get('phone', '').strip(),
                                     url=row.get('url', '').strip(),

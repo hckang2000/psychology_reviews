@@ -206,6 +206,17 @@
                             </svg>
                             <h2 class="text-xl font-bold" id="centerName"></h2>
                         </div>
+                        
+                        <!-- 기관유형 정보 추가 -->
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <div class="flex items-center space-x-2">
+                                <span id="centerTypeBadge" class="inline-block px-3 py-1 text-sm font-medium text-white rounded-full"></span>
+                            </div>
+                        </div>
+                        
                         <div class="flex items-center space-x-2">
                             <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
@@ -381,7 +392,6 @@
             </div>
             <div class="modal-therapist-info">
                 <h3 id="modalTherapistName" class="modal-therapist-name"></h3>
-                <p id="modalTherapistExperience" class="modal-therapist-experience"></p>
                 <p id="modalTherapistSpecialty" class="modal-therapist-specialty"></p>
                 <div id="modalTherapistDescription" class="modal-therapist-description"></div>
             </div>
@@ -493,7 +503,6 @@
             console.log('Showing therapist modal with data:', therapist); // 디버깅용 로그
             document.getElementById('modalTherapistPhoto').src = therapist.photo || '';
             document.getElementById('modalTherapistName').textContent = therapist.name;
-            document.getElementById('modalTherapistExperience').textContent = `경력 ${therapist.experience}년`;
             document.getElementById('modalTherapistSpecialty').textContent = therapist.specialty || '전문 분야 정보 없음';
             document.getElementById('modalTherapistDescription').textContent = therapist.description || '상세 설명이 없습니다.';
             modal.classList.add('active');
@@ -517,7 +526,6 @@
                 const therapistData = {
                     photo: card.querySelector('img')?.src || '',
                     name: card.querySelector('.therapist-name')?.textContent || '',
-                    experience: card.querySelector('.therapist-experience')?.textContent?.match(/\d+/)?.[0] || '0',
                     specialty: card.querySelector('.therapist-specialty')?.textContent || '',
                     description: card.querySelector('.therapist-description')?.textContent || ''
                 };
@@ -776,7 +784,36 @@
 
     <script>
         function showCenterInfo(center) {
+            console.log('showCenterInfo 호출됨:', center);
+            console.log('center.type:', center.type);
+            
             document.getElementById('centerName').textContent = center.name;
+            
+            // Type 배지 설정
+            const typeBadge = document.getElementById('centerTypeBadge');
+            
+            console.log('typeBadge 요소:', typeBadge);
+            
+            if (typeBadge) {
+                if (center.type === 'counseling') {
+                    console.log('counseling 타입으로 설정');
+                    typeBadge.textContent = '심리상담센터';
+                    typeBadge.className = 'inline-block px-3 py-1 text-sm font-medium text-white bg-blue-500 rounded-full';
+                } else if (center.type === 'clinic') {
+                    console.log('clinic 타입으로 설정');
+                    typeBadge.textContent = '정신건강의학과';
+                    typeBadge.className = 'inline-block px-3 py-1 text-sm font-medium text-white bg-green-500 rounded-full';
+                } else {
+                    console.log('미분류 타입으로 설정');
+                    typeBadge.textContent = '미분류';
+                    typeBadge.className = 'inline-block px-3 py-1 text-sm font-medium text-white bg-gray-500 rounded-full';
+                }
+                
+                console.log('typeBadge 최종 상태:', typeBadge.textContent, typeBadge.className);
+            } else {
+                console.error('Type badge element not found');
+            }
+            
             document.getElementById('centerAddress').textContent = center.address;
             document.getElementById('centerPhone').textContent = center.phone;
             

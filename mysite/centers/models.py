@@ -5,12 +5,24 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 
 class Center(models.Model):
+    # Type choices
+    TYPE_CHOICES = [
+        ('counseling', '심리상담센터'),
+        ('clinic', '정신건강의학과'),
+    ]
+    
     name = models.CharField(max_length=100)
     address = models.CharField(max_length=200)
     phone = models.CharField(max_length=20, default='')
     url = models.URLField(blank=True, help_text='상담소 웹사이트 URL')
     description = models.TextField(blank=True)
     operating_hours = models.CharField(max_length=100, blank=True)
+    type = models.CharField(
+        max_length=20, 
+        choices=TYPE_CHOICES, 
+        default='counseling',
+        help_text='상담소 유형을 선택하세요'
+    )
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)

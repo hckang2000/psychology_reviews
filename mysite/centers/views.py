@@ -81,6 +81,7 @@ def serialize_center(center, user=None):
         return {
             'id': center.id,
             'name': escape_quotes(center.name),
+            'type': escape_quotes(center.type),
             'lat': lat,
             'lng': lng,
             'address': escape_quotes(center.address),
