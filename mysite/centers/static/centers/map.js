@@ -372,8 +372,62 @@ function showCenterDetails(center) {
     switchTab('info');
 }
 
+// 탭 전환 기능
+function switchTab(tabName) {
+    const tabs = ['info', 'internalReviews', 'externalReviews'];
+    const buttons = tabs.map(tab => document.getElementById(`${tab}Tab`));
+    const contents = tabs.map(tab => document.getElementById(`${tab}Content`));
+    
+    tabs.forEach((tab, index) => {
+        if (tab === tabName) {
+            buttons[index]?.classList.add('bg-blue-500', 'text-white');
+            buttons[index]?.classList.remove('bg-gray-200', 'text-gray-700');
+            contents[index]?.classList.remove('hidden');
+            // 내부리뷰 탭 전환 시 로딩 상태 표시 후 데이터 가져오기
+            if (tab === 'internalReviews') {
+                showReviewsLoading();
+                fetchAndDisplayReviews(1);
+            }
+        } else {
+            buttons[index]?.classList.remove('bg-blue-500', 'text-white');
+            buttons[index]?.classList.add('bg-gray-200', 'text-gray-700');
+            contents[index]?.classList.add('hidden');
+        }
+    });
+}
+
+// 리뷰 로딩 상태 표시 함수
+function showReviewsLoading() {
+    const reviewsList = document.getElementById('reviewsList');
+    const noReviews = document.getElementById('noReviews');
+    const paginationContainer = document.getElementById('reviewsPagination');
+    
+    if (reviewsList) {
+        reviewsList.innerHTML = `
+            <div class="flex items-center justify-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <span class="ml-3 text-gray-600">리뷰를 불러오는 중...</span>
+            </div>
+        `;
+    }
+    
+    if (noReviews) {
+        noReviews.classList.add('hidden');
+    }
+    
+    if (paginationContainer) {
+        paginationContainer.innerHTML = '';
+    }
+}
+
 function fetchAndDisplayReviews(page) {
     console.log('fetchAndDisplayReviews 호출, currentCenterId:', currentCenterId, 'page:', page);
+    
+    // 페이지네이션 클릭 시에만 로딩 표시 (탭 전환 시에는 이미 표시됨)
+    if (page > 1) {
+        showReviewsLoading();
+    }
+    
     fetch(`/reviews/${currentCenterId}/?page=${page}`)
         .then(response => response.json())
         .then(data => {
@@ -381,7 +435,19 @@ function fetchAndDisplayReviews(page) {
             displayReviews(data.reviews, page, data.pagination); // pagination도 전달
         })
         .catch(error => {
-            alert('리뷰를 불러오는데 실패했습니다.');
+            console.error('리뷰 로딩 오류:', error);
+            const reviewsList = document.getElementById('reviewsList');
+            if (reviewsList) {
+                reviewsList.innerHTML = `
+                    <div class="text-center py-8 text-red-500">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>리뷰를 불러오는데 실패했습니다.</p>
+                        <button onclick="fetchAndDisplayReviews(${page})" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            다시 시도
+                        </button>
+                    </div>
+                `;
+            }
         });
 }
 
@@ -609,29 +675,6 @@ function initializeSwipers() {
         navigation: {
             nextEl: '.swiper-button-next',
             prevEl: '.swiper-button-prev',
-        }
-    });
-}
-
-// 탭 전환 기능
-function switchTab(tabName) {
-    const tabs = ['info', 'internalReviews', 'externalReviews'];
-    const buttons = tabs.map(tab => document.getElementById(`${tab}Tab`));
-    const contents = tabs.map(tab => document.getElementById(`${tab}Content`));
-    
-    tabs.forEach((tab, index) => {
-        if (tab === tabName) {
-            buttons[index]?.classList.add('bg-blue-500', 'text-white');
-            buttons[index]?.classList.remove('bg-gray-200', 'text-gray-700');
-            contents[index]?.classList.remove('hidden');
-            // 내부리뷰 탭 전환 시 항상 서버에서 최신 리뷰 목록을 받아와서 렌더링
-            if (tab === 'internalReviews') {
-                fetchAndDisplayReviews(1);
-            }
-        } else {
-            buttons[index]?.classList.remove('bg-blue-500', 'text-white');
-            buttons[index]?.classList.add('bg-gray-200', 'text-gray-700');
-            contents[index]?.classList.add('hidden');
         }
     });
 }

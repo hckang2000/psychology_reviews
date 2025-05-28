@@ -251,9 +251,61 @@ html, body, .app-container {
     animation: spin 1s linear infinite;
 }
 
+/* 리뷰 로딩 스피너 애니메이션 */
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* 리뷰 로딩 상태 스타일 */
+.reviews-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+.reviews-loading .spinner-small {
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid #e5e7eb;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 0.75rem;
+}
+
+/* 에러 상태 스타일 */
+.reviews-error {
+    text-align: center;
+    padding: 2rem;
+    color: #ef4444;
+}
+
+.reviews-error i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.reviews-error button {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.reviews-error button:hover {
+    background-color: #2563eb;
 }
 
 /* Mobile styles */
