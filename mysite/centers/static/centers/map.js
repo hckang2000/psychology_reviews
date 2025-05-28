@@ -481,28 +481,41 @@ function displayReviews(reviews, page = 1, pagination = null) {
         let commentsHtml = '';
         if (review.comments && review.comments.length > 0) {
             commentsHtml = `
-                <div class="mt-4 pl-4 border-l-4 border-blue-100 bg-blue-50 rounded-r-lg py-3">
-                    <div class="flex items-center mb-3">
-                        <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-2">
-                            <i class="fas fa-building text-white text-xs"></i>
+                <div class="mt-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                    <div class="flex items-center mb-4">
+                        <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mr-3 shadow-sm">
+                            <i class="fas fa-building text-white text-sm"></i>
                         </div>
-                        <span class="text-sm font-medium text-blue-700">센터 답변</span>
+                        <div class="flex items-center">
+                            <span class="text-base font-semibold text-blue-800">센터 답변</span>
+                            <div class="ml-2 px-2 py-1 bg-blue-200 text-blue-700 text-xs font-medium rounded-full">
+                                공식
+                            </div>
+                        </div>
                     </div>
                     <div class="space-y-3">
                         ${review.comments.map(comment => `
-                            <div class="bg-white rounded-lg p-4 shadow-sm border border-blue-200">
-                                <div class="flex justify-between items-start mb-3">
-                                    <div class="flex items-center">
-                                        <span class="text-sm font-medium text-gray-700">${comment.author}</span>
-                                        <span class="text-xs text-gray-500 ml-2">${formatDate(comment.created_at)}</span>
-                                        ${comment.updated_at ? `<span class="text-xs text-gray-400 ml-1">(수정됨)</span>` : ''}
+                            <div class="bg-white rounded-lg p-4 shadow-sm border border-blue-150 relative">
+                                <div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-400 to-blue-600 rounded-l-lg"></div>
+                                <div class="pl-3">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-center">
+                                            <div class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center mr-2">
+                                                <i class="fas fa-user-tie text-blue-600 text-xs"></i>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-800">${comment.author}</span>
+                                            <span class="text-xs text-gray-500 ml-2">${formatDate(comment.created_at)}</span>
+                                            ${comment.updated_at ? `<span class="text-xs text-gray-400 ml-1">(수정됨)</span>` : ''}
+                                        </div>
+                                        <div class="flex items-center">
+                                            <div class="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></div>
+                                            <span class="text-xs text-green-600 font-medium">답변완료</span>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center">
-                                        <div class="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
-                                        <span class="text-xs text-green-600 font-medium">공식 답변</span>
+                                    <div class="bg-gray-50 rounded-lg p-3 border-l-4 border-blue-300">
+                                        <p class="text-sm text-gray-700 leading-relaxed">${comment.content.replace(/\n/g, '<br>')}</p>
                                     </div>
                                 </div>
-                                <p class="text-sm text-gray-700 leading-relaxed">${comment.content.replace(/\n/g, '<br>')}</p>
                             </div>
                         `).join('')}
                     </div>
@@ -908,44 +921,8 @@ function cancelReviewForm() {
 
 // 리뷰 목록을 새로고침하는 함수
 function refreshReviews(centerId) {
-    fetch(`/reviews/${centerId}/`)
-        .then(response => response.json())
-        .then(data => {
-            const reviewsList = document.getElementById('reviewsList');
-            if (reviewsList && data.reviews) {
-                reviewsList.innerHTML = data.reviews.map(review => {
-                    // rating이 undefined/null이면 5점으로 fallback (임시)
-                    const rating = (review.rating !== undefined && review.rating !== null) ? Number(review.rating) : 5;
-                    return `
-                    <div class="bg-white rounded-lg shadow p-4 space-y-2">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-medium">${review.title}</h4>
-                                <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
-                            </div>
-                            <div class="flex items-center text-yellow-400">
-                                    ${generateStars(rating)}
-                            </div>
-                        </div>
-                        <p class="text-gray-700">${review.content}</p>
-                    </div>
-                    `;
-                }).join('');
-                
-                // "작성된 리뷰가 없습니다" 메시지 처리
-                const noReviews = document.getElementById('noReviews');
-                if (noReviews) {
-                    if (data.reviews.length > 0) {
-                        noReviews.classList.add('hidden');
-                    } else {
-                        noReviews.classList.remove('hidden');
-                    }
-                }
-            }
-        })
-        .catch(error => {
-            console.error('리뷰 목록 새로고침 실패:', error);
-        });
+    // 센터 답변이 포함된 새로운 스타일로 리뷰 목록 새로고침
+    fetchAndDisplayReviews(1);
 }
 
 function showReviewModal() {
@@ -1041,45 +1018,8 @@ function submitReview(event) {
             // 내부리뷰 탭으로 전환
             switchTab('internalReviews');
             
-            // 리뷰 목록 새로고침
-            fetch(`/reviews/${currentCenterId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    const reviewsList = document.getElementById('reviewsList');
-                    if (reviewsList && data.reviews) {
-                        reviewsList.innerHTML = data.reviews.map(review => {
-                            // rating이 undefined/null이면 5점으로 fallback (임시)
-                            const rating = (review.rating !== undefined && review.rating !== null) ? Number(review.rating) : 5;
-                            return `
-                                <div class="bg-white rounded-lg shadow p-4 space-y-2">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <h4 class="font-medium">${review.title}</h4>
-                                            <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
-                                        </div>
-                                        <div class="flex items-center text-yellow-400">
-                                            ${generateStars(rating)}
-                                        </div>
-                                    </div>
-                                    <p class="text-gray-700">${review.content}</p>
-                                </div>
-                            `;
-                        }).join('');
-                        
-                        // "작성된 리뷰가 없습니다" 메시지 처리
-                        const noReviews = document.getElementById('noReviews');
-                        if (noReviews) {
-                            if (data.reviews.length > 0) {
-                                noReviews.classList.add('hidden');
-                            } else {
-                                noReviews.classList.remove('hidden');
-                            }
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('리뷰 목록 새로고침 실패:', error);
-                });
+            // 리뷰 목록 새로고침 - 센터 답변이 포함된 새로운 스타일 적용
+            fetchAndDisplayReviews(1);
         } else {
             throw new Error(data.error || '리뷰 작성에 실패했습니다.');
         }
