@@ -1,0 +1,204 @@
+/* ==========================================================================
+   Center Management Page Styles
+   ========================================================================== */
+
+.center-management {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 5rem;
+}
+
+.management-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius-lg);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.management-header h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.back-button {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.back-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.form-section {
+    background: var(--background-white);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+.section-title {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    outline: none;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.formset-section {
+    margin-top: 2rem;
+}
+
+.formset-item {
+    background: var(--background-light);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    position: relative;
+}
+
+.formset-item.to-delete {
+    opacity: 0.5;
+    background: #fee;
+}
+
+.delete-checkbox {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.delete-checkbox label {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.image-preview {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: var(--border-radius);
+    margin-top: 0.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.therapist-photo-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-top: 0.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.submit-section {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 2px solid var(--border-color);
+}
+
+.submit-button {
+    width: 100%;
+    background: var(--primary-color);
+    color: white;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.submit-button:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.help-text {
+    color: var(--text-light);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .center-management {
+        padding: 1rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .management-header {
+        padding: 1.5rem;
+    }
+    
+    .management-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .form-section {
+        padding: 1.5rem;
+    }
+} 

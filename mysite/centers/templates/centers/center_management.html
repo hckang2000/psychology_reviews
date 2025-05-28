@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ center.name }} 관리{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'centers/css/variables.css' %}">
+<link rel="stylesheet" href="{% static 'centers/css/common.css' %}">
+<link rel="stylesheet" href="{% static 'centers/css/management.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="center-management">
+    <div class="management-header">
+        <a href="{% url 'centers:management_dashboard' %}" class="back-button">
+            ← 대시보드로 돌아가기
+        </a>
+        <h1>📝 {{ center.name }} 관리</h1>
+        <p>센터 정보, 상담사, 이미지를 관리할 수 있습니다.</p>
+    </div>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- 센터 기본 정보 -->
+        <div class="form-section">
+            <h2 class="section-title">🏢 센터 기본 정보</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.name.label_tag }}
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="error-message">{{ form.name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.type.label_tag }}
+                    {{ form.type }}
+                    {% if form.type.errors %}
+                        <div class="error-message">{{ form.type.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                {{ form.address.label_tag }}
+                {{ form.address }}
+                {% if form.address.errors %}
+                    <div class="error-message">{{ form.address.errors.0 }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.phone.label_tag }}
+                    {{ form.phone }}
+                    {% if form.phone.errors %}
+                        <div class="error-message">{{ form.phone.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.url.label_tag }}
+                    {{ form.url }}
+                    {% if form.url.errors %}
+                        <div class="error-message">{{ form.url.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                {{ form.operating_hours.label_tag }}
+                {{ form.operating_hours }}
+                {% if form.operating_hours.errors %}
+                    <div class="error-message">{{ form.operating_hours.errors.0 }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                {{ form.description.label_tag }}
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="error-message">{{ form.description.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 상담사 정보 -->
+        <div class="form-section">
+            <h2 class="section-title">👨‍⚕️ 상담사 정보</h2>
+            
+            {{ therapist_formset.management_form }}
+            {% for form in therapist_formset %}
+                <div class="formset-item">
+                    {% if form.DELETE %}
+                        <div class="delete-checkbox">
+                            {{ form.DELETE }}
+                            {{ form.DELETE.label_tag }}
+                        </div>
+                    {% endif %}
+                    
+                    {{ form.id }}
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            {{ form.name.label_tag }}
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="error-message">{{ form.name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.experience.label_tag }}
+                            {{ form.experience }}
+                            {% if form.experience.errors %}
+                                <div class="error-message">{{ form.experience.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.specialty.label_tag }}
+                        {{ form.specialty }}
+                        {% if form.specialty.errors %}
+                            <div class="error-message">{{ form.specialty.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.description.label_tag }}
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="error-message">{{ form.description.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.photo.label_tag }}
+                        {{ form.photo }}
+                        {% if form.photo.errors %}
+                            <div class="error-message">{{ form.photo.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.instance.photo %}
+                            <img src="{{ form.instance.photo.url }}" alt="상담사 사진" class="therapist-photo-preview">
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 센터 이미지 -->
+        <div class="form-section">
+            <h2 class="section-title">📸 센터 이미지</h2>
+            
+            {{ image_formset.management_form }}
+            {% for form in image_formset %}
+                <div class="formset-item">
+                    {% if form.DELETE %}
+                        <div class="delete-checkbox">
+                            {{ form.DELETE }}
+                            {{ form.DELETE.label_tag }}
+                        </div>
+                    {% endif %}
+                    
+                    {{ form.id }}
+                    
+                    <div class="form-group">
+                        {{ form.image.label_tag }}
+                        {{ form.image }}
+                        {% if form.image.errors %}
+                            <div class="error-message">{{ form.image.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.instance.image %}
+                            <img src="{{ form.instance.image.url }}" alt="센터 이미지" class="image-preview">
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="submit-section">
+            <button type="submit" class="submit-button">
+                💾 변경사항 저장
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+// 폼셋 삭제 체크박스 처리
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteCheckboxes = document.querySelectorAll('input[name$="-DELETE"]');
+    
+    deleteCheckboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            const formsetItem = this.closest('.formset-item');
+            if (this.checked) {
+                formsetItem.classList.add('to-delete');
+            } else {
+                formsetItem.classList.remove('to-delete');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

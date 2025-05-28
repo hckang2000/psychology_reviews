@@ -4,8 +4,8 @@
 
 :root {
     /* Colors */
-    --primary-color: #4A90E2;
-    --primary-hover: #357ABD;
+    --primary-color: #4f46e5;
+    --primary-hover: #4338ca;
     --secondary-color: #3b82f6;
     --text-color: #1f2937;
     --text-light: #6b7280;
@@ -21,7 +21,7 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     
     /* Dimensions */
-    --header-height: 64px;
+    --header-height: 62px;
     --header-height-mobile: 56px;
     --border-radius: 8px;
     --border-radius-lg: 12px;
@@ -35,8 +35,9 @@
     --spacing-xl: 2rem;
     
     /* Transitions */
-    --transition-fast: 0.2s ease;
-    --transition-normal: 0.3s ease;
+    --transition: all 0.3s ease;
+    --transition-fast: all 0.2s ease;
+    --transition-normal: all 0.3s ease;
     --transition-slow: 0.5s ease;
     
     /* Z-index */
@@ -44,6 +45,9 @@
     --z-sidebar: 1050;
     --z-modal: 1100;
     --z-loading: 9999;
+    
+    /* iOS Safari 뷰포트 높이 변수 */
+    --vh: 1vh;
 }
 
 /* ==========================================================================

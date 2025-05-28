@@ -58,6 +58,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'centers/css/variables.css' %}">
     <link rel="stylesheet" href="{% static 'centers/css/common.css' %}">
+    <link rel="stylesheet" href="{% static 'centers/css/alerts.css' %}">
     <link rel="stylesheet" href="{% static 'centers/style.css' %}">
     {% block extra_css %}{% endblock %}
     <style>
@@ -229,6 +230,12 @@
                         <i class="fas fa-user-secret"></i>
                         익명게시판
                     </a>
+                    {% if user.is_authenticated and user.profile.role in 'admin,center_manager' %}
+                        <a href="{% url 'centers:management_dashboard' %}" class="menu-item">
+                            <i class="fas fa-cog"></i>
+                            센터 관리
+                        </a>
+                    {% endif %}
                 </nav>
                 <div class="sidebar-footer">
                     {% if user.is_authenticated %}
@@ -251,11 +258,23 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Django Messages (숨김 처리, JavaScript에서 처리) -->
+            {% if messages %}
+                <div class="django-messages" style="display: none;">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
             {% block content %}{% endblock %}
         </main>
     </div>
 
     <!-- JavaScript -->
+    <script src="{% static 'centers/js/alerts.js' %}"></script>
     <script src="{% static 'centers/script.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>

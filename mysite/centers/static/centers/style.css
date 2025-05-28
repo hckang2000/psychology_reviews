@@ -905,16 +905,22 @@ h1 {
 }
 
 #review-form button {
-    background-color: #d49f00;
+    background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
     cursor: pointer;
+    transition: background-color 0.3s;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
 }
 
 #review-form button:hover {
-    background-color: #b88700;
+    background-color: var(--primary-hover);
+    box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
+    transform: translateY(-1px);
 }
 
 .review {
@@ -1096,10 +1102,10 @@ footer a:hover {
     display: block;
 }
 
-.submit-button {
+.signup-submit-button {
     width: 100%;
     padding: 14px;
-    background: #007bff;
+    background: var(--primary-color);
     color: white;
     border: none;
     border-radius: 8px;
@@ -1107,10 +1113,13 @@ footer a:hover {
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.3s;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
 }
 
-.submit-button:hover {
-    background: #0056b3;
+.signup-submit-button:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
+    transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {
@@ -1126,8 +1135,17 @@ footer a:hover {
         padding: 10px;
     }
     
-    .submit-button {
+    .signup-submit-button {
         padding: 12px;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
     }
 }
 

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}센터 관리 대시보드{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'centers/css/variables.css' %}">
+<link rel="stylesheet" href="{% static 'centers/css/common.css' %}">
+<link rel="stylesheet" href="{% static 'centers/css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="management-dashboard">
+    <div class="dashboard-header">
+        <h1>🏢 센터 관리 대시보드</h1>
+        <p>
+            {% if profile.is_admin %}
+                총관리자로 로그인하셨습니다. 모든 센터를 관리할 수 있습니다.
+            {% else %}
+                센터운영자로 로그인하셨습니다. 담당 센터를 관리할 수 있습니다.
+            {% endif %}
+        </p>
+    </div>
+    
+    {% if centers %}
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ centers.count }}</div>
+                <div class="stat-label">관리 센터 수</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ centers.0.therapists.count|default:0 }}</div>
+                <div class="stat-label">등록된 상담사</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ centers.0.reviews.count|default:0 }}</div>
+                <div class="stat-label">리뷰 수</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ centers.0.images.count|default:0 }}</div>
+                <div class="stat-label">센터 이미지</div>
+            </div>
+        </div>
+        
+        <div class="centers-grid">
+            {% for center in centers %}
+                <div class="center-card">
+                    <h3>{{ center.name }}</h3>
+                    <div class="center-info">
+                        <p><strong>유형:</strong> {{ center.get_type_display }}</p>
+                        <p><strong>주소:</strong> {{ center.address }}</p>
+                        <p><strong>전화번호:</strong> {{ center.phone|default:"미등록" }}</p>
+                        <p><strong>운영시간:</strong> {{ center.operating_hours|default:"미등록" }}</p>
+                        <p><strong>상담사 수:</strong> {{ center.therapists.count }}명</p>
+                        <p><strong>리뷰 수:</strong> {{ center.reviews.count }}개</p>
+                    </div>
+                    <a href="{% url 'centers:center_management' center.pk %}" class="manage-button">
+                        📝 센터 정보 관리
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-centers">
+            <h3>관리할 센터가 없습니다</h3>
+            <p>관리자에게 센터 관리 권한을 요청해주세요.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
-from .models import Center, Review, ExternalReview
-from .forms import ReviewForm
+from .models import Center, Review, ExternalReview, Therapist, CenterImage
+from .forms import ReviewForm, CenterManagementForm, TherapistManagementForm
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
@@ -14,6 +14,13 @@ from django.conf import settings
 import requests
 import csv
 from django.utils.safestring import mark_safe
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import UpdateView, ListView
+from django.contrib import messages
+from django.http import Http404
+from django.forms import inlineformset_factory
+from django.db import transaction
+from django.urls import reverse
 
 # 유틸리티 함수들
 def escape_quotes(text):
@@ -398,3 +405,129 @@ def upload_centers(request):
         return redirect('centers:index')
     
     return render(request, 'centers/upload.html')
+
+class CenterManagerRequiredMixin:
+    """센터 관리자 권한이 필요한 뷰를 위한 Mixin"""
+    
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        
+        if not hasattr(request.user, 'profile'):
+            messages.error(request, '프로필이 설정되지 않았습니다.')
+            return redirect('home')
+        
+        profile = request.user.profile
+        if not (profile.is_admin() or profile.is_center_manager()):
+            messages.error(request, '센터 관리 권한이 없습니다.')
+            return redirect('home')
+        
+        return super().dispatch(request, *args, **kwargs)
+
+class CenterManagementView(CenterManagerRequiredMixin, UpdateView):
+    """센터 정보 관리 뷰"""
+    model = Center
+    form_class = CenterManagementForm
+    template_name = 'centers/center_management.html'
+    context_object_name = 'center'
+    
+    def get_object(self):
+        center_id = self.kwargs.get('pk')
+        center = get_object_or_404(Center, pk=center_id)
+        
+        # 권한 확인
+        profile = self.request.user.profile
+        if not profile.can_manage_center(center):
+            raise Http404("해당 센터를 관리할 권한이 없습니다.")
+        
+        return center
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # 상담사 폼셋 추가
+        TherapistFormSet = inlineformset_factory(
+            Center, Therapist, 
+            form=TherapistManagementForm,
+            extra=1, can_delete=True
+        )
+        
+        # 이미지 폼셋 추가
+        ImageFormSet = inlineformset_factory(
+            Center, CenterImage,
+            fields=('image',),
+            extra=1, can_delete=True
+        )
+        
+        if self.request.POST:
+            context['therapist_formset'] = TherapistFormSet(
+                self.request.POST, self.request.FILES, instance=self.object
+            )
+            context['image_formset'] = ImageFormSet(
+                self.request.POST, self.request.FILES, instance=self.object
+            )
+        else:
+            context['therapist_formset'] = TherapistFormSet(instance=self.object)
+            context['image_formset'] = ImageFormSet(instance=self.object)
+        
+        return context
+    
+    def form_valid(self, form):
+        context = self.get_context_data()
+        therapist_formset = context['therapist_formset']
+        image_formset = context['image_formset']
+        
+        with transaction.atomic():
+            if form.is_valid() and therapist_formset.is_valid() and image_formset.is_valid():
+                self.object = form.save()
+                therapist_formset.instance = self.object
+                therapist_formset.save()
+                image_formset.instance = self.object
+                image_formset.save()
+                
+                messages.success(self.request, '센터 정보가 성공적으로 업데이트되었습니다.')
+                return redirect('centers:center_management', pk=self.object.pk)
+            else:
+                return self.form_invalid(form)
+    
+    def get_success_url(self):
+        return reverse('centers:center_management', kwargs={'pk': self.object.pk})
+
+class CenterListView(CenterManagerRequiredMixin, ListView):
+    """센터 관리자가 관리할 수 있는 센터 목록"""
+    model = Center
+    template_name = 'centers/center_list_management.html'
+    context_object_name = 'centers'
+    
+    def get_queryset(self):
+        profile = self.request.user.profile
+        if profile.is_admin():
+            return Center.objects.all()
+        elif profile.is_center_manager():
+            return Center.objects.filter(id=profile.managed_center.id)
+        return Center.objects.none()
+
+@login_required
+def center_management_dashboard(request):
+    """센터 관리 대시보드"""
+    if not hasattr(request.user, 'profile'):
+        messages.error(request, '프로필이 설정되지 않았습니다.')
+        return redirect('home')
+    
+    profile = request.user.profile
+    if not (profile.is_admin() or profile.is_center_manager()):
+        messages.error(request, '센터 관리 권한이 없습니다.')
+        return redirect('home')
+    
+    # 관리 가능한 센터 목록
+    if profile.is_admin():
+        centers = Center.objects.all()
+    else:
+        centers = Center.objects.filter(id=profile.managed_center.id) if profile.managed_center else Center.objects.none()
+    
+    context = {
+        'centers': centers,
+        'profile': profile,
+    }
+    
+    return render(request, 'centers/management_dashboard.html', context)

@@ -14,4 +14,9 @@ urlpatterns = [
     path('check-auth/', views.check_auth, name='check_auth'),
     path('<int:center_id>/', views.center_detail, name='center_detail'),
     path('review-form/<int:center_id>/', views.review_form, name='review_form'),
+    
+    # 센터 관리 URL
+    path('management/', views.center_management_dashboard, name='management_dashboard'),
+    path('management/centers/', views.CenterListView.as_view(), name='center_list_management'),
+    path('management/center/<int:pk>/', views.CenterManagementView.as_view(), name='center_management'),
 ]

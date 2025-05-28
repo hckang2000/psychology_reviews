@@ -1,0 +1,193 @@
+/* ==========================================================================
+   Alert Messages Styles
+   ========================================================================== */
+
+.alert-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 400px;
+    width: 100%;
+}
+
+.alert {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+    animation: slideInRight 0.4s ease-out;
+    transition: all 0.3s ease;
+}
+
+.alert::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: currentColor;
+}
+
+.alert-icon {
+    font-size: 1.25rem;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.alert-content {
+    flex: 1;
+    font-weight: 500;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.alert-close {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 0.75rem;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+    flex-shrink: 0;
+}
+
+.alert-close:hover {
+    opacity: 1;
+}
+
+/* Success Alert */
+.alert-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.alert-success .alert-icon::before {
+    content: '✓';
+}
+
+/* Error Alert */
+.alert-error,
+.alert-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.alert-error .alert-icon::before,
+.alert-danger .alert-icon::before {
+    content: '✕';
+}
+
+/* Warning Alert */
+.alert-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.alert-warning .alert-icon::before {
+    content: '⚠';
+}
+
+/* Info Alert */
+.alert-info {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+}
+
+.alert-info .alert-icon::before {
+    content: 'ℹ';
+}
+
+/* Progress Bar */
+.alert-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+    animation: progressBar 5s linear forwards;
+}
+
+/* Animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes progressBar {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
+
+.alert.fade-out {
+    animation: slideOutRight 0.3s ease-in forwards;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .alert-container {
+        top: 60px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .alert {
+        padding: 0.875rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .alert-icon {
+        font-size: 1.1rem;
+        margin-right: 0.5rem;
+    }
+    
+    .alert-close {
+        margin-left: 0.5rem;
+    }
+}
+
+/* ==========================================================================
+   Dark Mode Support
+   ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+    .alert {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+} 

@@ -199,6 +199,71 @@ class CenterAdmin(admin.ModelAdmin):
         }),
     )
 
+    def get_queryset(self, request):
+        """사용자 권한에 따라 센터 목록을 필터링"""
+        qs = super().get_queryset(request)
+        
+        # 슈퍼유저는 모든 센터 접근 가능
+        if request.user.is_superuser:
+            return qs
+        
+        # 프로필이 없는 경우 빈 쿼리셋 반환
+        if not hasattr(request.user, 'profile'):
+            return qs.none()
+        
+        profile = request.user.profile
+        
+        # 총관리자는 모든 센터 접근 가능
+        if profile.is_admin():
+            return qs
+        
+        # 센터운영자는 자신이 관리하는 센터만 접근 가능
+        if profile.is_center_manager() and profile.managed_center:
+            return qs.filter(id=profile.managed_center.id)
+        
+        # 일반 사용자는 접근 불가
+        return qs.none()
+    
+    def has_add_permission(self, request):
+        """센터 추가 권한 확인"""
+        if request.user.is_superuser:
+            return True
+        
+        if hasattr(request.user, 'profile'):
+            return request.user.profile.is_admin()
+        
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """센터 수정 권한 확인"""
+        if request.user.is_superuser:
+            return True
+        
+        if not hasattr(request.user, 'profile'):
+            return False
+        
+        profile = request.user.profile
+        
+        # 총관리자는 모든 센터 수정 가능
+        if profile.is_admin():
+            return True
+        
+        # 센터운영자는 자신이 관리하는 센터만 수정 가능
+        if profile.is_center_manager() and obj:
+            return profile.managed_center == obj
+        
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        """센터 삭제 권한 확인 (총관리자만 가능)"""
+        if request.user.is_superuser:
+            return True
+        
+        if hasattr(request.user, 'profile'):
+            return request.user.profile.is_admin()
+        
+        return False
+
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
@@ -442,6 +507,82 @@ class TherapistAdmin(CSVImportMixin, admin.ModelAdmin):
     search_fields = ('name', 'specialty')
     list_filter = ('center', 'created_at')
     change_list_template = 'centers/admin/therapist_changelist.html'
+
+    def get_queryset(self, request):
+        """사용자 권한에 따라 상담사 목록을 필터링"""
+        qs = super().get_queryset(request)
+        
+        # 슈퍼유저는 모든 상담사 접근 가능
+        if request.user.is_superuser:
+            return qs
+        
+        # 프로필이 없는 경우 빈 쿼리셋 반환
+        if not hasattr(request.user, 'profile'):
+            return qs.none()
+        
+        profile = request.user.profile
+        
+        # 총관리자는 모든 상담사 접근 가능
+        if profile.is_admin():
+            return qs
+        
+        # 센터운영자는 자신이 관리하는 센터의 상담사만 접근 가능
+        if profile.is_center_manager() and profile.managed_center:
+            return qs.filter(center=profile.managed_center)
+        
+        # 일반 사용자는 접근 불가
+        return qs.none()
+    
+    def has_add_permission(self, request):
+        """상담사 추가 권한 확인"""
+        if request.user.is_superuser:
+            return True
+        
+        if hasattr(request.user, 'profile'):
+            profile = request.user.profile
+            return profile.is_admin() or profile.is_center_manager()
+        
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """상담사 수정 권한 확인"""
+        if request.user.is_superuser:
+            return True
+        
+        if not hasattr(request.user, 'profile'):
+            return False
+        
+        profile = request.user.profile
+        
+        # 총관리자는 모든 상담사 수정 가능
+        if profile.is_admin():
+            return True
+        
+        # 센터운영자는 자신이 관리하는 센터의 상담사만 수정 가능
+        if profile.is_center_manager() and obj:
+            return profile.managed_center == obj.center
+        
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        """상담사 삭제 권한 확인"""
+        if request.user.is_superuser:
+            return True
+        
+        if not hasattr(request.user, 'profile'):
+            return False
+        
+        profile = request.user.profile
+        
+        # 총관리자는 모든 상담사 삭제 가능
+        if profile.is_admin():
+            return True
+        
+        # 센터운영자는 자신이 관리하는 센터의 상담사만 삭제 가능
+        if profile.is_center_manager() and obj:
+            return profile.managed_center == obj.center
+        
+        return False
 
     def get_urls(self):
         urls = super().get_urls()
@@ -693,3 +834,79 @@ class ExternalReviewAdmin(admin.ModelAdmin):
 class CenterImageAdmin(admin.ModelAdmin):
     list_display = ('center', 'image', 'created_at')
     list_filter = ('center', 'created_at')
+
+    def get_queryset(self, request):
+        """사용자 권한에 따라 센터 이미지 목록을 필터링"""
+        qs = super().get_queryset(request)
+        
+        # 슈퍼유저는 모든 센터 이미지 접근 가능
+        if request.user.is_superuser:
+            return qs
+        
+        # 프로필이 없는 경우 빈 쿼리셋 반환
+        if not hasattr(request.user, 'profile'):
+            return qs.none()
+        
+        profile = request.user.profile
+        
+        # 총관리자는 모든 센터 이미지 접근 가능
+        if profile.is_admin():
+            return qs
+        
+        # 센터운영자는 자신이 관리하는 센터의 이미지만 접근 가능
+        if profile.is_center_manager() and profile.managed_center:
+            return qs.filter(center=profile.managed_center)
+        
+        # 일반 사용자는 접근 불가
+        return qs.none()
+    
+    def has_add_permission(self, request):
+        """센터 이미지 추가 권한 확인"""
+        if request.user.is_superuser:
+            return True
+        
+        if hasattr(request.user, 'profile'):
+            profile = request.user.profile
+            return profile.is_admin() or profile.is_center_manager()
+        
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """센터 이미지 수정 권한 확인"""
+        if request.user.is_superuser:
+            return True
+        
+        if not hasattr(request.user, 'profile'):
+            return False
+        
+        profile = request.user.profile
+        
+        # 총관리자는 모든 센터 이미지 수정 가능
+        if profile.is_admin():
+            return True
+        
+        # 센터운영자는 자신이 관리하는 센터의 이미지만 수정 가능
+        if profile.is_center_manager() and obj:
+            return profile.managed_center == obj.center
+        
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        """센터 이미지 삭제 권한 확인"""
+        if request.user.is_superuser:
+            return True
+        
+        if not hasattr(request.user, 'profile'):
+            return False
+        
+        profile = request.user.profile
+        
+        # 총관리자는 모든 센터 이미지 삭제 가능
+        if profile.is_admin():
+            return True
+        
+        # 센터운영자는 자신이 관리하는 센터의 이미지만 삭제 가능
+        if profile.is_center_manager() and obj:
+            return profile.managed_center == obj.center
+        
+        return False

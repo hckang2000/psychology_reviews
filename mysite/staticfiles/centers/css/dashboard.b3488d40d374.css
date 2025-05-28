@@ -1,0 +1,155 @@
+/* ==========================================================================
+   Management Dashboard Page Styles
+   ========================================================================== */
+
+.management-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius-lg);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.dashboard-header h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.dashboard-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.centers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.center-card {
+    background: var(--background-white);
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.center-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.center-card h3 {
+    color: var(--primary-color);
+    margin: 0 0 1rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.center-info {
+    margin-bottom: 1.5rem;
+}
+
+.center-info p {
+    margin: 0.5rem 0;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.center-info strong {
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.manage-button {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: center;
+}
+
+.manage-button:hover {
+    background: var(--primary-hover);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.no-centers {
+    text-align: center;
+    color: var(--text-light);
+    font-size: 1.1rem;
+    margin: 3rem 0;
+    padding: 2rem;
+    background: var(--background-light);
+    border-radius: var(--border-radius-lg);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--background-white);
+    padding: 1.5rem;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .management-dashboard {
+        padding: 1rem;
+    }
+    
+    .centers-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .dashboard-header {
+        padding: 1.5rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+} 
