@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
-from .models import Center, Review, ExternalReview, Therapist, CenterImage
-from .forms import ReviewForm, CenterManagementForm, TherapistManagementForm
+from .models import Center, Review, ExternalReview, Therapist, CenterImage, ReviewComment
+from .forms import ReviewForm, CenterManagementForm, TherapistManagementForm, ReviewCommentForm
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
@@ -59,6 +59,18 @@ def serialize_therapist(therapist):
 
 def serialize_review(review, user=None):
     """리뷰 객체 직렬화"""
+    # 댓글 직렬화
+    comments_data = []
+    for comment in review.comments.filter(is_active=True).order_by('created_at'):
+        comments_data.append({
+            'id': comment.id,
+            'content': escape_quotes(comment.content),
+            'author': escape_quotes(comment.author.username),
+            'created_at': format_date_for_json(comment.created_at),
+            'updated_at': format_date_for_json(comment.updated_at) if comment.updated_at != comment.created_at else None,
+            'can_edit': user and comment.author == user
+        })
+    
     return {
         'id': getattr(review, 'id', None),
         'title': escape_quotes(review.title),
@@ -66,7 +78,8 @@ def serialize_review(review, user=None):
         'author': escape_quotes(review.user.username if hasattr(review, 'user') and review.user else '익명'),
         'rating': getattr(review, 'rating', 5),
         'created_at': format_date_for_json(review.created_at),
-        'is_owner': user and hasattr(review, 'user') and review.user == user
+        'is_owner': user and hasattr(review, 'user') and review.user == user,
+        'comments': comments_data
     }
 
 def serialize_external_review(review):
@@ -98,7 +111,7 @@ def serialize_center(center, user=None):
             'description': escape_quotes(center.description),
             'images': [escape_quotes(image.image.url) for image in center.images.all()],
             'therapists': [serialize_therapist(t) for t in center.therapists.all()],
-            'reviews': [serialize_review(r, user) for r in center.reviews.all().order_by('-created_at')],
+            'reviews': [serialize_review(r, user) for r in center.reviews.all().prefetch_related('comments').order_by('-created_at')],
             'external_reviews': [serialize_external_review(r) for r in center.external_reviews.all().order_by('-created_at')],
             'is_authenticated': user.is_authenticated if user else False
         }
@@ -126,7 +139,12 @@ def validate_review_data(data):
 
 # 뷰 함수들
 def index(request):
-    centers = Center.objects.all().prefetch_related('images', 'therapists', 'reviews', 'external_reviews')
+    centers = Center.objects.all().prefetch_related(
+        'images', 
+        'therapists', 
+        'reviews__comments', 
+        'external_reviews'
+    )
     
     center_list = []
     for center in centers:
@@ -145,7 +163,7 @@ def index(request):
 
 def get_reviews(request, center_id):
     center = get_object_or_404(Center, pk=center_id)
-    reviews = Review.objects.filter(center=center).order_by('-created_at')
+    reviews = Review.objects.filter(center=center).order_by('-created_at').prefetch_related('comments')
     
     page_number = request.GET.get('page', 1)
     paginator = Paginator(reviews, 10)
@@ -531,3 +549,164 @@ def center_management_dashboard(request):
     }
     
     return render(request, 'centers/management_dashboard.html', context)
+
+# 리뷰 관리 관련 뷰들
+class ReviewManagementView(CenterManagerRequiredMixin, ListView):
+    """센터 관리자용 리뷰 관리 페이지"""
+    model = Review
+    template_name = 'centers/review_management.html'
+    context_object_name = 'reviews'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        profile = self.request.user.profile
+        
+        # 관리 가능한 센터의 리뷰만 조회
+        if profile.is_admin():
+            queryset = Review.objects.all()
+        elif profile.is_center_manager() and profile.managed_center:
+            queryset = Review.objects.filter(center=profile.managed_center)
+        else:
+            queryset = Review.objects.none()
+        
+        # 검색 기능
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(content__icontains=search_query) |
+                Q(user__username__icontains=search_query)
+            )
+        
+        return queryset.select_related('user', 'center').prefetch_related('comments').order_by('-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('search', '')
+        context['profile'] = self.request.user.profile
+        return context
+
+@login_required
+def add_review_comment(request, review_id):
+    """리뷰에 댓글 추가"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST 요청만 허용됩니다.'}, status=405)
+    
+    review = get_object_or_404(Review, pk=review_id)
+    
+    # 권한 확인
+    if not hasattr(request.user, 'profile'):
+        return JsonResponse({'error': '프로필이 설정되지 않았습니다.'}, status=403)
+    
+    profile = request.user.profile
+    if not (profile.is_admin() or (profile.is_center_manager() and profile.managed_center == review.center)):
+        return JsonResponse({'error': '댓글을 작성할 권한이 없습니다.'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        content = data.get('content', '').strip()
+        
+        if not content:
+            return JsonResponse({'error': '댓글 내용을 입력해주세요.'}, status=400)
+        
+        comment = ReviewComment.objects.create(
+            review=review,
+            author=request.user,
+            content=content
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'comment': {
+                'id': comment.id,
+                'content': comment.content,
+                'author': comment.author.username,
+                'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M'),
+                'can_edit': True
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': '잘못된 JSON 형식입니다.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def update_review_comment(request, comment_id):
+    """리뷰 댓글 수정"""
+    if request.method != 'PATCH':
+        return JsonResponse({'error': 'PATCH 요청만 허용됩니다.'}, status=405)
+    
+    comment = get_object_or_404(ReviewComment, pk=comment_id)
+    
+    # 권한 확인 (댓글 작성자만 수정 가능)
+    if comment.author != request.user:
+        return JsonResponse({'error': '댓글을 수정할 권한이 없습니다.'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        content = data.get('content', '').strip()
+        
+        if not content:
+            return JsonResponse({'error': '댓글 내용을 입력해주세요.'}, status=400)
+        
+        comment.content = content
+        comment.save()
+        
+        return JsonResponse({
+            'success': True,
+            'comment': {
+                'id': comment.id,
+                'content': comment.content,
+                'author': comment.author.username,
+                'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M'),
+                'updated_at': comment.updated_at.strftime('%Y-%m-%d %H:%M'),
+                'can_edit': True
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': '잘못된 JSON 형식입니다.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def delete_review_comment(request, comment_id):
+    """리뷰 댓글 삭제"""
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'DELETE 요청만 허용됩니다.'}, status=405)
+    
+    comment = get_object_or_404(ReviewComment, pk=comment_id)
+    
+    # 권한 확인 (댓글 작성자만 삭제 가능)
+    if comment.author != request.user:
+        return JsonResponse({'error': '댓글을 삭제할 권한이 없습니다.'}, status=403)
+    
+    try:
+        comment.delete()
+        return JsonResponse({'success': True})
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def get_review_comments(request, review_id):
+    """리뷰의 댓글 목록 조회"""
+    review = get_object_or_404(Review, pk=review_id)
+    comments = ReviewComment.objects.filter(review=review, is_active=True).order_by('created_at')
+    
+    comments_data = []
+    for comment in comments:
+        comments_data.append({
+            'id': comment.id,
+            'content': comment.content,
+            'author': comment.author.username,
+            'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M'),
+            'updated_at': comment.updated_at.strftime('%Y-%m-%d %H:%M') if comment.updated_at != comment.created_at else None,
+            'can_edit': comment.author == request.user
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'comments': comments_data
+    })

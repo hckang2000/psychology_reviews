@@ -476,26 +476,72 @@ function displayReviews(reviews, page = 1, pagination = null) {
         const rating = (review.rating !== undefined && review.rating !== null) ? Number(review.rating) : 5;
         const safeTitle = String(review.title).replace(/'/g, "&#39;");
         const safeContent = String(review.content).replace(/'/g, "&#39;");
-        return `
-        <div class="bg-white rounded-lg shadow p-4 space-y-2">
-            <div class="flex justify-between items-start">
-                <div>
-                        <h4 class="font-medium">${safeTitle}</h4>
-                    <p class="text-sm text-gray-500">${review.author} • ${formatDate(review.created_at)}</p>
+        
+        // 댓글 HTML 생성
+        let commentsHtml = '';
+        if (review.comments && review.comments.length > 0) {
+            commentsHtml = `
+                <div class="mt-4 pl-4 border-l-4 border-blue-100 bg-blue-50 rounded-r-lg py-3">
+                    <div class="flex items-center mb-3">
+                        <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-2">
+                            <i class="fas fa-building text-white text-xs"></i>
+                        </div>
+                        <span class="text-sm font-medium text-blue-700">센터 답변</span>
+                    </div>
+                    <div class="space-y-3">
+                        ${review.comments.map(comment => `
+                            <div class="bg-white rounded-lg p-4 shadow-sm border border-blue-200">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div class="flex items-center">
+                                        <span class="text-sm font-medium text-gray-700">${comment.author}</span>
+                                        <span class="text-xs text-gray-500 ml-2">${formatDate(comment.created_at)}</span>
+                                        ${comment.updated_at ? `<span class="text-xs text-gray-400 ml-1">(수정됨)</span>` : ''}
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
+                                        <span class="text-xs text-green-600 font-medium">공식 답변</span>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-700 leading-relaxed">${comment.content.replace(/\n/g, '<br>')}</p>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
-                    <div class="flex items-center min-w-[120px] ml-4" style="min-width:120px;">
-                        ${review.is_owner ? `
-                            <button onclick="openEditReviewModal(${review.id}, '${safeTitle}', ${review.rating}, '${safeContent}')" class="text-gray-500 hover:text-blue-500 mr-2" title="수정">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteReview(${review.id})" class="text-gray-500 hover:text-red-500 mr-2" title="삭제">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        ` : ''}
-                        <span class="flex items-center text-yellow-400 ml-auto">${generateStars(rating)}</span>
+            `;
+        }
+        
+        return `
+        <div class="bg-white rounded-lg shadow-md p-4 space-y-3 border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <h4 class="font-semibold text-gray-900 text-lg mb-1">${safeTitle}</h4>
+                    <div class="flex items-center text-sm text-gray-500 mb-2">
+                        <div class="w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center mr-2">
+                            <i class="fas fa-user text-white text-xs"></i>
+                        </div>
+                        <span class="mr-3">${review.author}</span>
+                        <span class="text-gray-400">•</span>
+                        <span class="ml-3">${formatDate(review.created_at)}</span>
+                    </div>
+                </div>
+                <div class="flex items-center min-w-[140px] ml-4" style="min-width:140px;">
+                    ${review.is_owner ? `
+                        <button onclick="openEditReviewModal(${review.id}, '${safeTitle}', ${review.rating}, '${safeContent}')" 
+                                class="text-gray-400 hover:text-blue-500 mr-2 p-1 rounded transition-colors" title="수정">
+                            <i class="fas fa-edit text-sm"></i>
+                        </button>
+                        <button onclick="deleteReview(${review.id})" 
+                                class="text-gray-400 hover:text-red-500 mr-3 p-1 rounded transition-colors" title="삭제">
+                            <i class="fas fa-trash-alt text-sm"></i>
+                        </button>
+                    ` : ''}
+                    <div class="flex items-center text-yellow-400 ml-auto">${generateStars(rating)}</div>
                 </div>
             </div>
-                <p class="text-gray-700">${safeContent}</p>
+            <div class="bg-gray-50 rounded-lg p-3">
+                <p class="text-gray-700 leading-relaxed">${safeContent}</p>
+            </div>
+            ${commentsHtml}
         </div>
         `;
     }).join('');

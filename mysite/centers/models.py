@@ -75,6 +75,23 @@ class Review(models.Model):
         verbose_name_plural = '리뷰 목록'
         ordering = ['-created_at']
 
+class ReviewComment(models.Model):
+    """센터관리자가 리뷰에 달 수 있는 댓글"""
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    content = models.TextField(help_text='댓글 내용을 입력하세요')
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True, help_text='댓글 활성화 여부')
+
+    def __str__(self):
+        return f"{self.review.title}에 대한 {self.author.username}의 댓글"
+
+    class Meta:
+        verbose_name = '리뷰 댓글'
+        verbose_name_plural = '리뷰 댓글 목록'
+        ordering = ['created_at']
+
 class ExternalReview(models.Model):
     title = models.CharField(max_length=255)
     url = models.URLField()

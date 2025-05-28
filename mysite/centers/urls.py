@@ -19,4 +19,11 @@ urlpatterns = [
     path('management/', views.center_management_dashboard, name='management_dashboard'),
     path('management/centers/', views.CenterListView.as_view(), name='center_list_management'),
     path('management/center/<int:pk>/', views.CenterManagementView.as_view(), name='center_management'),
+    
+    # 리뷰 관리 URL
+    path('management/reviews/', views.ReviewManagementView.as_view(), name='review_management'),
+    path('reviews/<int:review_id>/comments/', views.get_review_comments, name='get_review_comments'),
+    path('reviews/<int:review_id>/comments/add/', views.add_review_comment, name='add_review_comment'),
+    path('comments/<int:comment_id>/update/', views.update_review_comment, name='update_review_comment'),
+    path('comments/<int:comment_id>/delete/', views.delete_review_comment, name='delete_review_comment'),
 ]

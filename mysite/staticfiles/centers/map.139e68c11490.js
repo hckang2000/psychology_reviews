@@ -481,31 +481,29 @@ function displayReviews(reviews, page = 1, pagination = null) {
         let commentsHtml = '';
         if (review.comments && review.comments.length > 0) {
             commentsHtml = `
-                <div class="mt-4 pl-4 border-l-4 border-blue-100 bg-blue-50 rounded-r-lg py-3">
-                    <div class="flex items-center mb-3">
+                <div class="mt-4 pl-4 border-l-4 border-blue-100 bg-blue-50 rounded-r-lg">
+                    <div class="flex items-center mb-2">
                         <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-2">
                             <i class="fas fa-building text-white text-xs"></i>
                         </div>
                         <span class="text-sm font-medium text-blue-700">센터 답변</span>
                     </div>
-                    <div class="space-y-3">
-                        ${review.comments.map(comment => `
-                            <div class="bg-white rounded-lg p-4 shadow-sm border border-blue-200">
-                                <div class="flex justify-between items-start mb-3">
-                                    <div class="flex items-center">
-                                        <span class="text-sm font-medium text-gray-700">${comment.author}</span>
-                                        <span class="text-xs text-gray-500 ml-2">${formatDate(comment.created_at)}</span>
-                                        ${comment.updated_at ? `<span class="text-xs text-gray-400 ml-1">(수정됨)</span>` : ''}
-                                    </div>
-                                    <div class="flex items-center">
-                                        <div class="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
-                                        <span class="text-xs text-green-600 font-medium">공식 답변</span>
-                                    </div>
+                    ${review.comments.map(comment => `
+                        <div class="bg-white rounded-lg p-3 mb-2 shadow-sm border border-blue-200">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center">
+                                    <span class="text-sm font-medium text-gray-700">${comment.author}</span>
+                                    <span class="text-xs text-gray-500 ml-2">${formatDate(comment.created_at)}</span>
+                                    ${comment.updated_at ? `<span class="text-xs text-gray-400 ml-1">(수정됨)</span>` : ''}
                                 </div>
-                                <p class="text-sm text-gray-700 leading-relaxed">${comment.content.replace(/\n/g, '<br>')}</p>
+                                <div class="flex items-center">
+                                    <div class="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
+                                    <span class="text-xs text-green-600 font-medium">공식 답변</span>
+                                </div>
                             </div>
-                        `).join('')}
-                    </div>
+                            <p class="text-sm text-gray-700 leading-relaxed">${comment.content.replace(/\n/g, '<br>')}</p>
+                        </div>
+                    `).join('')}
                 </div>
             `;
         }

@@ -95,12 +95,14 @@
 
 .no-centers {
     text-align: center;
-    color: var(--text-light);
-    font-size: 1.1rem;
-    margin: 3rem 0;
-    padding: 2rem;
-    background: var(--background-light);
-    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-xl);
+    color: var(--text-secondary);
+}
+
+.no-centers h3 {
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
 }
 
 .stats-grid {
@@ -131,13 +133,89 @@
     font-size: 0.9rem;
 }
 
+/* Additional Management Section */
+.additional-management {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-xl);
+    border-top: 1px solid var(--border-color);
+}
+
+.additional-management h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+}
+
+.management-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+}
+
+.management-card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: var(--background-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    text-decoration: none;
+    color: inherit;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.management-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.management-card.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--background-gray);
+}
+
+.management-card.disabled:hover {
+    box-shadow: none;
+    border-color: var(--border-color);
+    transform: none;
+}
+
+.card-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.card-content {
+    flex: 1;
+}
+
+.card-content h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.card-content p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
 /* ==========================================================================
    Responsive Design
    ========================================================================== */
 
 @media (max-width: 768px) {
     .management-dashboard {
-        padding: 1rem;
+        padding: var(--spacing-md);
     }
     
     .centers-grid {
@@ -151,5 +229,50 @@
     
     .dashboard-header h1 {
         font-size: 1.5rem;
+    }
+
+    .dashboard-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .center-actions {
+        flex-direction: column;
+    }
+
+    .action-button {
+        text-align: center;
+    }
+
+    .management-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .management-card {
+        padding: var(--spacing-md);
+    }
+
+    .card-icon {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard {
+        padding: var(--spacing-sm);
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.25rem;
+    }
+
+    .center-card {
+        padding: var(--spacing-md);
+    }
+
+    .management-card {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-sm);
     }
 } 

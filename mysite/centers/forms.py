@@ -1,5 +1,5 @@
 from django import forms
-from .models import Review, Center, Therapist, CenterImage
+from .models import Review, Center, Therapist, CenterImage, ReviewComment
 
 class ReviewForm(forms.ModelForm):
     class Meta:
@@ -9,6 +9,24 @@ class ReviewForm(forms.ModelForm):
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'content': forms.Textarea(attrs={'class': 'form-control'}),
             'rating': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 5}),
+        }
+
+class ReviewCommentForm(forms.ModelForm):
+    """리뷰 댓글 작성/수정 폼"""
+    
+    class Meta:
+        model = ReviewComment
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': '리뷰에 대한 답변을 작성해주세요...',
+                'style': 'resize: vertical;'
+            }),
+        }
+        labels = {
+            'content': '댓글 내용',
         }
 
 class CenterManagementForm(forms.ModelForm):

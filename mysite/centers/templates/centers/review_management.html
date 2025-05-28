@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}리뷰 관리{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'centers/css/variables.css' %}">
+<link rel="stylesheet" href="{% static 'centers/css/common.css' %}">
+<link rel="stylesheet" href="{% static 'centers/css/review-management.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'centers/js/review-comments.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="review-management">
+    <div class="management-header">
+        <a href="{% url 'centers:management_dashboard' %}" class="back-button">
+            ← 대시보드로 돌아가기
+        </a>
+        <h1>💬 리뷰 관리</h1>
+        <p>
+            {% if profile.is_admin %}
+                모든 센터의 리뷰를 관리할 수 있습니다.
+            {% else %}
+                담당 센터의 리뷰를 관리하고 답변을 작성할 수 있습니다.
+            {% endif %}
+        </p>
+    </div>
+    
+    <!-- 검색 기능 -->
+    <div class="search-section">
+        <form method="get" class="search-form">
+            <div class="search-input-group">
+                <input type="text" 
+                       name="search" 
+                       value="{{ search_query }}" 
+                       placeholder="리뷰 제목, 내용, 작성자로 검색..."
+                       class="search-input">
+                <button type="submit" class="search-button">
+                    🔍 검색
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- 리뷰 목록 -->
+    <div class="reviews-section">
+        {% if reviews %}
+            <div class="reviews-stats">
+                <p>총 {{ page_obj.paginator.count }}개의 리뷰가 있습니다.</p>
+            </div>
+            
+            <div class="reviews-list">
+                {% for review in reviews %}
+                    <div class="review-card" data-review-id="{{ review.id }}">
+                        <div class="review-header">
+                            <div class="review-info">
+                                <h3 class="review-title">{{ review.title }}</h3>
+                                <div class="review-meta">
+                                    <span class="review-center">📍 {{ review.center.name }}</span>
+                                    <span class="review-author">👤 {{ review.user.username }}</span>
+                                    <span class="review-rating">⭐ {{ review.rating }}/5</span>
+                                    <span class="review-date">📅 {{ review.created_at|date:"Y-m-d H:i" }}</span>
+                                </div>
+                            </div>
+                            <div class="review-actions">
+                                <button class="toggle-comments-btn" onclick="toggleComments({{ review.id }})">
+                                    💬 댓글 ({{ review.comments.count }})
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="review-content">
+                            <p>{{ review.content|linebreaks }}</p>
+                        </div>
+                        
+                        <!-- 댓글 섹션 -->
+                        <div class="comments-section" id="comments-{{ review.id }}" style="display: none;">
+                            <div class="comments-header">
+                                <h4>💬 센터 답변</h4>
+                            </div>
+                            
+                            <!-- 기존 댓글 목록 -->
+                            <div class="comments-list" id="comments-list-{{ review.id }}">
+                                {% for comment in review.comments.all %}
+                                    <div class="comment-item" data-comment-id="{{ comment.id }}">
+                                        <div class="comment-header">
+                                            <span class="comment-author">🏢 {{ comment.author.username }}</span>
+                                            <span class="comment-date">{{ comment.created_at|date:"Y-m-d H:i" }}</span>
+                                            {% if comment.author == request.user %}
+                                                <div class="comment-actions">
+                                                    <button class="edit-comment-btn" onclick="editComment({{ comment.id }})">
+                                                        ✏️ 수정
+                                                    </button>
+                                                    <button class="delete-comment-btn" onclick="deleteComment({{ comment.id }})">
+                                                        🗑️ 삭제
+                                                    </button>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="comment-content" id="comment-content-{{ comment.id }}">
+                                            {{ comment.content|linebreaks }}
+                                        </div>
+                                        <div class="comment-edit-form" id="comment-edit-form-{{ comment.id }}" style="display: none;">
+                                            <textarea class="comment-edit-textarea" id="comment-edit-textarea-{{ comment.id }}">{{ comment.content }}</textarea>
+                                            <div class="comment-edit-actions">
+                                                <button class="save-comment-btn" onclick="saveComment({{ comment.id }})">
+                                                    💾 저장
+                                                </button>
+                                                <button class="cancel-edit-btn" onclick="cancelEdit({{ comment.id }})">
+                                                    ❌ 취소
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- 새 댓글 작성 폼 -->
+                            <div class="add-comment-form">
+                                <textarea class="comment-textarea" 
+                                         id="comment-textarea-{{ review.id }}" 
+                                         placeholder="이 리뷰에 대한 센터의 답변을 작성해주세요..."></textarea>
+                                <div class="comment-form-actions">
+                                    <button class="add-comment-btn" onclick="addComment({{ review.id }})">
+                                        💬 답변 작성
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- 페이지네이션 -->
+            {% if page_obj.has_other_pages %}
+                <div class="pagination-container">
+                    <div class="pagination">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}" class="pagination-button">
+                                ⏮️ 처음
+                            </a>
+                            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="pagination-button">
+                                ◀️ 이전
+                            </a>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <span class="pagination-button current">{{ num }}</span>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}" class="pagination-button">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="pagination-button">
+                                다음 ▶️
+                            </a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" class="pagination-button">
+                                마지막 ⏭️
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="no-reviews">
+                <h3>📝 관리할 리뷰가 없습니다</h3>
+                {% if search_query %}
+                    <p>"{{ search_query }}"에 대한 검색 결과가 없습니다.</p>
+                    <a href="{% url 'centers:review_management' %}" class="clear-search-btn">
+                        🔄 전체 리뷰 보기
+                    </a>
+                {% else %}
+                    <p>아직 작성된 리뷰가 없습니다.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 
