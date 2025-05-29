@@ -2,12 +2,15 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <!-- iOS Safari 호환성을 위한 메타태그 추가 -->
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-touch-fullscreen" content="yes">
+    <!-- iOS Safari 확대/축소 방지 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     {% load static %}
     
     <!-- 기본 메타 태그 -->
@@ -62,6 +65,42 @@
     <link rel="stylesheet" href="{% static 'centers/style.css' %}">
     {% block extra_css %}{% endblock %}
     <style>
+        /* iOS Safari 확대/축소 방지 */
+        * {
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* 텍스트 입력 요소에는 선택 허용 */
+        input, textarea, [contenteditable] {
+            -webkit-user-select: auto;
+            -khtml-user-select: auto;
+            -moz-user-select: auto;
+            -ms-user-select: auto;
+            user-select: auto;
+            touch-action: manipulation;
+        }
+        
+        /* 버튼 요소에 대한 특별 처리 */
+        button, .icon-button, .search-toggle-btn {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            outline: none;
+        }
+        
+        /* 검색 버튼 특별 처리 */
+        .search-toggle-btn {
+            touch-action: manipulation !important;
+            -webkit-tap-highlight-color: transparent !important;
+        }
+        
         /* Global styles */
         .app-container {
             @apply min-h-screen bg-gray-50;
@@ -147,8 +186,57 @@
     <!-- Base JavaScript -->
     <script>
         console.log('Base HTML loaded');
-        window.addEventListener('DOMContentLoaded', function() {
+        
+        // iOS Safari 확대/축소 방지를 위한 이벤트 처리
+        document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM Content Loaded in base.html');
+            
+            // iOS Safari 확대/축소 방지
+            function preventZoom(e) {
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }
+            
+            // 더블탭 확대 방지
+            let lastTouchEnd = 0;
+            function preventDoubleTab(e) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    e.preventDefault();
+                }
+                lastTouchEnd = now;
+            }
+            
+            // 터치 이벤트 리스너 추가
+            document.addEventListener('touchstart', preventZoom, {passive: false});
+            document.addEventListener('touchend', preventDoubleTab, {passive: false});
+            
+            // 검색 토글 버튼 특별 처리
+            const searchToggleBtn = document.querySelector('.search-toggle-btn');
+            if (searchToggleBtn) {
+                searchToggleBtn.addEventListener('touchstart', function(e) {
+                    e.stopPropagation();
+                }, {passive: true});
+                
+                searchToggleBtn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // 검색창 토글 로직 실행
+                    const searchContainer = document.querySelector('.search-container');
+                    if (searchContainer) {
+                        searchContainer.classList.toggle('active');
+                        if (searchContainer.classList.contains('active')) {
+                            const searchInput = document.querySelector('.search-input');
+                            if (searchInput) {
+                                setTimeout(() => searchInput.focus(), 100);
+                            }
+                        }
+                    }
+                }, {passive: false});
+            }
+            
             // Check if script.js is loaded
             const scriptElement = document.querySelector('script[src*="script.js"]');
             console.log('script.js element found:', !!scriptElement);

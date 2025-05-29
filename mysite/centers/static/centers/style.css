@@ -139,6 +139,13 @@ html, body, .app-container {
     justify-content: center;
     border-radius: 50%;
     transition: all var(--transition-fast);
+    /* iOS Safari 확대/축소 방지 강화 */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    outline: none;
 }
 
 .icon-button:hover {
@@ -146,8 +153,19 @@ html, body, .app-container {
     color: var(--primary-color);
 }
 
+.icon-button:focus {
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.icon-button:active {
+    -webkit-tap-highlight-color: transparent;
+    transform: scale(0.95);
+}
+
 .icon-button i {
     font-size: 1.25rem;
+    pointer-events: none;
 }
 
 /* Search container styles */
@@ -162,6 +180,8 @@ html, body, .app-container {
     display: none;
     align-items: center;
     animation: fadeIn var(--transition-fast);
+    /* iOS Safari 확대/축소 방지 */
+    touch-action: manipulation;
 }
 
 .search-container.active {
@@ -175,6 +195,8 @@ html, body, .app-container {
     position: relative;
     display: flex;
     align-items: center;
+    /* iOS Safari 확대/축소 방지 */
+    touch-action: manipulation;
 }
 
 .search-input {
@@ -186,6 +208,9 @@ html, body, .app-container {
     font-size: 1rem;
     background: var(--background-gray);
     transition: all var(--transition-fast);
+    /* iOS Safari 확대/축소 방지 */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .search-input:focus {
@@ -193,6 +218,7 @@ html, body, .app-container {
     border-color: var(--primary-color);
     background: var(--background-white);
     box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    -webkit-tap-highlight-color: transparent;
 }
 
 .search-buttons {
@@ -205,10 +231,33 @@ html, body, .app-container {
 .search-buttons .icon-button {
     width: 32px;
     height: 32px;
+    /* iOS Safari 확대/축소 방지 강화 */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .search-buttons i {
     font-size: 1rem;
+    pointer-events: none;
+}
+
+/* 검색 토글 버튼 특별 처리 */
+.search-toggle-btn {
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    outline: none !important;
+}
+
+.search-toggle-btn:focus,
+.search-toggle-btn:active {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
 }
 
 @keyframes fadeIn {

@@ -429,16 +429,16 @@ class CenterManagerRequiredMixin:
     
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return redirect('login')
+            return redirect('accounts:account_login')
         
         if not hasattr(request.user, 'profile'):
             messages.error(request, '프로필이 설정되지 않았습니다.')
-            return redirect('home')
+            return redirect('centers:index')
         
         profile = request.user.profile
         if not (profile.is_admin() or profile.is_center_manager()):
-            messages.error(request, '센터 관리 권한이 없습니다.')
-            return redirect('home')
+            messages.error(request, '센터 관리 권한이 없습니다. 일반 사용자는 이 페이지에 접근할 수 없습니다.')
+            return redirect('centers:index')
         
         return super().dispatch(request, *args, **kwargs)
 
@@ -530,12 +530,12 @@ def center_management_dashboard(request):
     """센터 관리 대시보드"""
     if not hasattr(request.user, 'profile'):
         messages.error(request, '프로필이 설정되지 않았습니다.')
-        return redirect('home')
+        return redirect('centers:index')
     
     profile = request.user.profile
     if not (profile.is_admin() or profile.is_center_manager()):
-        messages.error(request, '센터 관리 권한이 없습니다.')
-        return redirect('home')
+        messages.error(request, '센터 관리 권한이 없습니다. 일반 사용자는 이 페이지에 접근할 수 없습니다.')
+        return redirect('centers:index')
     
     # 관리 가능한 센터 목록
     if profile.is_admin():
