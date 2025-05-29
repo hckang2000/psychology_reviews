@@ -26,4 +26,10 @@ urlpatterns = [
     path('reviews/<int:review_id>/comments/add/', views.add_review_comment, name='add_review_comment'),
     path('comments/<int:comment_id>/update/', views.update_review_comment, name='update_review_comment'),
     path('comments/<int:comment_id>/delete/', views.delete_review_comment, name='delete_review_comment'),
+    
+    # 백업/복원 URL (superuser 전용)
+    path('backup/', views.backup_dashboard, name='backup_dashboard'),
+    path('backup/perform/', views.perform_backup, name='perform_backup'),
+    path('backup/restore/', views.perform_restore, name='perform_restore'),
+    path('backup/status/', views.get_backup_status, name='get_backup_status'),
 ]

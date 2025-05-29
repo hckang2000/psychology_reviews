@@ -1,0 +1,642 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}데이터 백업/복원 대시보드{% endblock %}
+
+{% block content %}
+<div class="backup-dashboard">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">
+            <i class="fas fa-database"></i>
+            데이터 백업/복원 시스템
+        </h1>
+        <p class="dashboard-subtitle">시스템 데이터를 안전하게 백업하고 복원할 수 있습니다</p>
+    </div>
+
+    <!-- 백업/복원 액션 카드 -->
+    <div class="action-cards">
+        <div class="action-card backup-card">
+            <div class="card-icon">
+                <i class="fas fa-upload"></i>
+            </div>
+            <div class="card-content">
+                <h3>데이터 백업</h3>
+                <p>현재 시스템의 모든 데이터를 GitHub Releases에 안전하게 백업합니다</p>
+                <button id="perform-backup-btn" class="action-btn backup-btn">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    백업 실행
+                </button>
+            </div>
+        </div>
+
+        <div class="action-card restore-card">
+            <div class="card-icon">
+                <i class="fas fa-download"></i>
+            </div>
+            <div class="card-content">
+                <h3>데이터 복원</h3>
+                <p>백업 파일을 업로드하여 시스템 데이터를 복원합니다</p>
+                <div class="file-upload-area">
+                    <input type="file" id="backup-file-input" accept=".json.gz" style="display: none;">
+                    <button id="select-file-btn" class="action-btn restore-btn">
+                        <i class="fas fa-file-upload"></i>
+                        파일 선택
+                    </button>
+                    <button id="perform-restore-btn" class="action-btn restore-btn" style="display: none;">
+                        <i class="fas fa-cloud-download-alt"></i>
+                        복원 실행
+                    </button>
+                </div>
+                <div id="selected-file-info" class="file-info" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 상태 표시 영역 -->
+    <div class="status-section">
+        <div class="status-card">
+            <h3><i class="fas fa-info-circle"></i> 시스템 상태</h3>
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="status-label">마지막 백업:</span>
+                    <span id="last-backup-time" class="status-value">로딩 중...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">총 백업 수:</span>
+                    <span id="total-backups" class="status-value">{{ backup_history|length }}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">자동 백업:</span>
+                    <span class="status-value active">매주 일요일 14:00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 백업 히스토리 -->
+    <div class="history-section">
+        <div class="history-card">
+            <h3><i class="fas fa-history"></i> 백업 히스토리</h3>
+            <div class="table-container">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>백업 파일명</th>
+                            <th>크기</th>
+                            <th>생성 시간</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody id="backup-history-tbody">
+                        {% for backup in backup_history %}
+                        <tr>
+                            <td class="filename">{{ backup.filename }}</td>
+                            <td class="size">{{ backup.size }}</td>
+                            <td class="date">{{ backup.date }}</td>
+                            <td><span class="status-badge success">성공</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="no-data">백업 히스토리가 없습니다</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 복원 히스토리 -->
+    <div class="history-section">
+        <div class="history-card">
+            <h3><i class="fas fa-undo"></i> 복원 히스토리</h3>
+            <div class="table-container">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>복원 파일명</th>
+                            <th>복원 시간</th>
+                            <th>실행자</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for restore in restore_history %}
+                        <tr>
+                            <td class="filename">{{ restore.filename }}</td>
+                            <td class="date">{{ restore.date }}</td>
+                            <td class="user">{{ restore.user }}</td>
+                            <td><span class="status-badge success">성공</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="no-data">복원 히스토리가 없습니다</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 로딩 모달 -->
+<div id="loading-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="loading-animation">
+            <div class="spinner"></div>
+            <h3 id="loading-message">처리 중...</h3>
+            <p id="loading-detail">잠시만 기다려주세요</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.backup-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px 0;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.dashboard-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 10px;
+}
+
+.dashboard-title i {
+    color: #3b82f6;
+    margin-right: 15px;
+}
+
+.dashboard-subtitle {
+    font-size: 1.1rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.action-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.action-card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.15);
+}
+
+.backup-card {
+    border-left: 4px solid #10b981;
+}
+
+.restore-card {
+    border-left: 4px solid #f59e0b;
+}
+
+.card-icon {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.card-icon i {
+    font-size: 3rem;
+    color: #3b82f6;
+}
+
+.card-content h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.card-content p {
+    color: #6b7280;
+    margin-bottom: 25px;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.action-btn {
+    width: 100%;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.backup-btn {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.backup-btn:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: translateY(-2px);
+}
+
+.restore-btn {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.restore-btn:hover {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    transform: translateY(-2px);
+}
+
+.file-upload-area {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.file-info {
+    padding: 12px;
+    background: #f3f4f6;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.status-section, .history-section {
+    margin-bottom: 30px;
+}
+
+.status-card, .history-card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+}
+
+.status-card h3, .history-card h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-card h3 i {
+    color: #3b82f6;
+}
+
+.history-card h3 i {
+    color: #8b5cf6;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.status-label {
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.status-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.status-value.active {
+    color: #10b981;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.history-table th {
+    background: #f9fafb;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.history-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+}
+
+.history-table tr:hover {
+    background: #f9fafb;
+}
+
+.filename {
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-badge.success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.no-data {
+    text-align: center;
+    color: #9ca3af;
+    font-style: italic;
+    padding: 40px !important;
+}
+
+/* 모달 스타일 */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 40px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.loading-animation .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e5e7eb;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#loading-message {
+    margin: 0 0 10px 0;
+    color: #1f2937;
+}
+
+#loading-detail {
+    margin: 0;
+    color: #6b7280;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .backup-dashboard {
+        padding: 15px;
+    }
+    
+    .dashboard-title {
+        font-size: 2rem;
+    }
+    
+    .action-cards {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .status-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const performBackupBtn = document.getElementById('perform-backup-btn');
+    const selectFileBtn = document.getElementById('select-file-btn');
+    const performRestoreBtn = document.getElementById('perform-restore-btn');
+    const backupFileInput = document.getElementById('backup-file-input');
+    const selectedFileInfo = document.getElementById('selected-file-info');
+    const loadingModal = document.getElementById('loading-modal');
+    const loadingMessage = document.getElementById('loading-message');
+    const loadingDetail = document.getElementById('loading-detail');
+
+    // CSRF 토큰 가져오기
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // 백업 실행
+    performBackupBtn.addEventListener('click', function() {
+        showLoading('백업 실행 중...', 'GitHub Releases에 데이터를 업로드하고 있습니다');
+        
+        fetch('{% url "centers:perform_backup" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showAlert('success', '백업이 성공적으로 완료되었습니다!');
+                refreshBackupHistory();
+            } else {
+                showAlert('error', data.error || '백업 실행 중 오류가 발생했습니다.');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showAlert('error', '네트워크 오류가 발생했습니다.');
+            console.error('Error:', error);
+        });
+    });
+
+    // 파일 선택
+    selectFileBtn.addEventListener('click', function() {
+        backupFileInput.click();
+    });
+
+    backupFileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            selectedFileInfo.innerHTML = `
+                <i class="fas fa-file-archive"></i>
+                <strong>선택된 파일:</strong> ${file.name} (${(file.size / 1024).toFixed(1)} KB)
+            `;
+            selectedFileInfo.style.display = 'block';
+            performRestoreBtn.style.display = 'block';
+        } else {
+            selectedFileInfo.style.display = 'none';
+            performRestoreBtn.style.display = 'none';
+        }
+    });
+
+    // 복원 실행
+    performRestoreBtn.addEventListener('click', function() {
+        const file = backupFileInput.files[0];
+        if (!file) {
+            showAlert('error', '복원할 파일을 선택해주세요.');
+            return;
+        }
+
+        if (!confirm('정말로 데이터를 복원하시겠습니까?\n\n주의: 현재 데이터가 백업 데이터로 덮어쓰일 수 있습니다.')) {
+            return;
+        }
+
+        showLoading('복원 실행 중...', '백업 파일을 분석하고 데이터를 복원하고 있습니다');
+
+        const formData = new FormData();
+        formData.append('backup_file', file);
+
+        fetch('{% url "centers:perform_restore" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showAlert('success', '복원이 성공적으로 완료되었습니다!');
+                // 파일 선택 초기화
+                backupFileInput.value = '';
+                selectedFileInfo.style.display = 'none';
+                performRestoreBtn.style.display = 'none';
+            } else {
+                showAlert('error', data.error || '복원 실행 중 오류가 발생했습니다.');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showAlert('error', '네트워크 오류가 발생했습니다.');
+            console.error('Error:', error);
+        });
+    });
+
+    // 유틸리티 함수들
+    function showLoading(message, detail) {
+        loadingMessage.textContent = message;
+        loadingDetail.textContent = detail;
+        loadingModal.style.display = 'flex';
+    }
+
+    function hideLoading() {
+        loadingModal.style.display = 'none';
+    }
+
+    function showAlert(type, message) {
+        // 알림 표시 (기존 alert 시스템 사용)
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert ${alertClass}`;
+        alertDiv.textContent = message;
+        
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    function refreshBackupHistory() {
+        // 백업 히스토리 새로고침 (페이지 리로드 또는 AJAX로 업데이트)
+        setTimeout(() => {
+            location.reload();
+        }, 2000);
+    }
+
+    // 페이지 로드시 백업 상태 확인
+    fetch('{% url "centers:get_backup_status" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 마지막 백업 시간 업데이트
+                const lines = data.backups.split('\n');
+                const lastBackupLine = lines.find(line => line.includes('backup_'));
+                if (lastBackupLine) {
+                    const parts = lastBackupLine.split(/\s+/);
+                    if (parts.length >= 3) {
+                        document.getElementById('last-backup-time').textContent = parts[2] || '알 수 없음';
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('백업 상태 확인 실패:', error);
+        });
+});
+</script>
+{% endblock %} 

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'django_extensions',  # URL 디버깅을 위해 추가
+    # 'django_celery_beat',  # Celery 주기적 작업 스케줄링 (임시 비활성화)
     
     # Local apps
     'centers',
@@ -198,3 +199,74 @@ if not DEBUG:
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = ['https://mindscanner.onrender.com']
+
+# ============================================
+# 백업 시스템 설정
+# ============================================
+
+# 백업 시스템 설정
+BACKUP_DEFAULT_STORAGE = os.getenv('BACKUP_DEFAULT_STORAGE', 'github')  # GitHub를 기본으로 변경
+BACKUP_COMPRESS_DEFAULT = os.getenv('BACKUP_COMPRESS_DEFAULT', 'True').lower() == 'true'
+BACKUP_RETENTION_DAYS = int(os.getenv('BACKUP_RETENTION_DAYS', '30'))
+
+# GitHub 백업 설정 (추가)
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
+GITHUB_BACKUP_REPO = os.getenv('GITHUB_BACKUP_REPO', 'hckang2000/mindscanner-backup')
+
+# AWS S3 백업 설정 (선택사항)
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_BACKUP_BUCKET_NAME = os.getenv('AWS_BACKUP_BUCKET_NAME')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'ap-northeast-2')
+
+# Google Drive 백업 설정 (선택사항)
+GOOGLE_DRIVE_WEBHOOK_URL = os.getenv('GOOGLE_DRIVE_WEBHOOK_URL')
+
+# 백업할 모델 목록 (centers 앱)
+BACKUP_DEFAULT_MODELS = [
+    'Center',
+    'InternalReview', 
+    'ExternalReview',
+    'Therapist'
+]
+
+# 로깅 설정 (백업 관련)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'backup.log'),
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'centers.tasks': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+# Celery Configuration
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Seoul'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

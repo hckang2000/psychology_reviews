@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from .models import Center, Review, ExternalReview, Therapist, CenterImage, ReviewComment
 from .forms import ReviewForm, CenterManagementForm, TherapistManagementForm, ReviewCommentForm
 from django.utils import timezone
@@ -21,6 +21,14 @@ from django.http import Http404
 from django.forms import inlineformset_factory
 from django.db import transaction
 from django.urls import reverse
+import os
+import gzip
+import subprocess
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import user_passes_test
+from django.core.management import call_command
+from io import StringIO
+import tempfile
 
 # 유틸리티 함수들
 def escape_quotes(text):
@@ -741,3 +749,122 @@ def get_review_comments(request, review_id):
         'success': True,
         'comments': comments_data
     })
+
+def is_superuser(user):
+    return user.is_superuser
+
+@user_passes_test(is_superuser)
+def backup_dashboard(request):
+    """백업/복원 대시보드"""
+    # GitHub에서 백업 히스토리 가져오기
+    backup_history = []
+    try:
+        # StringIO를 사용해서 명령어 출력 캡처
+        output = StringIO()
+        call_command('list_backups', storage='github', details=True, limit=10, stdout=output)
+        
+        # 출력 파싱해서 백업 히스토리 생성
+        output_lines = output.getvalue().split('\n')
+        for line in output_lines:
+            if 'backup_' in line and '.json.gz' in line:
+                parts = line.split()
+                if len(parts) >= 3:
+                    backup_history.append({
+                        'filename': parts[0],
+                        'size': parts[1] if len(parts) > 1 else 'Unknown',
+                        'date': parts[2] if len(parts) > 2 else 'Unknown'
+                    })
+    except Exception as e:
+        print(f"백업 히스토리 로드 실패: {e}")
+    
+    # 복원 이력은 로그에서 가져오거나 별도로 저장해야 함
+    restore_history = []
+    
+    context = {
+        'backup_history': backup_history,
+        'restore_history': restore_history,
+    }
+    return render(request, 'centers/backup_dashboard.html', context)
+
+@user_passes_test(is_superuser)
+@csrf_exempt
+def perform_backup(request):
+    """백업 실행"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': '잘못된 요청입니다.'})
+    
+    try:
+        # 백업 명령어 실행
+        output = StringIO()
+        call_command('backup_data', storage='github', stdout=output)
+        
+        return JsonResponse({
+            'success': True, 
+            'message': '백업이 성공적으로 완료되었습니다.',
+            'output': output.getvalue()
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'백업 실행 중 오류가 발생했습니다: {str(e)}'
+        })
+
+@user_passes_test(is_superuser)
+@csrf_exempt
+def perform_restore(request):
+    """복원 실행"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': '잘못된 요청입니다.'})
+    
+    if 'backup_file' not in request.FILES:
+        return JsonResponse({'success': False, 'error': '백업 파일이 필요합니다.'})
+    
+    backup_file = request.FILES['backup_file']
+    
+    # 파일 이름 검증
+    if not backup_file.name.endswith('.json.gz'):
+        return JsonResponse({'success': False, 'error': '올바른 백업 파일 형식이 아닙니다. (.json.gz 파일만 허용)'})
+    
+    try:
+        # 임시 파일로 저장
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.json.gz') as temp_file:
+            for chunk in backup_file.chunks():
+                temp_file.write(chunk)
+            temp_file_path = temp_file.name
+        
+        try:
+            # 복원 명령어 실행
+            output = StringIO()
+            call_command('restore_data', temp_file_path, storage='local', stdout=output)
+            
+            return JsonResponse({
+                'success': True,
+                'message': '복원이 성공적으로 완료되었습니다.',
+                'output': output.getvalue()
+            })
+        finally:
+            # 임시 파일 삭제
+            os.unlink(temp_file_path)
+            
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'복원 실행 중 오류가 발생했습니다: {str(e)}'
+        })
+
+@user_passes_test(is_superuser)
+def get_backup_status(request):
+    """백업 상태 조회"""
+    try:
+        output = StringIO()
+        call_command('list_backups', storage='github', limit=5, stdout=output)
+        
+        return JsonResponse({
+            'success': True,
+            'backups': output.getvalue()
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })

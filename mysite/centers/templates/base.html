@@ -328,6 +328,12 @@
                             리뷰 관리
                         </a>
                     {% endif %}
+                    {% if user.is_superuser %}
+                        <a href="{% url 'centers:backup_dashboard' %}" class="menu-item">
+                            <i class="fas fa-database"></i>
+                            데이터 백업/복원
+                        </a>
+                    {% endif %}
                 </nav>
                 <div class="sidebar-footer">
                     {% if user.is_authenticated %}
