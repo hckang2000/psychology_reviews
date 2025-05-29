@@ -119,6 +119,48 @@
     box-shadow: var(--shadow-sm);
     text-align: center;
     border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.stat-card-clickable {
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card-clickable:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color);
+    text-decoration: none;
+    color: inherit;
+}
+
+.stat-card-clickable .stat-number {
+    transition: all 0.3s ease;
+}
+
+.stat-card-clickable:hover .stat-number {
+    color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.stat-card-hover-text {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-weight: 500;
+}
+
+.stat-card-clickable:hover .stat-card-hover-text {
+    opacity: 1;
 }
 
 .stat-number {
@@ -126,11 +168,100 @@
     font-weight: 600;
     color: var(--primary-color);
     margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
 }
 
 .stat-label {
     color: var(--text-light);
     font-size: 0.9rem;
+}
+
+/* Review Management Section */
+.review-management-section {
+    margin: 2rem 0;
+}
+
+.review-management-button {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem 2.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5b73e8 100%);
+    color: white;
+    border-radius: 20px;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.review-management-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.review-management-button:hover::before {
+    left: 100%;
+}
+
+.review-management-button:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.review-management-button .button-icon {
+    font-size: 3rem;
+    flex-shrink: 0;
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+}
+
+.review-management-button .button-content {
+    flex: 1;
+}
+
+.review-management-button .button-content h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.review-management-button .button-content p {
+    margin: 0;
+    opacity: 0.95;
+    font-size: 1rem;
+    line-height: 1.5;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.review-management-button .button-arrow {
+    font-size: 1.8rem;
+    font-weight: bold;
+    opacity: 0.9;
+    transition: all 0.3s ease;
+    filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.review-management-button:hover .button-arrow {
+    transform: translateX(8px) scale(1.1);
+    opacity: 1;
 }
 
 /* Additional Management Section */
@@ -254,6 +385,36 @@
 
     .card-icon {
         font-size: 1.5rem;
+    }
+    
+    .review-management-button {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+        padding: 2rem 1.5rem;
+        border-radius: 16px;
+    }
+    
+    .review-management-button .button-icon {
+        font-size: 2.5rem;
+        animation: none;
+    }
+    
+    .review-management-button .button-content h3 {
+        font-size: 1.2rem;
+    }
+    
+    .review-management-button .button-content p {
+        font-size: 0.9rem;
+    }
+    
+    .review-management-button .button-arrow {
+        display: none;
+    }
+    
+    .stat-card-hover-text {
+        font-size: 0.7rem;
+        bottom: 0.25rem;
     }
 }
 

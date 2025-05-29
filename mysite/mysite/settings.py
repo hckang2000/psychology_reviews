@@ -119,13 +119,24 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR.parent, 'static'),  # 프로젝트 루트의 static 디렉토리
     os.path.join(BASE_DIR, 'centers/static'),
     os.path.join(BASE_DIR, 'boards/static'),
 ]
 
-# WhiteNoise 설정
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# STATICFILES_FINDERS 추가 - 정적 파일 수집 개선
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
+
+# WhiteNoise 설정 - 운영환경에서 정적 파일 오류 방지
+if DEBUG:
+    # 개발환경: 기본 설정
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+else:
+    # 운영환경: 매니페스트 없는 압축 스토리지 사용 (안정성 우선)
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Media files
 MEDIA_URL = '/media/'
