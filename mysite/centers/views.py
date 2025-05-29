@@ -580,10 +580,41 @@ class ReviewManagementView(CenterManagerRequiredMixin, ListView):
         
         return queryset.select_related('user', 'center').prefetch_related('comments').order_by('-created_at')
     
+    def get_unanswered_reviews(self):
+        """답변이 없는 리뷰들을 반환"""
+        profile = self.request.user.profile
+        
+        # 관리 가능한 센터의 리뷰만 조회
+        if profile.is_admin():
+            queryset = Review.objects.all()
+        elif profile.is_center_manager() and profile.managed_center:
+            queryset = Review.objects.filter(center=profile.managed_center)
+        else:
+            queryset = Review.objects.none()
+        
+        # 검색 기능
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(content__icontains=search_query) |
+                Q(user__username__icontains=search_query)
+            )
+        
+        # 댓글이 없는 리뷰만 필터링
+        unanswered_reviews = queryset.filter(comments__isnull=True).select_related('user', 'center').prefetch_related('comments').order_by('-created_at')
+        
+        return unanswered_reviews
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('search', '')
         context['profile'] = self.request.user.profile
+        
+        # 미응답 리뷰 추가
+        context['unanswered_reviews'] = self.get_unanswered_reviews()
+        context['unanswered_count'] = context['unanswered_reviews'].count()
+        
         return context
 
 @login_required
