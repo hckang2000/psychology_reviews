@@ -1,55 +1,68 @@
 /* ==========================================================================
-   Review Management Page Styles
+   Review Management Page Styles - Enhanced Design
    ========================================================================== */
 
 .review-management {
     max-width: 1200px;
     margin: 0 auto;
-    padding: var(--spacing-lg);
-    background: var(--background-white);
+    padding: 5rem;
+    background: var(--background-light);
     min-height: calc(100vh - var(--header-height));
 }
 
 /* Header Section */
 .management-header {
     margin-bottom: var(--spacing-xl);
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius-lg);
     text-align: center;
+    box-shadow: var(--shadow-lg);
 }
 
 .management-header h1 {
-    font-size: 2rem;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-size: 2.5rem;
+    font-weight: 700;
     margin-bottom: var(--spacing-sm);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .management-header p {
-    color: var(--text-secondary);
     font-size: 1.1rem;
     margin-bottom: var(--spacing-lg);
+    opacity: 0.95;
 }
 
 .back-button {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-xs);
-    color: var(--primary-color);
+    color: rgba(255, 255, 255, 0.9);
     text-decoration: none;
     font-weight: 500;
     margin-bottom: var(--spacing-md);
-    transition: color var(--transition-fast);
+    transition: all var(--transition-fast);
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
 }
 
 .back-button:hover {
-    color: var(--primary-hover);
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-4px);
 }
 
 /* Search Section */
 .search-section {
     margin-bottom: var(--spacing-xl);
-    background: var(--background-gray);
-    padding: var(--spacing-lg);
+    background: var(--background-white);
+    padding: var(--spacing-xl);
     border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
 }
 
 .search-form {
@@ -58,38 +71,41 @@
 }
 
 .search-input-group {
+    width: 100%;
     display: flex;
     gap: var(--spacing-sm);
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
 }
 
 .search-input {
     flex: 1;
-    padding: var(--spacing-md);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
+    padding: 1rem var(--spacing-lg);
+    border: none;
     font-size: 1rem;
-    transition: border-color var(--transition-fast);
+    outline: none;
+    background: var(--background-white);
 }
 
-.search-input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+.search-input::placeholder {
+    color: var(--text-light);
 }
 
 .search-button {
-    padding: var(--spacing-md) var(--spacing-lg);
-    background: var(--primary-color);
+    padding: 1rem var(--spacing-xl);
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: var(--background-white);
     border: none;
-    border-radius: var(--border-radius);
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color var(--transition-fast);
+    transition: all var(--transition-fast);
+    font-size: 1rem;
 }
 
 .search-button:hover {
-    background: var(--primary-hover);
+    background: linear-gradient(135deg, var(--primary-hover), var(--secondary-color));
+    transform: translateY(-1px);
 }
 
 /* Reviews Section */
@@ -100,7 +116,12 @@
 .reviews-stats {
     margin-bottom: var(--spacing-lg);
     text-align: center;
-    color: var(--text-secondary);
+    background: var(--background-white);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    color: var(--text-color);
+    font-weight: 500;
 }
 
 .reviews-list {
@@ -109,25 +130,39 @@
     gap: var(--spacing-lg);
 }
 
-/* Review Card */
+/* Enhanced Review Card */
 .review-card {
     background: var(--background-white);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-xl);
     box-shadow: var(--shadow-sm);
-    transition: box-shadow var(--transition-fast);
+    transition: all var(--transition-fast);
+    position: relative;
+    overflow: hidden;
+}
+
+.review-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
 }
 
 .review-card:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
 }
 
 .review-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
 }
 
 .review-info {
@@ -135,24 +170,28 @@
 }
 
 .review-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-color);
     margin-bottom: var(--spacing-sm);
+    line-height: 1.3;
 }
 
 .review-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-md);
-    font-size: 0.875rem;
-    color: var(--text-secondary);
+    gap: var(--spacing-lg);
+    font-size: 0.9rem;
+    color: var(--text-light);
 }
 
 .review-meta span {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
+    padding: 0.25rem 0.75rem;
+    background: var(--background-light);
+    border-radius: var(--border-radius);
 }
 
 .review-actions {
@@ -160,72 +199,112 @@
     gap: var(--spacing-sm);
 }
 
+/* Fixed Toggle Comments Button */
 .toggle-comments-btn {
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--secondary-color);
-    color: var(--background-white);
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
     border: none;
-    border-radius: var(--border-radius);
-    font-size: 0.875rem;
+    border-radius: var(--border-radius-lg);
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color var(--transition-fast);
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .toggle-comments-btn:hover {
-    background: var(--secondary-hover);
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: white; /* 중요: 호버 시에도 색상 유지 */
+}
+
+.toggle-comments-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
 }
 
 .review-content {
-    margin-bottom: var(--spacing-md);
-    line-height: 1.6;
-    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.7;
+    color: var(--text-color);
+    background: var(--background-light);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--primary-color);
 }
 
-/* Comments Section */
+/* Enhanced Comments Section */
 .comments-section {
-    border-top: 1px solid var(--border-color);
-    padding-top: var(--spacing-lg);
-    margin-top: var(--spacing-lg);
+    border-top: 2px solid var(--border-color);
+    padding-top: var(--spacing-xl);
+    margin-top: var(--spacing-xl);
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    margin: var(--spacing-xl) -var(--spacing-xl) -var(--spacing-xl);
+    padding: var(--spacing-xl);
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
 }
 
 .comments-header {
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
 }
 
 .comments-header h4 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
 .comments-list {
     margin-bottom: var(--spacing-lg);
 }
 
-/* Comment Item */
+/* Comment Items */
 .comment-item {
-    background: var(--background-gray);
+    background: var(--background-white);
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    padding: var(--spacing-md);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
     margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+    border-left: 4px solid var(--secondary-color);
+}
+
+.comment-item:hover {
+    box-shadow: var(--shadow-md);
+    border-left-color: var(--primary-color);
 }
 
 .comment-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-sm);
-    font-size: 0.875rem;
+    margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
 }
 
 .comment-author {
     font-weight: 600;
     color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
 }
 
 .comment-date {
-    color: var(--text-secondary);
+    color: var(--text-light);
+    font-size: 0.875rem;
 }
 
 .comment-actions {
@@ -234,119 +313,131 @@
 }
 
 .edit-comment-btn,
-.delete-comment-btn {
-    padding: var(--spacing-xs) var(--spacing-sm);
+.delete-comment-btn,
+.save-comment-btn,
+.cancel-edit-btn {
+    padding: 0.4rem 0.8rem;
     border: none;
-    border-radius: var(--border-radius-sm);
-    font-size: 0.75rem;
+    border-radius: var(--border-radius);
+    font-size: 0.8rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color var(--transition-fast);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
 }
 
 .edit-comment-btn {
-    background: var(--warning-color);
-    color: var(--background-white);
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
 }
 
 .edit-comment-btn:hover {
-    background: var(--warning-hover);
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: translateY(-1px);
 }
 
 .delete-comment-btn {
-    background: var(--error-color);
-    color: var(--background-white);
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
 }
 
 .delete-comment-btn:hover {
-    background: var(--error-hover);
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateY(-1px);
 }
 
 .comment-content {
-    line-height: 1.5;
-    color: var(--text-primary);
+    line-height: 1.6;
+    color: var(--text-color);
+    background: var(--background-light);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
 }
 
-/* Comment Edit Form */
 .comment-edit-form {
-    margin-top: var(--spacing-sm);
+    margin-top: var(--spacing-md);
 }
 
 .comment-edit-textarea {
     width: 100%;
-    min-height: 80px;
-    padding: var(--spacing-sm);
-    border: 1px solid var(--border-color);
+    min-height: 100px;
+    padding: var(--spacing-md);
+    border: 2px solid var(--border-color);
     border-radius: var(--border-radius);
-    font-family: inherit;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
     resize: vertical;
     transition: border-color var(--transition-fast);
+    font-family: inherit;
 }
 
 .comment-edit-textarea:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
 .comment-edit-actions {
     display: flex;
     gap: var(--spacing-sm);
-    margin-top: var(--spacing-sm);
-}
-
-.save-comment-btn,
-.cancel-edit-btn {
-    padding: var(--spacing-sm) var(--spacing-md);
-    border: none;
-    border-radius: var(--border-radius);
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: background-color var(--transition-fast);
+    margin-top: var(--spacing-md);
+    justify-content: flex-end;
 }
 
 .save-comment-btn {
-    background: var(--success-color);
-    color: var(--background-white);
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
 }
 
 .save-comment-btn:hover {
-    background: var(--success-hover);
+    background: linear-gradient(135deg, var(--primary-hover), var(--secondary-color));
+    transform: translateY(-1px);
 }
 
 .cancel-edit-btn {
-    background: var(--text-light);
-    color: var(--background-white);
+    background: var(--background-gray);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
 }
 
 .cancel-edit-btn:hover {
-    background: var(--text-secondary);
+    background: var(--border-color);
 }
 
 /* Add Comment Form */
 .add-comment-form {
+    margin-top: var(--spacing-lg);
     background: var(--background-white);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    padding: var(--spacing-md);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    border: 2px dashed var(--border-color);
+    transition: border-color var(--transition-fast);
+}
+
+.add-comment-form:hover {
+    border-color: var(--primary-color);
 }
 
 .comment-textarea {
     width: 100%;
-    min-height: 100px;
-    padding: var(--spacing-md);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    font-family: inherit;
+    min-height: 120px;
+    padding: var(--spacing-lg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
     font-size: 1rem;
+    line-height: 1.6;
     resize: vertical;
-    transition: border-color var(--transition-fast);
+    transition: all var(--transition-fast);
+    font-family: inherit;
 }
 
 .comment-textarea:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+    transform: translateY(-2px);
 }
 
 .comment-form-actions {
@@ -356,46 +447,67 @@
 }
 
 .add-comment-btn {
-    padding: var(--spacing-md) var(--spacing-lg);
-    background: var(--primary-color);
-    color: var(--background-white);
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
     border: none;
-    border-radius: var(--border-radius);
-    font-weight: 500;
+    border-radius: var(--border-radius-lg);
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color var(--transition-fast);
+    transition: all var(--transition-fast);
+    font-size: 1rem;
+    box-shadow: var(--shadow-sm);
 }
 
 .add-comment-btn:hover {
-    background: var(--primary-hover);
+    background: linear-gradient(135deg, var(--primary-hover), var(--secondary-color));
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
-/* No Reviews State */
+/* Enhanced No Reviews Section */
 .no-reviews {
     text-align: center;
     padding: var(--spacing-xl);
-    color: var(--text-secondary);
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+    border-radius: var(--border-radius-lg);
+    border: 2px dashed var(--border-color);
+    margin: var(--spacing-xl) 0;
 }
 
 .no-reviews h3 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-color);
     margin-bottom: var(--spacing-md);
-    color: var(--text-primary);
+}
+
+.no-reviews p {
+    color: var(--text-light);
+    font-size: 1.1rem;
+    margin-bottom: var(--spacing-lg);
 }
 
 .clear-search-btn {
-    display: inline-block;
-    margin-top: var(--spacing-md);
-    padding: var(--spacing-md) var(--spacing-lg);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 0.75rem 1.5rem;
     background: var(--primary-color);
-    color: var(--background-white);
+    color: white;
     text-decoration: none;
-    border-radius: var(--border-radius);
-    transition: background-color var(--transition-fast);
+    border-radius: var(--border-radius-lg);
+    font-weight: 600;
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
 }
 
 .clear-search-btn:hover {
     background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: white;
+    text-decoration: none;
 }
 
 /* Pagination */

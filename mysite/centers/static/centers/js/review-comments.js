@@ -2,7 +2,13 @@
 
 // 디버깅을 위한 로그 함수
 function debugLog(message, data = null) {
-    console.log(`[ReviewComments] ${message}`, data || '');
+    if (console && console.log) {
+        if (data) {
+            console.log(`[Review Comments Debug] ${message}:`, data);
+        } else {
+            console.log(`[Review Comments Debug] ${message}`);
+        }
+    }
 }
 
 // alertManager 안전 사용 함수
@@ -292,6 +298,71 @@ function getCookie(name) {
         }
     }
     return cookieValue;
+}
+
+// DOM이 로드되면 이벤트 리스너 등록
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Review comments JavaScript loaded');
+    initializeEventListeners();
+});
+
+// 이벤트 리스너 초기화
+function initializeEventListeners() {
+    console.log('Initializing event listeners for review management');
+    
+    // 이벤트 위임을 사용하여 동적으로 생성된 버튼들도 처리
+    document.addEventListener('click', function(event) {
+        const target = event.target;
+        const action = target.getAttribute('data-action');
+        
+        if (!action) return;
+        
+        console.log('Button clicked with action:', action);
+        
+        switch(action) {
+            case 'toggle-comments':
+                const reviewId = target.getAttribute('data-review-id');
+                if (reviewId) {
+                    toggleComments(parseInt(reviewId));
+                }
+                break;
+                
+            case 'edit-comment':
+                const commentId = target.getAttribute('data-comment-id');
+                if (commentId) {
+                    editComment(parseInt(commentId));
+                }
+                break;
+                
+            case 'delete-comment':
+                const deleteCommentId = target.getAttribute('data-comment-id');
+                if (deleteCommentId) {
+                    deleteComment(parseInt(deleteCommentId));
+                }
+                break;
+                
+            case 'save-comment':
+                const saveCommentId = target.getAttribute('data-comment-id');
+                if (saveCommentId) {
+                    saveComment(parseInt(saveCommentId));
+                }
+                break;
+                
+            case 'cancel-edit':
+                const cancelCommentId = target.getAttribute('data-comment-id');
+                if (cancelCommentId) {
+                    cancelEdit(parseInt(cancelCommentId));
+                }
+                break;
+                
+            case 'add-comment':
+                const addReviewId = target.getAttribute('data-review-id');
+                if (addReviewId) {
+                    addComment(parseInt(addReviewId));
+                }
+                break;
+        }
+    });
 }
 
 // 페이지 로드 시 디버깅 정보 출력

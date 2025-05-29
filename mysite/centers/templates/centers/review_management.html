@@ -66,7 +66,7 @@
                                 </div>
                             </div>
                             <div class="review-actions">
-                                <button class="toggle-comments-btn" onclick="toggleComments({{ review.id }})">
+                                <button class="toggle-comments-btn" data-review-id="{{ review.id }}" data-action="toggle-comments">
                                     💬 댓글 ({{ review.comments.count }})
                                 </button>
                             </div>
@@ -91,10 +91,10 @@
                                             <span class="comment-date">{{ comment.created_at|date:"Y-m-d H:i" }}</span>
                                             {% if comment.author == request.user %}
                                                 <div class="comment-actions">
-                                                    <button class="edit-comment-btn" onclick="editComment({{ comment.id }})">
+                                                    <button class="edit-comment-btn" data-comment-id="{{ comment.id }}" data-action="edit-comment">
                                                         ✏️ 수정
                                                     </button>
-                                                    <button class="delete-comment-btn" onclick="deleteComment({{ comment.id }})">
+                                                    <button class="delete-comment-btn" data-comment-id="{{ comment.id }}" data-action="delete-comment">
                                                         🗑️ 삭제
                                                     </button>
                                                 </div>
@@ -106,10 +106,10 @@
                                         <div class="comment-edit-form" id="comment-edit-form-{{ comment.id }}" style="display: none;">
                                             <textarea class="comment-edit-textarea" id="comment-edit-textarea-{{ comment.id }}">{{ comment.content }}</textarea>
                                             <div class="comment-edit-actions">
-                                                <button class="save-comment-btn" onclick="saveComment({{ comment.id }})">
+                                                <button class="save-comment-btn" data-comment-id="{{ comment.id }}" data-action="save-comment">
                                                     💾 저장
                                                 </button>
-                                                <button class="cancel-edit-btn" onclick="cancelEdit({{ comment.id }})">
+                                                <button class="cancel-edit-btn" data-comment-id="{{ comment.id }}" data-action="cancel-edit">
                                                     ❌ 취소
                                                 </button>
                                             </div>
@@ -124,7 +124,7 @@
                                          id="comment-textarea-{{ review.id }}" 
                                          placeholder="이 리뷰에 대한 센터의 답변을 작성해주세요..."></textarea>
                                 <div class="comment-form-actions">
-                                    <button class="add-comment-btn" onclick="addComment({{ review.id }})">
+                                    <button class="add-comment-btn" data-review-id="{{ review.id }}" data-action="add-comment">
                                         💬 답변 작성
                                     </button>
                                 </div>
