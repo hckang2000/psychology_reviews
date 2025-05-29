@@ -13,7 +13,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-your-secret-key-here')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True  # 임시로 디버그 모드 활성화
+# Render 환경에서는 자동으로 DEBUG=False, 로컬에서는 DEBUG=True
+DEBUG = not bool(os.getenv('RENDER'))  # RENDER 환경변수가 있으면 False, 없으면 True
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -39,7 +40,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'django_extensions',  # URL 디버깅을 위해 추가
-    # 'django_celery_beat',  # Celery 주기적 작업 스케줄링 (임시 비활성화)
     
     # Local apps
     'centers',
@@ -158,7 +158,7 @@ ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = '/'
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = 'account_login'
 ACCOUNT_EMAIL_SUBJECT_PREFIX = '[마인드스캐너] '
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http' if DEBUG else 'https'
 ACCOUNT_FORMS = {
     'login': 'accounts.forms.CustomLoginForm',
     'signup': 'accounts.forms.CustomSignupForm',
@@ -186,8 +186,8 @@ LOGIN_REDIRECT_URL = 'centers:index'
 LOGIN_URL = 'accounts:account_login'
 LOGOUT_REDIRECT_URL = 'centers:index'
 
-# Security settings
-if not DEBUG:
+# Security settings - 운영환경(Render)에서만 HTTPS 강제
+if not DEBUG:  # 운영환경 (RENDER=True)
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -196,9 +196,21 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+else:  # 개발환경 (로컬)
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
-# CSRF settings
-CSRF_TRUSTED_ORIGINS = ['https://mindscanner.onrender.com']
+# CSRF settings - 환경별 자동 구분
+if DEBUG:  # 개발환경 (로컬)
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+    ]
+else:  # 운영환경 (Render)
+    CSRF_TRUSTED_ORIGINS = [
+        'https://mindscanner.onrender.com'
+    ]
 
 # ============================================
 # 백업 시스템 설정
@@ -231,6 +243,9 @@ BACKUP_DEFAULT_MODELS = [
 ]
 
 # 로깅 설정 (백업 관련)
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)  # logs 디렉토리 자동 생성
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -239,14 +254,12 @@ LOGGING = {
             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
     },
     'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'backup.log'),
-            'formatter': 'verbose',
-        },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
@@ -255,18 +268,27 @@ LOGGING = {
     },
     'loggers': {
         'centers.tasks': {
-            'handlers': ['file', 'console'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
         },
     },
 }
 
-# Celery Configuration
-CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Asia/Seoul'
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+# 운영 환경이 아닌 경우에만 파일 로깅 추가
+if DEBUG or not os.getenv('RENDER'):
+    LOGGING['handlers']['file'] = {
+        'level': 'INFO',
+        'class': 'logging.FileHandler',
+        'filename': os.path.join(LOG_DIR, 'backup.log'),
+        'formatter': 'verbose',
+    }
+    # 파일 핸들러를 로거에 추가
+    for logger_name in ['centers.tasks', 'django']:
+        if logger_name in LOGGING['loggers']:
+            LOGGING['loggers'][logger_name]['handlers'].append('file')

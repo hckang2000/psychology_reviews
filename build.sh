@@ -6,8 +6,9 @@ set -o errexit
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Create staticfiles directory if it doesn't exist
+# Create necessary directories
 mkdir -p mysite/staticfiles
+mkdir -p mysite/logs
 
 cd mysite
 # 정적 파일 수집

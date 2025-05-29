@@ -1,7 +1,15 @@
 #!/usr/bin/env python
 """
-간단한 백업 스케줄러 (Celery 대안)
+백업 스케줄러 - 자동 백업 시스템
 사용법: python backup_scheduler.py
+
+이 스크립트는 schedule 패키지를 사용하여 주기적으로 백업을 실행합니다.
+기본 설정: 매주 일요일 14:00에 GitHub Releases로 백업
+
+운영 환경에서는 다음 방법 중 하나를 사용하세요:
+1. Windows: 작업 스케줄러에 등록
+2. Linux: cron 작업으로 등록
+3. Docker: 백그라운드 서비스로 실행
 """
 
 import os
