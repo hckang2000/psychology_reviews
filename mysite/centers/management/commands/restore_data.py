@@ -46,6 +46,11 @@ class Command(BaseCommand):
             action='store_true',
             help='실제 복원하지 않고 복원 과정만 시뮬레이션합니다'
         )
+        parser.add_argument(
+            '--force',
+            action='store_true',
+            help='사용자 확인 없이 강제로 복원을 실행합니다 (웹 인터페이스용)'
+        )
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS('=== 데이터 복원 시작 ==='))
@@ -92,12 +97,14 @@ class Command(BaseCommand):
         
         self.stdout.write(f"복원할 모델들: {', '.join(models_to_restore)}")
         
-        if not options['dry_run']:
-            # 사용자 확인 (dry-run이 아닌 경우)
+        if not options['dry_run'] and not options['force']:
+            # 사용자 확인 (dry-run이나 force 옵션이 아닌 경우)
             confirm = input('\n정말로 데이터를 복원하시겠습니까? (yes/no): ')
             if confirm.lower() != 'yes':
                 self.stdout.write(self.style.WARNING('복원이 취소되었습니다.'))
                 return
+        elif options['force']:
+            self.stdout.write(self.style.WARNING('--force 옵션이 설정되어 사용자 확인을 건너뜁니다.'))
         
         # 데이터 복원 실행
         with transaction.atomic():

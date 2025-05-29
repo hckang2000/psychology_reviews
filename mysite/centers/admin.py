@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db import models
 from django import forms
-from .models import Center, Review, Therapist, CenterImage, ExternalReview
+from .models import Center, Review, Therapist, CenterImage, ExternalReview, BackupHistory, RestoreHistory
 from django.conf import settings
 import requests
 import csv
@@ -910,3 +910,41 @@ class CenterImageAdmin(admin.ModelAdmin):
             return profile.managed_center == obj.center
         
         return False
+
+@admin.register(BackupHistory)
+class BackupHistoryAdmin(admin.ModelAdmin):
+    list_display = ('filename', 'backup_type', 'status', 'file_size_kb', 'created_by', 'created_at')
+    list_filter = ('backup_type', 'status', 'created_at')
+    search_fields = ('filename', 'created_by__username')
+    readonly_fields = ('filename', 'file_size', 'backup_type', 'status', 'models_count', 'created_by', 'created_at', 'error_message')
+    
+    def file_size_kb(self, obj):
+        if obj.file_size:
+            return f"{obj.file_size / 1024:.1f} KB"
+        return "알 수 없음"
+    file_size_kb.short_description = "파일 크기"
+    
+    def has_add_permission(self, request):
+        return False  # 백업 히스토리는 시스템에서 자동 생성
+    
+    def has_change_permission(self, request, obj=None):
+        return False  # 읽기 전용
+
+@admin.register(RestoreHistory)
+class RestoreHistoryAdmin(admin.ModelAdmin):
+    list_display = ('filename', 'restore_type', 'status', 'file_size_kb', 'restored_by', 'created_at')
+    list_filter = ('restore_type', 'status', 'created_at')
+    search_fields = ('filename', 'restored_by__username')
+    readonly_fields = ('filename', 'file_size', 'restore_type', 'status', 'models_restored', 'restored_by', 'created_at', 'error_message')
+    
+    def file_size_kb(self, obj):
+        if obj.file_size:
+            return f"{obj.file_size / 1024:.1f} KB"
+        return "알 수 없음"
+    file_size_kb.short_description = "파일 크기"
+    
+    def has_add_permission(self, request):
+        return False  # 복원 히스토리는 시스템에서 자동 생성
+    
+    def has_change_permission(self, request, obj=None):
+        return False  # 읽기 전용

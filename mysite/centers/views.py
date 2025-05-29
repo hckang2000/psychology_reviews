@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
-from .models import Center, Review, ExternalReview, Therapist, CenterImage, ReviewComment
+from .models import Center, Review, ExternalReview, Therapist, CenterImage, ReviewComment, BackupHistory, RestoreHistory
 from .forms import ReviewForm, CenterManagementForm, TherapistManagementForm, ReviewCommentForm
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
@@ -756,29 +756,40 @@ def is_superuser(user):
 @user_passes_test(is_superuser)
 def backup_dashboard(request):
     """백업/복원 대시보드"""
-    # GitHub에서 백업 히스토리 가져오기
+    # GitHub API에서 실제 백업 히스토리 가져오기
     backup_history = []
     try:
-        # StringIO를 사용해서 명령어 출력 캡처
-        output = StringIO()
-        call_command('list_backups', storage='github', details=True, limit=10, stdout=output)
+        token = getattr(settings, 'GITHUB_TOKEN', None) or os.getenv('GITHUB_TOKEN')
+        repo = getattr(settings, 'GITHUB_BACKUP_REPO', None) or os.getenv('GITHUB_BACKUP_REPO')
         
-        # 출력 파싱해서 백업 히스토리 생성
-        output_lines = output.getvalue().split('\n')
-        for line in output_lines:
-            if 'backup_' in line and '.json.gz' in line:
-                parts = line.split()
-                if len(parts) >= 3:
-                    backup_history.append({
-                        'filename': parts[0],
-                        'size': parts[1] if len(parts) > 1 else 'Unknown',
-                        'date': parts[2] if len(parts) > 2 else 'Unknown'
-                    })
+        if token and repo:
+            headers = {
+                'Authorization': f'token {token}',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+            
+            # GitHub Releases API 호출
+            url = f'https://api.github.com/repos/{repo}/releases'
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code == 200:
+                releases = response.json()
+                for release in releases[:10]:  # 최근 10개만
+                    if release['tag_name'].startswith('backup-'):
+                        for asset in release.get('assets', []):
+                            if asset['name'].endswith('.json.gz'):
+                                backup_history.append({
+                                    'filename': asset['name'],
+                                    'size': f"{asset['size'] / 1024:.1f} KB",
+                                    'date': release['created_at'][:19].replace('T', ' '),
+                                    'download_count': asset['download_count']
+                                })
+                        break  # 각 릴리스당 하나의 asset만
     except Exception as e:
-        print(f"백업 히스토리 로드 실패: {e}")
+        print(f"GitHub 백업 히스토리 로드 실패: {e}")
     
-    # 복원 이력은 로그에서 가져오거나 별도로 저장해야 함
-    restore_history = []
+    # DB에서 복원 히스토리 가져오기
+    restore_history = RestoreHistory.objects.all()[:10]  # 최근 10개
     
     context = {
         'backup_history': backup_history,
@@ -798,12 +809,63 @@ def perform_backup(request):
         output = StringIO()
         call_command('backup_data', storage='github', stdout=output)
         
+        output_text = output.getvalue()
+        
+        # 백업 성공시 히스토리 저장
+        try:
+            # 파일명 추출 (출력에서)
+            lines = output_text.split('\n')
+            filename = None
+            for line in lines:
+                if 'backup_' in line and '.json.gz' in line:
+                    # "=== 백업 완료: backup_20231201_143000.json.gz ===" 형태에서 파일명 추출
+                    if '===' in line:
+                        filename = line.split('===')[1].strip().replace('백업 완료: ', '').strip()
+                        break
+            
+            if not filename:
+                # 기본 파일명 생성
+                from datetime import datetime
+                filename = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json.gz"
+            
+            # 백업 히스토리 저장
+            BackupHistory.objects.create(
+                filename=filename,
+                file_size=0,  # GitHub에서 실제 크기를 가져올 수 없으므로 0으로 설정
+                backup_type='github',
+                status='success',
+                models_count={
+                    'Center': Center.objects.count(),
+                    'Review': Review.objects.count(),
+                    'ExternalReview': ExternalReview.objects.count(),
+                    'Therapist': Therapist.objects.count(),
+                    'CenterImage': CenterImage.objects.count(),
+                },
+                created_by=request.user
+            )
+        except Exception as e:
+            print(f"백업 히스토리 저장 실패: {e}")
+        
         return JsonResponse({
             'success': True, 
             'message': '백업이 성공적으로 완료되었습니다.',
-            'output': output.getvalue()
+            'output': output_text
         })
     except Exception as e:
+        # 백업 실패시 히스토리 저장
+        try:
+            BackupHistory.objects.create(
+                filename=f"failed_backup_{timezone.now().strftime('%Y%m%d_%H%M%S')}",
+                file_size=0,
+                backup_type='github',
+                status='failed',
+                models_count={},
+                created_by=request.user,
+                error_message=str(e)
+            )
+        except Exception as save_error:
+            print(f"실패 히스토리 저장 실패: {save_error}")
+        
         return JsonResponse({
             'success': False, 
             'error': f'백업 실행 중 오류가 발생했습니다: {str(e)}'
@@ -835,13 +897,47 @@ def perform_restore(request):
         try:
             # 복원 명령어 실행
             output = StringIO()
-            call_command('restore_data', temp_file_path, storage='local', stdout=output)
+            call_command('restore_data', temp_file_path, storage='local', force=True, stdout=output)
+            
+            output_text = output.getvalue()
+            
+            # 복원 성공시 히스토리 저장
+            try:
+                RestoreHistory.objects.create(
+                    filename=backup_file.name,
+                    file_size=backup_file.size,
+                    restore_type='local',
+                    status='success',
+                    models_restored={
+                        'restored_from': backup_file.name,
+                        'file_size_mb': round(backup_file.size / (1024*1024), 2)
+                    },
+                    restored_by=request.user
+                )
+            except Exception as e:
+                print(f"복원 히스토리 저장 실패: {e}")
             
             return JsonResponse({
                 'success': True,
                 'message': '복원이 성공적으로 완료되었습니다.',
-                'output': output.getvalue()
+                'output': output_text
             })
+        except Exception as restore_error:
+            # 복원 실패시 히스토리 저장
+            try:
+                RestoreHistory.objects.create(
+                    filename=backup_file.name,
+                    file_size=backup_file.size,
+                    restore_type='local',
+                    status='failed',
+                    models_restored={},
+                    restored_by=request.user,
+                    error_message=str(restore_error)
+                )
+            except Exception as save_error:
+                print(f"실패 히스토리 저장 실패: {save_error}")
+            
+            raise restore_error  # 원래 에러를 다시 발생시킴
         finally:
             # 임시 파일 삭제
             os.unlink(temp_file_path)

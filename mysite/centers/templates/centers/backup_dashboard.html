@@ -84,6 +84,7 @@
                             <th>백업 파일명</th>
                             <th>크기</th>
                             <th>생성 시간</th>
+                            <th>다운로드</th>
                             <th>상태</th>
                         </tr>
                     </thead>
@@ -93,11 +94,12 @@
                             <td class="filename">{{ backup.filename }}</td>
                             <td class="size">{{ backup.size }}</td>
                             <td class="date">{{ backup.date }}</td>
+                            <td class="download">{{ backup.download_count|default:"0" }}회</td>
                             <td><span class="status-badge success">성공</span></td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="no-data">백업 히스토리가 없습니다</td>
+                            <td colspan="5" class="no-data">백업 히스토리가 없습니다</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -124,9 +126,15 @@
                         {% for restore in restore_history %}
                         <tr>
                             <td class="filename">{{ restore.filename }}</td>
-                            <td class="date">{{ restore.date }}</td>
-                            <td class="user">{{ restore.user }}</td>
-                            <td><span class="status-badge success">성공</span></td>
+                            <td class="date">{{ restore.created_at|date:"Y-m-d H:i" }}</td>
+                            <td class="user">{{ restore.restored_by.username|default:"알 수 없음" }}</td>
+                            <td>
+                                {% if restore.status == 'success' %}
+                                    <span class="status-badge success">성공</span>
+                                {% else %}
+                                    <span class="status-badge failed">실패</span>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
@@ -392,6 +400,11 @@
     color: #065f46;
 }
 
+.status-badge.failed {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
 .no-data {
     text-align: center;
     color: #9ca3af;
@@ -550,7 +563,20 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (!confirm('정말로 데이터를 복원하시겠습니까?\n\n주의: 현재 데이터가 백업 데이터로 덮어쓰일 수 있습니다.')) {
+        // 더 명확한 확인 메시지
+        const confirmMessage = `정말로 데이터를 복원하시겠습니까?
+
+📁 선택한 파일: ${file.name}
+📊 파일 크기: ${(file.size / 1024).toFixed(1)} KB
+
+⚠️ 주의사항:
+• 현재 데이터가 백업 데이터로 덮어쓰일 수 있습니다
+• 이 작업은 되돌릴 수 없습니다
+• 복원 전에 현재 데이터를 백업하는 것을 권장합니다
+
+복원을 계속하시겠습니까?`;
+
+        if (!confirm(confirmMessage)) {
             return;
         }
 
