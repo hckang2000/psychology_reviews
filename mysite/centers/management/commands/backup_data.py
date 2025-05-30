@@ -1,6 +1,8 @@
 import os
 import json
 import gzip
+import tarfile
+import tempfile
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.core import serializers
@@ -18,14 +20,14 @@ except ImportError:
 
 
 class Command(BaseCommand):
-    help = '상담센터 데이터를 백업합니다 (JSON 형식으로 압축하여 클라우드에 저장)'
+    help = '상담센터 데이터를 백업합니다 (JSON 형식으로 압축하여 클라우드에 저장, 미디어 파일 포함)'
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--models',
             nargs='+',
-            default=['Center', 'Review', 'ExternalReview', 'Therapist', 'CenterImage'],
-            help='백업할 모델들을 지정합니다 (기본값: Center Review ExternalReview Therapist CenterImage)'
+            default=['Center', 'Review', 'ExternalReview', 'Therapist', 'CenterImage', 'ReviewComment'],
+            help='백업할 모델들을 지정합니다 (기본값: Center Review ExternalReview Therapist CenterImage ReviewComment)'
         )
         parser.add_argument(
             '--storage',
@@ -44,6 +46,12 @@ class Command(BaseCommand):
             action='store_true',
             default=True,
             help='백업 파일을 gzip으로 압축합니다 (기본값: True)'
+        )
+        parser.add_argument(
+            '--include-media',
+            action='store_true',
+            default=True,
+            help='미디어 파일도 함께 백업합니다 (기본값: True)'
         )
         parser.add_argument(
             '--repo',
@@ -116,30 +124,85 @@ class Command(BaseCommand):
             'django_version': getattr(settings, 'DJANGO_VERSION', 'unknown'),
             'total_models': len(backup_data) - 1,  # _metadata 제외
             'backup_format': options['format'],
-            'storage_type': options['storage']
+            'storage_type': options['storage'],
+            'includes_media': options['include_media']
         }
 
         # JSON 문자열로 변환
         backup_json = json.dumps(backup_data, ensure_ascii=False, indent=2)
         
         # 파일명 생성
-        filename = f'backup_{timestamp}.{options["format"]}'
+        data_filename = f'backup_{timestamp}.{options["format"]}'
+        media_filename = f'media_{timestamp}.tar.gz'
+        
         if options['compress']:
-            filename += '.gz'
+            data_filename += '.gz'
+
+        # 미디어 파일 백업
+        media_archive_path = None
+        if options['include_media']:
+            media_archive_path = self._create_media_archive(timestamp)
+            if media_archive_path:
+                self.stdout.write(self.style.SUCCESS('✓ 미디어 파일 아카이브 생성 완료'))
 
         # 저장 위치에 따른 처리
         if options['storage'] == 'local':
-            self._save_local(backup_json, filename, options['compress'])
+            self._save_local(backup_json, data_filename, options['compress'])
+            if media_archive_path:
+                self._save_media_local(media_archive_path, media_filename)
         elif options['storage'] == 'github':
-            self._save_github(backup_json, filename, options['compress'], repo, token, timestamp)
+            self._save_github(backup_json, data_filename, options['compress'], repo, token, timestamp, media_archive_path, media_filename)
         elif options['storage'] == 's3':
-            self._save_s3(backup_json, filename, options['compress'])
+            self._save_s3(backup_json, data_filename, options['compress'])
         elif options['storage'] == 'google_drive':
-            self._save_google_drive(backup_json, filename, options['compress'])
+            self._save_google_drive(backup_json, data_filename, options['compress'])
+
+        # 임시 미디어 아카이브 파일 정리
+        if media_archive_path and os.path.exists(media_archive_path):
+            os.remove(media_archive_path)
 
         self.stdout.write(
-            self.style.SUCCESS(f'=== 백업 완료: {filename} ===')
+            self.style.SUCCESS(f'=== 백업 완료: {data_filename} ===')
         )
+
+    def _create_media_archive(self, timestamp):
+        """미디어 파일들을 tar.gz로 압축합니다"""
+        try:
+            media_root = settings.MEDIA_ROOT
+            if not os.path.exists(media_root):
+                self.stdout.write(self.style.WARNING('미디어 폴더가 존재하지 않습니다.'))
+                return None
+
+            # 임시 파일 생성
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.tar.gz')
+            temp_file.close()
+            
+            with tarfile.open(temp_file.name, 'w:gz') as tar:
+                # centers/ 폴더 (상담소 이미지)
+                centers_path = os.path.join(media_root, 'centers')
+                if os.path.exists(centers_path):
+                    tar.add(centers_path, arcname='centers')
+                    self.stdout.write(f'✓ 상담소 이미지 폴더 추가: {centers_path}')
+                
+                # therapists/ 폴더 (상담사 이미지)
+                therapists_path = os.path.join(media_root, 'therapists')
+                if os.path.exists(therapists_path):
+                    tar.add(therapists_path, arcname='therapists')
+                    self.stdout.write(f'✓ 상담사 이미지 폴더 추가: {therapists_path}')
+                
+                # 기타 업로드 파일들
+                for item in os.listdir(media_root):
+                    item_path = os.path.join(media_root, item)
+                    if os.path.isfile(item_path):
+                        tar.add(item_path, arcname=item)
+            
+            return temp_file.name
+            
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'미디어 파일 아카이브 생성 실패: {str(e)}')
+            )
+            return None
 
     def _save_local(self, data, filename, compress):
         """로컬에 백업 파일 저장"""
@@ -157,7 +220,18 @@ class Command(BaseCommand):
                 
         self.stdout.write(f'로컬에 저장 완료: {filepath}')
 
-    def _save_github(self, data, filename, compress, repo, token, timestamp):
+    def _save_media_local(self, media_archive_path, media_filename):
+        """로컬에 미디어 아카이브 저장"""
+        backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        dest_path = os.path.join(backup_dir, media_filename)
+        
+        import shutil
+        shutil.copy2(media_archive_path, dest_path)
+        self.stdout.write(f'미디어 파일 로컬 저장 완료: {dest_path}')
+
+    def _save_github(self, data, data_filename, compress, repo, token, timestamp, media_archive_path, media_filename):
         """GitHub Releases에 백업 파일 저장"""
         try:
             # 데이터 압축 처리
@@ -179,8 +253,16 @@ class Command(BaseCommand):
             tag_name = f'backup-{timestamp}'
             release_data = {
                 'tag_name': tag_name,
-                'name': f'Data Backup {timestamp}',
-                'body': f'Automated backup created on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
+                'name': f'Complete Backup {timestamp}',
+                'body': f'''자동 백업 생성일: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+📊 **백업 내용:**
+- 데이터베이스: {data_filename}
+- 미디어 파일: {media_filename if media_archive_path else "미디어 파일 없음"}
+
+⚠️ **복원 시 주의사항:**
+- 두 파일을 모두 다운로드하여 복원해야 완전한 복원이 가능합니다
+- 데이터 파일만으로는 이미지가 복원되지 않습니다''',
                 'draft': False,
                 'prerelease': True
             }
@@ -193,23 +275,45 @@ class Command(BaseCommand):
             
             upload_url = response.json()['upload_url'].replace('{?name,label}', '')
             
-            # 2. 파일 업로드
+            # 2. 데이터 파일 업로드
             upload_headers = {
                 'Authorization': f'token {token}',
                 'Content-Type': 'application/gzip' if compress else 'application/json'
             }
             
             upload_response = requests.post(
-                f'{upload_url}?name={filename}',
+                f'{upload_url}?name={data_filename}',
                 headers=upload_headers,
                 data=upload_data
             )
             
             if upload_response.status_code == 201:
                 download_url = upload_response.json()['browser_download_url']
-                self.stdout.write(f'GitHub에 저장 완료: {download_url}')
+                self.stdout.write(f'데이터 파일 GitHub에 저장 완료: {download_url}')
             else:
-                raise Exception(f'파일 업로드 실패: {upload_response.status_code}')
+                raise Exception(f'데이터 파일 업로드 실패: {upload_response.status_code}')
+            
+            # 3. 미디어 파일 업로드
+            if media_archive_path and os.path.exists(media_archive_path):
+                with open(media_archive_path, 'rb') as f:
+                    media_data = f.read()
+                
+                media_headers = {
+                    'Authorization': f'token {token}',
+                    'Content-Type': 'application/gzip'
+                }
+                
+                media_response = requests.post(
+                    f'{upload_url}?name={media_filename}',
+                    headers=media_headers,
+                    data=media_data
+                )
+                
+                if media_response.status_code == 201:
+                    media_download_url = media_response.json()['browser_download_url']
+                    self.stdout.write(f'미디어 파일 GitHub에 저장 완료: {media_download_url}')
+                else:
+                    self.stdout.write(f'미디어 파일 업로드 실패: {media_response.status_code}')
                 
         except Exception as e:
             self.stdout.write(

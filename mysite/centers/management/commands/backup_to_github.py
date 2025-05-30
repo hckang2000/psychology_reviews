@@ -17,7 +17,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--models',
             nargs='+',
-            default=['Center', 'Review', 'ExternalReview', 'Therapist', 'CenterImage'],
+            default=['Center', 'Review', 'ExternalReview', 'Therapist', 'CenterImage', 'ReviewComment'],
             help='백업할 모델들을 지정합니다'
         )
         parser.add_argument(

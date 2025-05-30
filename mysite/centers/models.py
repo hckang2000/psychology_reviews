@@ -149,6 +149,7 @@ class RestoreHistory(models.Model):
     restore_type = models.CharField(max_length=50, default='local', help_text='복원 소스')
     status = models.CharField(max_length=20, default='success', help_text='복원 상태')
     models_restored = models.JSONField(default=dict, help_text='복원된 모델별 레코드 수')
+    media_files_count = models.IntegerField(default=0, help_text='복원된 미디어 파일 수')
     restored_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     error_message = models.TextField(blank=True, help_text='오류 메시지 (실패시)')

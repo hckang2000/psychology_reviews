@@ -29,6 +29,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.core.management import call_command
 from io import StringIO
 import tempfile
+from django.apps import apps
 
 # 유틸리티 함수들
 def escape_quotes(text):
@@ -840,6 +841,7 @@ def perform_backup(request):
                     'ExternalReview': ExternalReview.objects.count(),
                     'Therapist': Therapist.objects.count(),
                     'CenterImage': CenterImage.objects.count(),
+                    'ReviewComment': ReviewComment.objects.count(),
                 },
                 created_by=request.user
             )
@@ -878,75 +880,171 @@ def perform_restore(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': '잘못된 요청입니다.'})
     
-    if 'backup_file' not in request.FILES:
-        return JsonResponse({'success': False, 'error': '백업 파일이 필요합니다.'})
+    data_file = request.FILES.get('backup_data')
+    media_file = request.FILES.get('backup_media')
     
-    backup_file = request.FILES['backup_file']
-    
-    # 파일 이름 검증
-    if not backup_file.name.endswith('.json.gz'):
-        return JsonResponse({'success': False, 'error': '올바른 백업 파일 형식이 아닙니다. (.json.gz 파일만 허용)'})
+    if not data_file and not media_file:
+        return JsonResponse({'success': False, 'error': '복원할 파일이 필요합니다.'})
     
     try:
-        # 임시 파일로 저장
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.json.gz') as temp_file:
-            for chunk in backup_file.chunks():
-                temp_file.write(chunk)
-            temp_file_path = temp_file.name
+        restored_data = {}
         
+        # 데이터 파일 복원
+        if data_file:
+            if not data_file.name.endswith('.json.gz'):
+                return JsonResponse({'success': False, 'error': '올바른 데이터 파일 형식이 아닙니다. (.json.gz 파일만 허용)'})
+            
+            restored_data.update(restore_data_file(data_file, request.user))
+        
+        # 미디어 파일 복원
+        if media_file:
+            if not media_file.name.endswith('.tar.gz'):
+                return JsonResponse({'success': False, 'error': '올바른 미디어 파일 형식이 아닙니다. (.tar.gz 파일만 허용)'})
+            
+            restored_data.update(restore_media_file(media_file))
+        
+        # 복원 히스토리 저장
         try:
-            # 복원 명령어 실행
-            output = StringIO()
-            call_command('restore_data', temp_file_path, storage='local', force=True, stdout=output)
-            
-            output_text = output.getvalue()
-            
-            # 복원 성공시 히스토리 저장
-            try:
-                RestoreHistory.objects.create(
-                    filename=backup_file.name,
-                    file_size=backup_file.size,
-                    restore_type='local',
-                    status='success',
-                    models_restored={
-                        'restored_from': backup_file.name,
-                        'file_size_mb': round(backup_file.size / (1024*1024), 2)
-                    },
-                    restored_by=request.user
-                )
-            except Exception as e:
-                print(f"복원 히스토리 저장 실패: {e}")
-            
-            return JsonResponse({
-                'success': True,
-                'message': '복원이 성공적으로 완료되었습니다.',
-                'output': output_text
-            })
-        except Exception as restore_error:
-            # 복원 실패시 히스토리 저장
-            try:
-                RestoreHistory.objects.create(
-                    filename=backup_file.name,
-                    file_size=backup_file.size,
-                    restore_type='local',
-                    status='failed',
-                    models_restored={},
-                    restored_by=request.user,
-                    error_message=str(restore_error)
-                )
-            except Exception as save_error:
-                print(f"실패 히스토리 저장 실패: {save_error}")
-            
-            raise restore_error  # 원래 에러를 다시 발생시킴
-        finally:
-            # 임시 파일 삭제
-            os.unlink(temp_file_path)
-            
-    except Exception as e:
+            RestoreHistory.objects.create(
+                filename=f"data:{data_file.name if data_file else 'None'}, media:{media_file.name if media_file else 'None'}",
+                file_size=(data_file.size if data_file else 0) + (media_file.size if media_file else 0),
+                restore_type='complete' if (data_file and media_file) else ('data' if data_file else 'media'),
+                status='success',
+                restored_by=request.user,
+                models_restored=restored_data.get('models_restored', {}),
+                media_files_count=restored_data.get('media_files_count', 0)
+            )
+        except Exception as e:
+            print(f"복원 히스토리 저장 실패: {e}")
+        
         return JsonResponse({
-            'success': False,
+            'success': True, 
+            'message': '복원이 성공적으로 완료되었습니다.',
+            'restored_data': restored_data
+        })
+        
+    except Exception as e:
+        # 복원 실패시 히스토리 저장
+        try:
+            RestoreHistory.objects.create(
+                filename=f"data:{data_file.name if data_file else 'None'}, media:{media_file.name if media_file else 'None'}",
+                file_size=(data_file.size if data_file else 0) + (media_file.size if media_file else 0),
+                restore_type='complete' if (data_file and media_file) else ('data' if data_file else 'media'),
+                status='failed',
+                restored_by=request.user,
+                error_message=str(e)
+            )
+        except Exception as save_error:
+            print(f"실패 히스토리 저장 실패: {save_error}")
+        
+        return JsonResponse({
+            'success': False, 
             'error': f'복원 실행 중 오류가 발생했습니다: {str(e)}'
         })
+
+def restore_data_file(data_file, user):
+    """데이터 파일을 복원합니다"""
+    import gzip
+    import json
+    from django.core import serializers
+    from django.db import transaction
+    
+    # 임시 파일로 저장
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.json.gz') as temp_file:
+        for chunk in data_file.chunks():
+            temp_file.write(chunk)
+        temp_file_path = temp_file.name
+    
+    try:
+        # 압축 해제 및 JSON 로드
+        with gzip.open(temp_file_path, 'rt', encoding='utf-8') as f:
+            backup_data = json.load(f)
+        
+        models_restored = {}
+        
+        with transaction.atomic():
+            # 메타데이터 확인
+            if '_metadata' in backup_data:
+                metadata = backup_data['_metadata']
+                print(f"백업 정보: {metadata}")
+            
+            # 모델별 데이터 복원
+            for model_name, model_data in backup_data.items():
+                if model_name.startswith('_'):  # 메타데이터 스킵
+                    continue
+                
+                try:
+                    # 기존 데이터 삭제 (선택적)
+                    model_class = apps.get_model('centers', model_name)
+                    
+                    # 데이터 복원
+                    restored_objects = []
+                    for obj_data in model_data['data']:
+                        try:
+                            # Django serializer를 사용해 객체 복원
+                            for obj in serializers.deserialize('json', json.dumps([obj_data])):
+                                obj.save()
+                                restored_objects.append(obj.object)
+                        except Exception as e:
+                            print(f"객체 복원 실패: {e}")
+                            continue
+                    
+                    models_restored[model_name] = len(restored_objects)
+                    print(f"{model_name}: {len(restored_objects)}개 객체 복원 완료")
+                
+                except Exception as e:
+                    print(f"{model_name} 모델 복원 실패: {e}")
+                    continue
+        
+        return {
+            'models_restored': models_restored,
+            'total_restored': sum(models_restored.values())
+        }
+        
+    finally:
+        # 임시 파일 정리
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
+def restore_media_file(media_file):
+    """미디어 파일을 복원합니다"""
+    import tarfile
+    import shutil
+    
+    # 임시 파일로 저장
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.tar.gz') as temp_file:
+        for chunk in media_file.chunks():
+            temp_file.write(chunk)
+        temp_file_path = temp_file.name
+    
+    try:
+        media_root = settings.MEDIA_ROOT
+        os.makedirs(media_root, exist_ok=True)
+        
+        restored_files = []
+        
+        # tar.gz 파일 추출
+        with tarfile.open(temp_file_path, 'r:gz') as tar:
+            for member in tar.getmembers():
+                if member.isfile():
+                    # 파일 추출
+                    tar.extract(member, media_root)
+                    restored_files.append(member.name)
+                    print(f"미디어 파일 복원: {member.name}")
+        
+        return {
+            'media_files_count': len(restored_files),
+            'restored_files': restored_files[:10]  # 처음 10개만 반환
+        }
+        
+    except Exception as e:
+        print(f"미디어 파일 복원 실패: {e}")
+        raise e
+        
+    finally:
+        # 임시 파일 정리
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
 
 @user_passes_test(is_superuser)
 def get_backup_status(request):

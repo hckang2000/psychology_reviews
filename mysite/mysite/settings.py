@@ -93,6 +93,12 @@ DATABASES = {
     )
 }
 
+# SQLite Foreign Key 지원 활성화 (올바른 방식)
+if 'sqlite' in DATABASES['default']['ENGINE']:
+    DATABASES['default']['OPTIONS'] = {
+        'timeout': 20,
+    }
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -157,8 +163,13 @@ SITE_ID = 1
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
-ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 300
+# 새로운 방식의 로그인 시도 제한 설정 (기존 deprecated 설정 대체)
+ACCOUNT_RATE_LIMITS = {
+    'login_failed': '5/300s',      # 로그인 실패 제한: 5분 내 5회 실패 시 차단
+    'signup': '3/hour',            # 회원가입 제한: 1시간 내 3회 가입 시도만 허용
+    'reset_password': '5/hour',    # 비밀번호 재설정 제한: 1시간 내 5회만 허용
+    'confirm_email': '3/hour',     # 이메일 인증 제한: 1시간 내 3회만 허용
+}
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
@@ -248,9 +259,11 @@ GOOGLE_DRIVE_WEBHOOK_URL = os.getenv('GOOGLE_DRIVE_WEBHOOK_URL')
 # 백업할 모델 목록 (centers 앱)
 BACKUP_DEFAULT_MODELS = [
     'Center',
-    'InternalReview', 
+    'Review', 
     'ExternalReview',
-    'Therapist'
+    'Therapist',
+    'CenterImage',
+    'ReviewComment'
 ]
 
 # 로깅 설정 (백업 관련)

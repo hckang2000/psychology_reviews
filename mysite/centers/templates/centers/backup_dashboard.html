@@ -3,6 +3,16 @@
 
 {% block title %}데이터 백업/복원 대시보드{% endblock %}
 
+{% block extra_css %}
+<!-- 알림 시스템 CSS -->
+<link rel="stylesheet" href="{% static 'centers/css/alerts.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<!-- 알림 시스템 JavaScript -->
+<script src="{% static 'centers/js/alerts.js' %}"></script>
+{% endblock %}
+
 {% block content %}
 <div class="backup-dashboard">
     <div class="dashboard-header">
@@ -21,10 +31,20 @@
             </div>
             <div class="card-content">
                 <h3>데이터 백업</h3>
-                <p>현재 시스템의 모든 데이터를 GitHub Releases에 안전하게 백업합니다</p>
+                <p>현재 시스템의 모든 데이터와 미디어 파일을 GitHub Releases에 안전하게 백업합니다</p>
+                <div class="backup-info">
+                    <div class="info-item">
+                        <i class="fas fa-database"></i>
+                        <span>데이터베이스 정보</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-images"></i>
+                        <span>이미지 파일</span>
+                    </div>
+                </div>
                 <button id="perform-backup-btn" class="action-btn backup-btn">
                     <i class="fas fa-cloud-upload-alt"></i>
-                    백업 실행
+                    완전 백업 실행
                 </button>
             </div>
         </div>
@@ -37,17 +57,44 @@
                 <h3>데이터 복원</h3>
                 <p>백업 파일을 업로드하여 시스템 데이터를 복원합니다</p>
                 <div class="file-upload-area">
-                    <input type="file" id="backup-file-input" accept=".json.gz" style="display: none;">
-                    <button id="select-file-btn" class="action-btn restore-btn">
-                        <i class="fas fa-file-upload"></i>
-                        파일 선택
-                    </button>
-                    <button id="perform-restore-btn" class="action-btn restore-btn" style="display: none;">
+                    <!-- 데이터 파일 업로드 -->
+                    <div class="upload-section">
+                        <label class="upload-label">📊 데이터 파일 (필수)</label>
+                        <input type="file" id="backup-data-input" accept=".json.gz" style="display: none;">
+                        <button id="select-data-btn" class="action-btn restore-btn">
+                            <i class="fas fa-database"></i>
+                            데이터 파일 선택
+                        </button>
+                        <div id="selected-data-info" class="file-info" style="display: none;"></div>
+                    </div>
+                    
+                    <!-- 미디어 파일 업로드 -->
+                    <div class="upload-section">
+                        <label class="upload-label">📁 미디어 파일 (선택)</label>
+                        <input type="file" id="backup-media-input" accept=".tar.gz" style="display: none;">
+                        <button id="select-media-btn" class="action-btn restore-btn secondary">
+                            <i class="fas fa-images"></i>
+                            미디어 파일 선택
+                        </button>
+                        <div id="selected-media-info" class="file-info" style="display: none;"></div>
+                    </div>
+                    
+                    <!-- 복원 실행 버튼 -->
+                    <button id="perform-restore-btn" class="action-btn restore-btn main" style="display: none;">
                         <i class="fas fa-cloud-download-alt"></i>
                         복원 실행
                     </button>
+                    
+                    <!-- 복원 옵션 -->
+                    <div class="restore-options" style="display: none;">
+                        <div class="option-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="restore-data-only" checked>
+                                데이터만 복원 (미디어 파일 제외)
+                            </label>
+                        </div>
+                    </div>
                 </div>
-                <div id="selected-file-info" class="file-info" style="display: none;"></div>
             </div>
         </div>
     </div>
@@ -287,6 +334,74 @@
     gap: 15px;
 }
 
+.upload-section {
+    padding: 15px;
+    border: 2px dashed #e5e7eb;
+    border-radius: 10px;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+}
+
+.upload-section:hover {
+    border-color: #d1d5db;
+    background: #f3f4f6;
+}
+
+.upload-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 10px;
+}
+
+.restore-btn.secondary {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    color: white;
+}
+
+.restore-btn.secondary:hover {
+    background: linear-gradient(135deg, #4b5563, #374151);
+    transform: translateY(-2px);
+}
+
+.restore-btn.main {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: white;
+    font-weight: 700;
+}
+
+.restore-btn.main:hover {
+    background: linear-gradient(135deg, #047857, #065f46);
+    transform: translateY(-2px);
+}
+
+.restore-options {
+    padding: 15px;
+    background: #f3f4f6;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.option-group {
+    margin-bottom: 10px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #374151;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #f59e0b;
+}
+
 .file-info {
     padding: 12px;
     background: #f3f4f6;
@@ -478,15 +593,161 @@
         grid-template-columns: 1fr;
     }
 }
+
+.backup-info {
+    display: flex;
+    gap: 20px;
+    margin: 15px 0;
+    padding: 15px;
+    background: #f0f9ff;
+    border-radius: 8px;
+    border-left: 4px solid #10b981;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #374151;
+    font-weight: 500;
+}
+
+.info-item i {
+    color: #10b981;
+}
+
+/* 알림 시스템 CSS */
+.alert-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 400px;
+    width: 100%;
+}
+
+.alert {
+    margin-bottom: 10px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+    animation: slideInRight 0.3s ease-out;
+    white-space: pre-line;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-left: 4px solid #047857;
+}
+
+.alert-error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border-left: 4px solid #b91c1c;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-left: 4px solid #b45309;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-left: 4px solid #1d4ed8;
+}
+
+.alert-icon {
+    font-size: 18px;
+    margin-top: 2px;
+}
+
+.alert-content {
+    flex: 1;
+    line-height: 1.5;
+}
+
+.alert-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.alert-close:hover {
+    opacity: 1;
+}
+
+.alert-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.3);
+    animation: progress 5s linear forwards;
+}
+
+.fade-out {
+    animation: slideOutRight 0.3s ease-in forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes progress {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const performBackupBtn = document.getElementById('perform-backup-btn');
-    const selectFileBtn = document.getElementById('select-file-btn');
+    const selectDataBtn = document.getElementById('select-data-btn');
+    const selectMediaBtn = document.getElementById('select-media-btn');
     const performRestoreBtn = document.getElementById('perform-restore-btn');
-    const backupFileInput = document.getElementById('backup-file-input');
-    const selectedFileInfo = document.getElementById('selected-file-info');
+    const backupDataInput = document.getElementById('backup-data-input');
+    const backupMediaInput = document.getElementById('backup-media-input');
+    const selectedDataInfo = document.getElementById('selected-data-info');
+    const selectedMediaInfo = document.getElementById('selected-media-info');
     const loadingModal = document.getElementById('loading-modal');
     const loadingMessage = document.getElementById('loading-message');
     const loadingDetail = document.getElementById('loading-detail');
@@ -522,52 +783,74 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             hideLoading();
             if (data.success) {
-                showAlert('success', '백업이 성공적으로 완료되었습니다!');
+                showSuccess('✅ 백업이 성공적으로 완료되었습니다!', 8000);
                 refreshBackupHistory();
             } else {
-                showAlert('error', data.error || '백업 실행 중 오류가 발생했습니다.');
+                showError('❌ ' + (data.error || '백업 실행 중 오류가 발생했습니다.'), 8000);
             }
         })
         .catch(error => {
             hideLoading();
-            showAlert('error', '네트워크 오류가 발생했습니다.');
+            showError('🌐 네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.', 8000);
             console.error('Error:', error);
         });
     });
 
-    // 파일 선택
-    selectFileBtn.addEventListener('click', function() {
-        backupFileInput.click();
+    // 데이터 파일 선택
+    selectDataBtn.addEventListener('click', function() {
+        backupDataInput.click();
     });
 
-    backupFileInput.addEventListener('change', function() {
+    backupDataInput.addEventListener('change', function() {
         const file = this.files[0];
         if (file) {
-            selectedFileInfo.innerHTML = `
+            selectedDataInfo.innerHTML = `
                 <i class="fas fa-file-archive"></i>
                 <strong>선택된 파일:</strong> ${file.name} (${(file.size / 1024).toFixed(1)} KB)
             `;
-            selectedFileInfo.style.display = 'block';
+            selectedDataInfo.style.display = 'block';
             performRestoreBtn.style.display = 'block';
         } else {
-            selectedFileInfo.style.display = 'none';
+            selectedDataInfo.style.display = 'none';
+            performRestoreBtn.style.display = 'none';
+        }
+    });
+
+    // 미디어 파일 선택
+    selectMediaBtn.addEventListener('click', function() {
+        backupMediaInput.click();
+    });
+
+    backupMediaInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            selectedMediaInfo.innerHTML = `
+                <i class="fas fa-file-archive"></i>
+                <strong>선택된 파일:</strong> ${file.name} (${(file.size / 1024).toFixed(1)} KB)
+            `;
+            selectedMediaInfo.style.display = 'block';
+            performRestoreBtn.style.display = 'block';
+        } else {
+            selectedMediaInfo.style.display = 'none';
             performRestoreBtn.style.display = 'none';
         }
     });
 
     // 복원 실행
     performRestoreBtn.addEventListener('click', function() {
-        const file = backupFileInput.files[0];
-        if (!file) {
-            showAlert('error', '복원할 파일을 선택해주세요.');
+        const dataFile = backupDataInput.files[0];
+        const mediaFile = backupMediaInput.files[0];
+        if (!dataFile && !mediaFile) {
+            showWarning('⚠️ 복원할 파일을 선택해주세요.', 5000);
             return;
         }
 
         // 더 명확한 확인 메시지
         const confirmMessage = `정말로 데이터를 복원하시겠습니까?
 
-📁 선택한 파일: ${file.name}
-📊 파일 크기: ${(file.size / 1024).toFixed(1)} KB
+선택한 파일:
+📊 데이터 파일: ${dataFile ? dataFile.name : '없음'}
+📁 미디어 파일: ${mediaFile ? mediaFile.name : '없음'}
 
 ⚠️ 주의사항:
 • 현재 데이터가 백업 데이터로 덮어쓰일 수 있습니다
@@ -583,7 +866,8 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoading('복원 실행 중...', '백업 파일을 분석하고 데이터를 복원하고 있습니다');
 
         const formData = new FormData();
-        formData.append('backup_file', file);
+        if (dataFile) formData.append('backup_data', dataFile);
+        if (mediaFile) formData.append('backup_media', mediaFile);
 
         fetch('{% url "centers:perform_restore" %}', {
             method: 'POST',
@@ -596,18 +880,36 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             hideLoading();
             if (data.success) {
-                showAlert('success', '복원이 성공적으로 완료되었습니다!');
+                let successMessage = '✅ 복원이 성공적으로 완료되었습니다!';
+                
+                // 복원 상세 정보 추가
+                if (data.restored_data) {
+                    const restored = data.restored_data;
+                    if (restored.models_restored) {
+                        const modelCount = Object.keys(restored.models_restored).length;
+                        const totalCount = restored.total_restored || 0;
+                        successMessage += `\n\n📊 복원된 데이터: ${modelCount}개 모델, 총 ${totalCount}개 레코드`;
+                    }
+                    if (restored.media_files_count) {
+                        successMessage += `\n📁 복원된 미디어 파일: ${restored.media_files_count}개`;
+                    }
+                }
+                
+                showSuccess(successMessage, 10000);
+                
                 // 파일 선택 초기화
-                backupFileInput.value = '';
-                selectedFileInfo.style.display = 'none';
+                backupDataInput.value = '';
+                backupMediaInput.value = '';
+                selectedDataInfo.style.display = 'none';
+                selectedMediaInfo.style.display = 'none';
                 performRestoreBtn.style.display = 'none';
             } else {
-                showAlert('error', data.error || '복원 실행 중 오류가 발생했습니다.');
+                showError('❌ ' + (data.error || '복원 실행 중 오류가 발생했습니다.'), 8000);
             }
         })
         .catch(error => {
             hideLoading();
-            showAlert('error', '네트워크 오류가 발생했습니다.');
+            showError('🌐 네트워크 오류가 발생했습니다. 파일이 너무 크거나 서버 연결에 문제가 있을 수 있습니다.', 8000);
             console.error('Error:', error);
         });
     });
@@ -621,20 +923,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function hideLoading() {
         loadingModal.style.display = 'none';
-    }
-
-    function showAlert(type, message) {
-        // 알림 표시 (기존 alert 시스템 사용)
-        const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert ${alertClass}`;
-        alertDiv.textContent = message;
-        
-        document.body.appendChild(alertDiv);
-        
-        setTimeout(() => {
-            alertDiv.remove();
-        }, 5000);
     }
 
     function refreshBackupHistory() {
@@ -665,4 +953,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 });
 </script>
-{% endblock %} 
+{% endblock %}
