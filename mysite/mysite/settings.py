@@ -86,16 +86,30 @@ TEMPLATES = [
 WSGI_APPLICATION = 'mysite.wsgi.application'
 
 # Database
-DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+# 프로덕션 환경(Render)에서는 PostgreSQL, 로컬에서는 SQLite 사용
+if os.getenv('RENDER'):
+    # Render 프로덕션 환경: PostgreSQL 사용
+    DATABASES = {
+        'default': dj_database_url.config(
+            # Render에서 자동으로 설정되는 DATABASE_URL 환경변수 사용
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+else:
+    # 로컬 개발 환경: SQLite 사용
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+            'OPTIONS': {
+                'timeout': 20,
+            }
+        }
+    }
 
-# SQLite Foreign Key 지원 활성화 (올바른 방식)
-if 'sqlite' in DATABASES['default']['ENGINE']:
+# SQLite Foreign Key 지원 활성화 (로컬 환경에서만)
+if not os.getenv('RENDER') and 'sqlite' in DATABASES['default']['ENGINE']:
     DATABASES['default']['OPTIONS'] = {
         'timeout': 20,
     }
@@ -216,17 +230,32 @@ SESSION_COOKIE_NAME = 'sessionid'
 SESSION_SAVE_EVERY_REQUEST = True  # 매 요청마다 세션 저장
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
-# Cache settings (for progress tracking)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
-        'TIMEOUT': 600,  # 10 minutes
-        'OPTIONS': {
-            'MAX_ENTRIES': 1000,
+# Cache settings - 환경별 분리
+if os.getenv('RENDER'):
+    # Render 프로덕션 환경: Database cache 사용 (PostgreSQL)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+            'LOCATION': 'django_cache_table',
+            'TIMEOUT': 600,  # 10 minutes
+            'OPTIONS': {
+                'MAX_ENTRIES': 5000,
+                'CULL_FREQUENCY': 3,
+            }
         }
     }
-}
+else:
+    # 로컬 개발 환경: LocMemCache 사용
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+            'TIMEOUT': 600,  # 10 minutes
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+            }
+        }
+    }
 
 # Security settings - 운영환경(Render)에서만 HTTPS 강제
 if not DEBUG:  # 운영환경 (RENDER=True)

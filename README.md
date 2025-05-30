@@ -3,6 +3,55 @@
 ## 프로젝트 소개
 MindScanner는 사용자들이 심리상담센터를 쉽게 찾고 리뷰를 공유할 수 있는 종합적인 플랫폼입니다. 네이버 지도 API를 활용하여 상담센터의 위치를 시각적으로 보여주며, 사용자들은 각 센터에 대한 리뷰를 작성하고 공유할 수 있습니다. 또한 커뮤니티 기능을 통해 사용자들 간의 소통을 지원합니다.
 
+## 🚀 배포 환경에서 데이터베이스 보존 방법
+
+### Render에서 PostgreSQL 설정 (중요!)
+
+SQLite는 Render와 같은 클라우드 환경에서 배포할 때마다 데이터가 사라집니다. 
+데이터를 영구적으로 보존하려면 PostgreSQL을 사용해야 합니다.
+
+#### 1. Render에서 PostgreSQL 서비스 생성
+1. Render 대시보드 접속
+2. "New +" → "PostgreSQL" 선택
+3. Database Name: `mindscanner_db` (원하는 이름)
+4. Plan: Free tier 선택
+5. "Create Database" 클릭
+
+#### 2. Web Service에 PostgreSQL 연결
+1. Web Service 설정 페이지 접속
+2. "Environment" 탭 클릭
+3. 환경 변수 추가:
+   ```
+   DATABASE_URL=<PostgreSQL 데이터베이스 External Database URL>
+   RENDER=true
+   ```
+
+#### 3. 기존 SQLite 데이터를 PostgreSQL로 마이그레이션
+로컬에서 기존 데이터를 백업한 후 PostgreSQL로 복원:
+
+```bash
+# 1. 로컬에서 기존 데이터 백업
+cd mysite
+python manage.py backup_data
+
+# 2. PostgreSQL 환경변수 설정 후 복원
+export DATABASE_URL="postgresql://user:password@host:port/database"
+python manage.py migrate
+python manage.py createcachetable
+python manage.py restore_data --file=backup_YYYYMMDD_HHMMSS.json
+```
+
+#### 4. 배포 후 확인사항
+- PostgreSQL 연결 확인: 로그에서 데이터베이스 연결 상태 확인
+- 캐시 테이블 생성 확인: `createcachetable` 명령이 성공적으로 실행되었는지 확인
+- 기존 데이터 복원 확인: 상담소, 리뷰 등 데이터가 정상적으로 표시되는지 확인
+
+### 환경별 데이터베이스 설정
+- **로컬 개발**: SQLite (db.sqlite3)
+- **Render 프로덕션**: PostgreSQL (DATABASE_URL 환경변수)
+
+이제 Git push로 배포해도 PostgreSQL의 데이터는 영구적으로 보존됩니다!
+
 ## 주요 기능
 - 🗺️ **지도 기반 상담센터 검색**
   - 네이버 지도 API를 활용한 시각적 위치 표시
