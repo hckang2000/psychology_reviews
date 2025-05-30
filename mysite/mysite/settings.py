@@ -166,9 +166,9 @@ ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 # 새로운 방식의 로그인 시도 제한 설정 (기존 deprecated 설정 대체)
 ACCOUNT_RATE_LIMITS = {
     'login_failed': '5/300s',      # 로그인 실패 제한: 5분 내 5회 실패 시 차단
-    'signup': '3/hour',            # 회원가입 제한: 1시간 내 3회 가입 시도만 허용
-    'reset_password': '5/hour',    # 비밀번호 재설정 제한: 1시간 내 5회만 허용
-    'confirm_email': '3/hour',     # 이메일 인증 제한: 1시간 내 3회만 허용
+    'signup': '3/3600s',           # 회원가입 제한: 1시간 내 3회 가입 시도만 허용
+    'reset_password': '5/3600s',   # 비밀번호 재설정 제한: 1시간 내 5회만 허용
+    'confirm_email': '3/3600s',    # 이메일 인증 제한: 1시간 내 3회만 허용
 }
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
