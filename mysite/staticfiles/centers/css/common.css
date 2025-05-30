@@ -43,6 +43,56 @@
 }
 
 /* ==========================================================================
+   Form Components
+   ========================================================================== */
+
+/* Form Input
+   - 기본 폼 입력 필드 스타일
+   ========================================================================== */
+.form-input {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-500;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+    @apply transition-all duration-200;
+}
+
+.form-input:hover {
+    @apply border-gray-400;
+}
+
+/* Form Input Error State
+   - 오류 상태의 폼 입력 필드
+   ========================================================================== */
+.form-input.error,
+.form-input:invalid {
+    @apply border-red-300 bg-red-50;
+    @apply focus:ring-red-500 focus:border-red-500;
+}
+
+/* Form Group
+   - 폼 그룹 기본 스타일
+   ========================================================================== */
+.form-group {
+    @apply mb-4;
+}
+
+.form-group label {
+    @apply block text-sm font-medium text-gray-700 mb-2;
+}
+
+/* Form Button
+   - 폼 제출 버튼 스타일
+   ========================================================================== */
+.form-button {
+    @apply w-full bg-primary text-white py-3 px-4 rounded-lg font-medium;
+    @apply hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+    @apply transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.form-button:disabled {
+    @apply bg-gray-400 hover:bg-gray-400;
+}
+
+/* ==========================================================================
    Common Component Styles
    ========================================================================== */
 

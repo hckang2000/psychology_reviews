@@ -2,15 +2,20 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <!-- iOS Safari 호환성을 위한 메타태그 추가 -->
+    <!-- 개선된 viewport 설정 - 배포 환경 호환성 향상 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
+    
+    <!-- iOS Safari 전용 설정 -->
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-touch-fullscreen" content="yes">
-    <!-- iOS Safari 확대/축소 방지 -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- 브라우저별 호환성 개선 -->
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="theme-color" content="#4A90E2">
+    
     {% load static %}
     
     <!-- 기본 메타 태그 -->
@@ -60,13 +65,31 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{% static 'centers/css/variables.css' %}">
-    <link rel="stylesheet" href="{% static 'centers/css/common.css' %}">
-    <link rel="stylesheet" href="{% static 'centers/css/alerts.css' %}">
-    <link rel="stylesheet" href="{% static 'centers/style.css' %}">
+    <link rel="stylesheet" href="{% static 'centers/css/variables.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'centers/css/common.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'centers/css/alerts.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'centers/style.css' %}?v=2">
     {% block extra_css %}{% endblock %}
     <style>
-        /* iOS Safari 확대/축소 방지 */
+        /* 배포 환경 호환성을 위한 기본 설정 */
+        html {
+            font-size: 16px; /* 기본 폰트 크기 고정 */
+            -webkit-text-size-adjust: 100%; /* iOS에서 텍스트 크기 자동 조정 방지 */
+            -ms-text-size-adjust: 100%; /* IE/Edge에서 텍스트 크기 자동 조정 방지 */
+            text-size-adjust: 100%; /* 표준 텍스트 크기 자동 조정 방지 */
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-size: 1rem; /* 상대 크기 대신 절대 크기 사용 */
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* iOS Safari 확대/축소 방지 (기존 기능 유지) */
         * {
             touch-action: manipulation;
             -webkit-touch-callout: none;
@@ -75,6 +98,7 @@
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         
         /* 텍스트 입력 요소에는 선택 허용 */
@@ -85,6 +109,7 @@
             -ms-user-select: auto;
             user-select: auto;
             touch-action: manipulation;
+            -webkit-text-size-adjust: 100%;
         }
         
         /* 버튼 요소에 대한 특별 처리 */
@@ -94,6 +119,7 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             outline: none;
+            font-size: inherit; /* 부모 요소의 폰트 크기 상속 */
         }
         
         /* 검색 버튼 특별 처리 */
@@ -102,34 +128,47 @@
             -webkit-tap-highlight-color: transparent !important;
         }
         
-        /* Global styles */
+        /* 배포 환경에서의 일관된 크기 보장 */
         .app-container {
             @apply min-h-screen bg-gray-50;
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
         }
         
         .header {
             @apply fixed top-0 left-0 right-0 bg-white shadow-sm z-50;
+            width: 100%;
         }
         
         .header-content {
             @apply container mx-auto px-4 h-16 flex justify-between items-center;
+            max-width: 100%;
         }
         
         .logo {
             @apply text-2xl font-bold text-primary hover:text-primary-dark transition-colors duration-200;
+            font-size: 1.5rem; /* 고정 폰트 크기 */
         }
         
         .icon-button {
             @apply p-2 text-gray-600 hover:text-primary transition-colors duration-200;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .main-content {
             @apply pt-20 bg-gray-50;
+            width: 100%;
         }
         
         /* Global content container styles */
         .content-container {
             @apply container mx-auto px-4 py-8 mt-8;
+            max-width: 100%;
         }
 
         .content-wrapper {
@@ -138,6 +177,7 @@
 
         .section-title {
             @apply text-3xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent;
+            font-size: 1.875rem; /* 고정 폰트 크기 */
         }
         
         .sidebar {
@@ -170,6 +210,7 @@
         
         .menu-item {
             @apply flex items-center space-x-3 p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200;
+            font-size: 1rem; /* 고정 폰트 크기 */
         }
         
         .sidebar-footer {
@@ -178,42 +219,182 @@
         
         .auth-links {
             @apply flex items-center justify-center space-x-4 text-sm text-gray-600;
+            font-size: 0.875rem; /* 고정 폰트 크기 */
         }
         
         .logout-button {
             @apply w-full py-2 px-4 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors duration-200;
+            font-size: 1rem; /* 고정 폰트 크기 */
+        }
+        
+        /* 반응형 디자인 보장 - 배포 환경에서도 동일하게 작동 */
+        @media screen and (max-width: 768px) {
+            .header-content {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            
+            .logo {
+                font-size: 1.25rem;
+            }
+            
+            .sidebar {
+                width: 280px;
+            }
+        }
+        
+        /* 초고해상도 디스플레이 대응 */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            body {
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+        }
+        
+        /* PC 뷰에서 헤더 중앙 정렬 강제 적용 */
+        @media (min-width: 768px) {
+            .header-content {
+                max-width: 90% !important;
+                margin: 0 auto !important;
+                padding: 0 3rem !important;
+            }
+            
+            .header {
+                padding: 0 !important;
+            }
         }
     </style>
     <!-- Base JavaScript -->
     <script>
         console.log('Base HTML loaded');
         
-        // iOS Safari 확대/축소 방지를 위한 이벤트 처리
+        // 배포 환경 호환성을 위한 초기 설정
+        (function() {
+            // 정확한 뷰포트 높이 계산 (배포 환경에서 중요)
+            function setRealViewportHeight() {
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+                document.documentElement.style.setProperty('--real-vh', `${vh}px`);
+                
+                // 디버깅용 로그
+                console.log('Viewport height set:', window.innerHeight, 'vh:', vh);
+            }
+            
+            // 초기 설정
+            setRealViewportHeight();
+            
+            // 리사이즈 및 방향 변경 시 재계산
+            window.addEventListener('resize', setRealViewportHeight);
+            window.addEventListener('orientationchange', function() {
+                // orientationchange 이벤트는 리사이즈보다 먼저 발생하므로 지연 필요
+                setTimeout(setRealViewportHeight, 100);
+            });
+            
+            // viewport 메타태그 동적 조정 (배포 환경 대응)
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                // 현재 설정 유지하면서 배포 환경에서 안정화
+                const content = viewport.getAttribute('content');
+                if (!content.includes('shrink-to-fit=no')) {
+                    viewport.setAttribute('content', content + ', shrink-to-fit=no');
+                }
+            }
+            
+            // iOS Safari 특별 처리 - 배포 환경에서도 동일하게 작동
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+            
+            if (isIOS || isSafari) {
+                // iOS Safari 전용 스타일 추가
+                const style = document.createElement('style');
+                style.textContent = `
+                    body {
+                        position: fixed;
+                        overflow: hidden;
+                        width: 100%;
+                        height: 100vh;
+                        height: calc(var(--real-vh, 1vh) * 100);
+                    }
+                    .app-container {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100vh;
+                        height: calc(var(--real-vh, 1vh) * 100);
+                        overflow-y: auto;
+                        -webkit-overflow-scrolling: touch;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        })();
+        
+        // iOS Safari 확대/축소 방지를 위한 이벤트 처리 (기존 기능 유지 및 강화)
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM Content Loaded in base.html');
             
-            // iOS Safari 확대/축소 방지
+            // 확대/축소 방지 - 멀티터치 제스처
             function preventZoom(e) {
-                if (e.touches.length > 1) {
+                if (e.touches && e.touches.length > 1) {
                     e.preventDefault();
+                    e.stopPropagation();
+                    return false;
                 }
             }
             
-            // 더블탭 확대 방지
+            // 더블탭 확대 방지 - 강화된 버전
             let lastTouchEnd = 0;
+            let lastTouchStart = 0;
             function preventDoubleTab(e) {
-                const now = (new Date()).getTime();
-                if (now - lastTouchEnd <= 300) {
-                    e.preventDefault();
+                const now = Date.now();
+                if (e.type === 'touchstart') {
+                    lastTouchStart = now;
+                } else if (e.type === 'touchend') {
+                    // 더블탭 감지 시간을 더 정확하게 조정
+                    if (now - lastTouchEnd <= 300 && now - lastTouchStart < 500) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return false;
+                    }
+                    lastTouchEnd = now;
                 }
-                lastTouchEnd = now;
             }
             
-            // 터치 이벤트 리스너 추가
-            document.addEventListener('touchstart', preventZoom, {passive: false});
-            document.addEventListener('touchend', preventDoubleTab, {passive: false});
+            // 핀치 줌 방지
+            function preventPinch(e) {
+                if (e.scale && e.scale !== 1) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }
             
-            // 검색 토글 버튼 특별 처리
+            // 이벤트 리스너 추가 - passive: false로 preventDefault 가능하게 함
+            document.addEventListener('touchstart', preventZoom, {passive: false});
+            document.addEventListener('touchstart', preventDoubleTab, {passive: false});
+            document.addEventListener('touchend', preventDoubleTab, {passive: false});
+            document.addEventListener('gesturestart', preventPinch, {passive: false});
+            document.addEventListener('gesturechange', preventPinch, {passive: false});
+            document.addEventListener('gestureend', preventPinch, {passive: false});
+            
+            // 키보드 줌 방지 (Ctrl + +/-)
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // 마우스 휠 줌 방지
+            document.addEventListener('wheel', function(e) {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    return false;
+                }
+            }, {passive: false});
+            
+            // 검색 토글 버튼 특별 처리 (기존 기능 유지)
             const searchToggleBtn = document.querySelector('.search-toggle-btn');
             if (searchToggleBtn) {
                 searchToggleBtn.addEventListener('touchstart', function(e) {
@@ -237,6 +418,26 @@
                     }
                 }, {passive: false});
             }
+            
+            // 폰트 크기 강제 고정 (배포 환경에서 자동 조정 방지)
+            function enforceFixedFontSize() {
+                const html = document.documentElement;
+                const computedStyle = window.getComputedStyle(html);
+                const fontSize = computedStyle.fontSize;
+                
+                // 16px가 아닌 경우 강제로 16px로 설정
+                if (fontSize !== '16px') {
+                    html.style.fontSize = '16px';
+                    console.log('Font size adjusted to 16px from', fontSize);
+                }
+            }
+            
+            // 페이지 로드 시와 리사이즈 시 폰트 크기 체크
+            enforceFixedFontSize();
+            window.addEventListener('resize', enforceFixedFontSize);
+            window.addEventListener('orientationchange', function() {
+                setTimeout(enforceFixedFontSize, 100);
+            });
             
             // Check if script.js is loaded
             const scriptElement = document.querySelector('script[src*="script.js"]');
