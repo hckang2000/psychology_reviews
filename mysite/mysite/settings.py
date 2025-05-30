@@ -72,6 +72,7 @@ TEMPLATES = [
         ],
         'APP_DIRS': True,
         'OPTIONS': {
+            'debug': DEBUG,  # 템플릿 디버깅 활성화
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
@@ -207,6 +208,25 @@ NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET')
 LOGIN_REDIRECT_URL = 'centers:index'
 LOGIN_URL = 'accounts:account_login'
 LOGOUT_REDIRECT_URL = 'centers:index'
+
+# Session settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 1209600  # 2 weeks
+SESSION_COOKIE_NAME = 'sessionid'
+SESSION_SAVE_EVERY_REQUEST = True  # 매 요청마다 세션 저장
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Cache settings (for progress tracking)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 600,  # 10 minutes
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
 
 # Security settings - 운영환경(Render)에서만 HTTPS 강제
 if not DEBUG:  # 운영환경 (RENDER=True)

@@ -1,33 +1,368 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load i18n static %}
+
+{% block title %}센터 CSV 업로드 (커스텀 템플릿){% endblock %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <style>
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .error-list {
+            color: red;
+            margin-top: 10px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .message.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+        .message.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+        .custom-template-indicator {
+            background-color: #e3f2fd;
+            border: 2px solid #2196f3;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            color: #1976d2;
+            font-weight: bold;
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
-<div id="content-main">
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div>
-            <fieldset class="module aligned">
-                <h2>CSV 파일 업로드</h2>
-                <div class="form-row">
-                    {{ form.csv_file.label_tag }}
-                    {{ form.csv_file }}
-                    <div class="help">
-                        CSV 파일을 선택하세요. <br>
-                        <strong>필수 필드:</strong> name, address<br>
-                        <strong>선택 필드:</strong> phone, url, description, operating_hours, type, image_filename<br>
-                        <strong>type 필드:</strong> "심리상담센터" 또는 "정신건강의학과" (기본값: 심리상담센터)
-                    </div>
-                </div>
-                <div class="form-row">
-                    {{ form.image_zip.label_tag }}
-                    {{ form.image_zip }}
-                    <div class="help">{{ form.image_zip.help_text }}</div>
-                </div>
-            </fieldset>
-            <div class="submit-row">
-                <input type="submit" value="업로드" class="default">
-            </div>
+    <div id="content-main">
+        <div class="custom-template-indicator">
+            ✅ 커스텀 템플릿이 정상적으로 로드되었습니다! (centers/admin/csv_form.html)
         </div>
-    </form>
-</div>
+        
+        <form method="post" enctype="multipart/form-data" id="csv-import-form">
+            {% csrf_token %}
+            <div>
+                <fieldset class="module aligned">
+                    <h2>🏥 CSV 파일로 센터 등록 (진행률 표시 지원)</h2>
+                    <div class="form-row">
+                        {{ form.csv_file.errors }}
+                        <label for="{{ form.csv_file.id_for_label }}">{{ form.csv_file.label }}:</label>
+                        {{ form.csv_file }}
+                    </div>
+                    <div class="form-row">
+                        {{ form.image_zip.errors }}
+                        <label for="{{ form.image_zip.id_for_label }}">{{ form.image_zip.label }}:</label>
+                        {{ form.image_zip }}
+                        <div class="help">{{ form.image_zip.help_text }}</div>
+                    </div>
+                </fieldset>
+                
+                <div class="submit-row">
+                    <input type="submit" value="🚀 업로드 시작" class="default" name="_save">
+                </div>
+            </div>
+        </form>
+
+        <div id="message-container"></div>
+
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-bar-fill"></div>
+            </div>
+            <div class="progress-text">처리 중: <span class="processed">0</span> / <span class="total">0</span></div>
+            <div class="error-list"></div>
+        </div>
+
+        <div class="help-text" style="margin-top: 20px;">
+            <h3>📋 CSV 파일 형식</h3>
+            <p>CSV 파일은 다음 형식을 따라야 합니다:</p>
+            <pre>name,address,phone,url,description,operating_hours,type,image_filename
+마음샘 심리상담센터,서울시 강남구 테헤란로 123,02-1234-5678,https://example.com,전문 심리상담,평일 9-18시,심리상담센터,center1.jpg
+하늘정신건강의학과,서울시 서초구 서초대로 456,02-5678-9012,https://hospital.com,정신건강 전문,평일 9-17시,정신건강의학과,clinic1.jpg</pre>
+            <p><strong>필수 필드:</strong> name, address</p>
+            <p><strong>선택 필드:</strong> phone, url, description, operating_hours, type, image_filename</p>
+            <p><strong>type 필드:</strong> "심리상담센터" 또는 "정신건강의학과" (기본값: 심리상담센터)</p>
+            <p><strong>이미지 파일:</strong> ZIP 파일에 포함되어야 하며, CSV 파일의 image_filename 필드와 일치해야 합니다.</p>
+        </div>
+    </div>
+
+    <script>
+        console.log('커스텀 CSV 업로드 스크립트 로드됨');
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('csv-import-form');
+            const progressContainer = document.querySelector('.progress-container');
+            const progressBar = document.querySelector('.progress-bar-fill');
+            const processedText = document.querySelector('.processed');
+            const totalText = document.querySelector('.total');
+            const errorList = document.querySelector('.error-list');
+            const messageContainer = document.getElementById('message-container');
+            let isUploading = false;
+            let progressInterval = null;
+            let currentTaskId = null;  // task_id 저장 변수 추가
+
+            console.log('Form elements found:', {
+                form: !!form,
+                progressContainer: !!progressContainer,
+                progressBar: !!progressBar
+            });
+
+            // CSRF 토큰 가져오기
+            function getCSRFToken() {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (csrfToken) {
+                    return csrfToken.value;
+                }
+                // 쿠키에서 가져오기 시도
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const [name, value] = cookie.trim().split('=');
+                    if (name === 'csrftoken') {
+                        return value;
+                    }
+                }
+                return null;
+            }
+
+            function showMessage(message, type) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+                messageDiv.textContent = message;
+                messageContainer.innerHTML = '';
+                messageContainer.appendChild(messageDiv);
+            }
+
+            function startProgressPolling() {
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                }
+                
+                progressInterval = setInterval(async () => {
+                    try {
+                        // 더 정확한 진행률 체크 URL 구성
+                        const currentUrl = new URL(window.location.href);
+                        let progressUrl = `${currentUrl.origin}${currentUrl.pathname}progress/`;
+                        
+                        // task_id가 있으면 URL 파라미터로 추가
+                        if (currentTaskId) {
+                            progressUrl += `?task_id=${currentTaskId}`;
+                        }
+                        
+                        console.log('진행률 체크 URL:', progressUrl);
+                        console.log('현재 Task ID:', currentTaskId);
+                        console.log('현재 시간:', new Date().toISOString());
+                        
+                        const response = await fetch(progressUrl, {
+                            method: 'GET',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Cache-Control': 'no-cache'
+                            },
+                            cache: 'no-cache'
+                        });
+                        
+                        console.log('응답 상태:', response.status);
+                        console.log('응답 헤더:', response.headers);
+                        
+                        if (!response.ok) {
+                            console.warn('진행률 체크 응답 오류:', response.status);
+                            const errorText = await response.text();
+                            console.warn('오류 내용:', errorText);
+                            return;
+                        }
+                        
+                        const data = await response.json();
+                        console.log('진행률 데이터 (상세):', JSON.stringify(data, null, 2));
+
+                        // 데이터가 유효한지 확인
+                        if (typeof data.total === 'number' && typeof data.processed === 'number') {
+                            if (data.total > 0) {
+                                const progress = (data.processed / data.total) * 100;
+                                progressBar.style.width = `${progress}%`;
+                                processedText.textContent = data.processed;
+                                totalText.textContent = data.total;
+                                
+                                console.log(`진행률 업데이트: ${data.processed}/${data.total} (${progress.toFixed(1)}%)`);
+
+                                if (data.errors && data.errors.length > 0) {
+                                    errorList.innerHTML = data.errors.map(error => 
+                                        `<div>행 ${error.row}: ${error.error}</div>`
+                                    ).join('');
+                                }
+
+                                if (data.processed >= data.total) {
+                                    clearInterval(progressInterval);
+                                    progressInterval = null;
+                                    currentTaskId = null;  // task_id 초기화
+                                    console.log('업로드 완료!');
+                                }
+                            } else {
+                                console.log('아직 처리할 데이터가 없음 (total: 0)');
+                            }
+                        } else {
+                            console.warn('진행률 데이터 형식이 올바르지 않음:', data);
+                        }
+                    } catch (error) {
+                        console.error('진행률 체크 오류:', error);
+                        // 진행률 체크 실패는 무시하고 계속 진행
+                    }
+                }, 1000);
+            }
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                console.log('폼 제출 가로채기 성공');
+                
+                if (isUploading) {
+                    console.log('이미 업로드 중...');
+                    return;
+                }
+                
+                isUploading = true;
+
+                // UI 초기화
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                processedText.textContent = '0';
+                totalText.textContent = '0';
+                errorList.innerHTML = '';
+                messageContainer.innerHTML = '';
+                
+                const formData = new FormData(form);
+                const csrfToken = getCSRFToken();
+                
+                console.log('CSRF 토큰:', csrfToken);
+                
+                if (!csrfToken) {
+                    showMessage('CSRF 토큰을 찾을 수 없습니다.', 'error');
+                    isUploading = false;
+                    return;
+                }
+                
+                try {
+                    console.log('POST 요청 시작:', window.location.href);
+                    
+                    // POST 요청을 시작하되, 응답을 기다리지 않음
+                    const postPromise = fetch(window.location.href, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    // 잠깐 기다린 후 진행률 폴링 시작 (서버가 처리를 시작할 시간을 줌)
+                    setTimeout(() => {
+                        console.log('진행률 폴링 시작 (task_id 없이 시작)');
+                        startProgressPolling();
+                    }, 1000);
+                    
+                    // POST 응답 대기
+                    const response = await postPromise;
+                    console.log('응답 상태:', response.status);
+                    console.log('응답 헤더:', response.headers);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('HTTP 오류:', response.status, errorText);
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+                    
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        const responseText = await response.text();
+                        console.error('JSON이 아닌 응답:', responseText);
+                        throw new Error('서버에서 잘못된 응답을 받았습니다.');
+                    }
+                    
+                    const data = await response.json();
+                    console.log('응답 데이터:', data);
+
+                    // task_id를 받아서 저장
+                    if (data.task_id) {
+                        currentTaskId = data.task_id;
+                        console.log('Task ID 설정됨:', currentTaskId);
+                        
+                        // 진행률 폴링 재시작 (이번에는 task_id와 함께)
+                        if (progressInterval) {
+                            clearInterval(progressInterval);
+                        }
+                        startProgressPolling();
+                    }
+
+                    if (data.success) {
+                        showMessage(data.message, 'success');
+                        
+                        // 진행률 폴링 중단
+                        if (progressInterval) {
+                            clearInterval(progressInterval);
+                            progressInterval = null;
+                        }
+                        
+                        // 최종 진행률 표시
+                        if (data.stats) {
+                            progressBar.style.width = '100%';
+                            processedText.textContent = data.stats.total;
+                            totalText.textContent = data.stats.total;
+                            
+                            if (data.stats.error_details && data.stats.error_details.length > 0) {
+                                errorList.innerHTML = data.stats.error_details.map(error => 
+                                    `<div>행 ${error.row}: ${error.error}</div>`
+                                ).join('');
+                            }
+                        }
+                        
+                        setTimeout(() => {
+                            if (data.redirect) {
+                                window.location.href = data.redirect;
+                            } else {
+                                window.location.reload();
+                            }
+                        }, 3000);
+                    } else {
+                        throw new Error(data.error || '알 수 없는 오류가 발생했습니다.');
+                    }
+                    
+                } catch (error) {
+                    console.error('업로드 오류:', error);
+                    showMessage(`업로드 실패: ${error.message}`, 'error');
+                    progressContainer.style.display = 'none';
+                    
+                    // 진행률 폴링 중단
+                    if (progressInterval) {
+                        clearInterval(progressInterval);
+                        progressInterval = null;
+                    }
+                } finally {
+                    isUploading = false;
+                }
+            });
+        });
+    </script>
 {% endblock %} 

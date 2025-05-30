@@ -20,36 +20,142 @@ from PIL import Image
 import io
 import tempfile
 from datetime import datetime
+from django.core.cache import cache
+import uuid
 
 # CSV Import Mixin - 공통 로직 분리
 class CSVImportMixin:
     """CSV 업로드 공통 기능을 제공하는 Mixin"""
     
     def init_progress_tracking(self, request, total_rows):
-        """진행 상황 추적 초기화"""
-        request.session['import_progress'] = {
-            'total': total_rows,
-            'processed': 0,
-            'success': 0,
-            'errors': []
-        }
+        """진행 상황 추적 초기화 - 캐시 기반"""
+        try:
+            # 고유한 작업 ID 생성
+            if not hasattr(request, '_import_task_id'):
+                request._import_task_id = str(uuid.uuid4())
+            
+            task_id = request._import_task_id
+            print(f"=== 진행 상황 초기화 시작 ===")
+            print(f"Task ID: {task_id}")
+            print(f"Total rows: {total_rows}")
+            
+            progress_data = {
+                'total': total_rows,
+                'processed': 0,
+                'success': 0,
+                'errors': []
+            }
+            
+            # 캐시에 저장 (10분간 유지)
+            cache.set(f'import_progress_{task_id}', progress_data, 600)
+            
+            # 세션에도 task_id 저장 - 더 명시적으로 처리
+            request.session['current_import_task_id'] = task_id
+            request.session.modified = True
+            request.session.save()  # 명시적으로 세션 저장
+            
+            print(f"캐시에 저장된 데이터: {progress_data}")
+            print(f"캐시 키: import_progress_{task_id}")
+            print(f"세션에 저장된 task_id: {request.session.get('current_import_task_id')}")
+            
+        except Exception as e:
+            print(f"진행 상황 초기화 오류: {str(e)}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
     
     def update_progress(self, request, success=True, error_msg=None, row_num=None):
-        """진행 상황 업데이트"""
-        if success:
-            request.session['import_progress']['success'] += 1
-        else:
-            request.session['import_progress']['errors'].append({
-                'row': row_num,
-                'error': error_msg
-            })
-        request.session['import_progress']['processed'] += 1
-        request.session.modified = True
+        """진행 상황 업데이트 - 캐시 기반"""
+        try:
+            task_id = getattr(request, '_import_task_id', None)
+            if not task_id:
+                task_id = request.session.get('current_import_task_id')
+            
+            if not task_id:
+                print("Task ID를 찾을 수 없어 진행률 업데이트를 건너뜁니다.")
+                return
+            
+            cache_key = f'import_progress_{task_id}'
+            progress_data = cache.get(cache_key)
+            
+            if not progress_data:
+                print(f"캐시에서 진행률 데이터를 찾을 수 없습니다: {cache_key}")
+                return
+            
+            print(f"=== 진행 상황 업데이트 ===")
+            print(f"Task ID: {task_id}")
+            print(f"업데이트 전: {progress_data}")
+            
+            if success:
+                progress_data['success'] += 1
+                print(f"성공 처리: {progress_data['success']}")
+            else:
+                error_info = {
+                    'row': row_num or 'unknown',
+                    'error': str(error_msg) if error_msg else 'Unknown error'
+                }
+                progress_data['errors'].append(error_info)
+                print(f"오류 처리: {error_info}")
+            
+            progress_data['processed'] += 1
+            
+            # 캐시에 업데이트된 데이터 저장
+            cache.set(cache_key, progress_data, 600)
+            
+            print(f"업데이트 후: {progress_data}")
+            print(f"진행 상황: {progress_data['processed']}/{progress_data['total']}")
+            
+        except Exception as e:
+            print(f"진행 상황 업데이트 중 오류: {str(e)}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
     
     def clear_progress(self, request):
-        """진행 상황 데이터 정리"""
-        if 'import_progress' in request.session:
-            del request.session['import_progress']
+        """진행 상황 데이터 정리 - 캐시 기반"""
+        try:
+            task_id = getattr(request, '_import_task_id', None)
+            if not task_id:
+                task_id = request.session.get('current_import_task_id')
+            
+            if task_id:
+                cache_key = f'import_progress_{task_id}'
+                cache.delete(cache_key)
+                print(f"캐시 정리 완료: {cache_key}")
+            
+            if 'current_import_task_id' in request.session:
+                del request.session['current_import_task_id']
+                
+        except Exception as e:
+            print(f"진행 상황 정리 중 오류: {str(e)}")
+    
+    def get_progress_data(self, request):
+        """현재 진행률 데이터 조회 - 캐시 기반"""
+        try:
+            # URL 파라미터에서 task_id 확인 (우선순위 1)
+            task_id = request.GET.get('task_id')
+            if not task_id:
+                # 세션에서 task_id 확인 (우선순위 2)
+                task_id = request.session.get('current_import_task_id')
+            
+            print(f"진행률 조회 시도 - Task ID: {task_id}")
+            print(f"URL 파라미터: {request.GET.get('task_id')}")
+            print(f"세션 task_id: {request.session.get('current_import_task_id')}")
+            print(f"모든 세션 키: {list(request.session.keys())}")
+            
+            if not task_id:
+                print("Task ID를 찾을 수 없습니다.")
+                return {'total': 0, 'processed': 0}
+            
+            cache_key = f'import_progress_{task_id}'
+            progress_data = cache.get(cache_key, {'total': 0, 'processed': 0})
+            
+            print(f"캐시 키: {cache_key}")
+            print(f"조회된 데이터: {progress_data}")
+            
+            return progress_data
+            
+        except Exception as e:
+            print(f"진행률 조회 중 오류: {str(e)}")
+            return {'total': 0, 'processed': 0}
     
     def validate_csv_file(self, csv_file):
         """CSV 파일 유효성 검사"""
@@ -107,15 +213,32 @@ class CSVImportMixin:
     
     def get_success_response(self, request):
         """성공 응답 생성"""
-        progress = request.session.get('import_progress', {})
+        task_id = getattr(request, '_import_task_id', None)
+        if not task_id:
+            task_id = request.session.get('current_import_task_id')
+            
+        cache_key = f'import_progress_{task_id}' if task_id else None
+        progress = cache.get(cache_key, {}) if cache_key else {}
+        
         success_count = progress.get('success', 0)
         error_count = len(progress.get('errors', []))
+        total_count = progress.get('total', 0)
         
-        return JsonResponse({
+        response_data = {
             'success': True,
-            'message': f'CSV 파일이 성공적으로 업로드되었습니다. (성공: {success_count}, 실패: {error_count})',
-            'redirect': '../'
-        })
+            'message': f'CSV 파일이 성공적으로 업로드되었습니다. (총 {total_count}개 중 성공: {success_count}개, 실패: {error_count}개)',
+            'redirect': '../',
+            'task_id': task_id,  # task_id 포함
+            'stats': {
+                'total': total_count,
+                'success': success_count,
+                'errors': error_count,
+                'error_details': progress.get('errors', [])
+            }
+        }
+        
+        print(f"응답 데이터: {response_data}")
+        return JsonResponse(response_data)
 
 # Inline for managing images within the Center admin
 class CenterImageInline(admin.TabularInline):
@@ -174,7 +297,7 @@ class ExternalReviewCsvImportForm(forms.Form):
     )
 
 @admin.register(Center)
-class CenterAdmin(admin.ModelAdmin):
+class CenterAdmin(CSVImportMixin, admin.ModelAdmin):
     form = CenterAdminForm
     list_display = ('name', 'type', 'address', 'phone', 'url', 'created_at')
     search_fields = ('name', 'address')
@@ -273,202 +396,179 @@ class CenterAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def import_csv_progress(self, request):
+        print(f"=== 진행률 체크 요청 (캐시 기반) ===")
+        print(f"Method: {request.method}")
+        print(f"Session keys: {list(request.session.keys())}")
+        
         if request.method == 'GET':
-            progress = request.session.get('import_progress', {'total': 0, 'processed': 0})
-            return JsonResponse(progress)
+            progress_data = self.get_progress_data(request)
+            return JsonResponse(progress_data)
         return JsonResponse({'error': 'Invalid request method'})
 
-    def get_geocode(self, address):
-        try:
-            headers = {
-                'X-NCP-APIGW-API-KEY-ID': settings.NAVER_CLIENT_ID,
-                'X-NCP-APIGW-API-KEY': settings.NAVER_CLIENT_SECRET
-            }
-            response = requests.get(
-                f'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode',
-                params={'query': address},
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                if result.get('addresses'):
-                    first_result = result['addresses'][0]
-                    return first_result['y'], first_result['x']
-            return None, None
-        except Exception as e:
-            return None, None
-
-    def process_image_zip(self, zip_file, center_name, therapist_name=None):
-        try:
-            processed_files = []
-            with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                for filename in zip_ref.namelist():
-                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                        # 이미지 파일 읽기
-                        image_data = zip_ref.read(filename)
-                        
-                        # 이미지 유효성 검사
-                        try:
-                            Image.open(io.BytesIO(image_data))
-                        except:
-                            continue
-                            
-                        # 파일 저장 경로 설정
-                        if therapist_name:
-                            file_path = f'therapists/{center_name}/{therapist_name}/{filename}'
-                        else:
-                            file_path = f'centers/{center_name}/{filename}'
-                            
-                        # 디렉토리 생성
-                        os.makedirs(os.path.dirname(os.path.join(settings.MEDIA_ROOT, file_path)), exist_ok=True)
-                        
-                        # 파일 저장
-                        default_storage.save(file_path, ContentFile(image_data))
-                        processed_files.append(file_path)
-                        print(f"이미지 처리 성공: {file_path}")
-            
-            return processed_files
-        except Exception as e:
-            print(f"이미지 처리 중 오류: {str(e)}")
-            return []
-
     def import_csv(self, request):
-        if request.method == "POST":
+        print(f"=== CSV Import 호출됨 ===")
+        print(f"Request method: {request.method}")
+        print(f"Request path: {request.path}")
+        print(f"Request META: {request.META.get('HTTP_X_REQUESTED_WITH')}")
+        
+        if request.method != "POST":
+            form = CsvImportForm()
+            print(f"GET 요청 - 템플릿 렌더링: centers/admin/csv_form.html")
+            return render(request, "centers/admin/csv_form.html", {"form": form})
+        
+        print(f"POST 요청 처리 시작")
+        print(f"Files: {list(request.FILES.keys())}")
+        
+        try:
+            # 파일 검증
             csv_file = request.FILES.get("csv_file")
             image_zip = request.FILES.get("image_zip")
             
-            if not csv_file:
-                messages.error(request, 'CSV 파일을 선택해주세요.')
-                return HttpResponseRedirect("..")
-                
-            if not csv_file.name.endswith('.csv'):
-                messages.error(request, 'CSV 파일만 업로드 가능합니다.')
-                return HttpResponseRedirect("..")
+            print(f"CSV 파일: {csv_file}")
+            print(f"이미지 ZIP: {image_zip}")
             
-            try:
-                # CSV 파일을 바이트로 읽기
-                csv_content = csv_file.read().decode('utf-8-sig')
-                
-                # CSV 리더 설정 - 따옴표로 묶인 데이터 처리
-                csv_reader = csv.DictReader(
-                    csv_content.splitlines(),
-                    quoting=csv.QUOTE_ALL,  # 모든 필드를 따옴표로 처리
-                    skipinitialspace=True  # 따옴표 안의 공백 유지
-                )
-                
-                # 데이터 행 읽기
-                data_rows = list(csv_reader)
-                
-                if not data_rows:
-                    raise ValueError('CSV 파일에 유효한 데이터가 없습니다.')
-                
-                print("CSV 필드명:", csv_reader.fieldnames)
-                print("첫 번째 행 데이터:", data_rows[0])
-                
-                # 필수 필드 확인
-                required_fields = ['name', 'address']
-                for row in data_rows:
-                    for field in required_fields:
-                        if field not in row or not row[field].strip():
-                            print(f"필드 누락 확인 - 필드명: {field}, 값: {row.get(field)}")
-                            raise ValueError(f'필수 필드 {field}가 누락되었습니다.')
-                
-                # 중복 주소 검사
-                addresses = [row['address'].strip() for row in data_rows]
-                duplicate_addresses = set([x for x in addresses if addresses.count(x) > 1])
-                if duplicate_addresses:
-                    raise ValueError(f'중복된 주소가 있습니다: {", ".join(duplicate_addresses)}')
-                
-                # 기존 상담소 주소와 비교
-                existing_addresses = set(Center.objects.values_list('address', flat=True))
-                duplicate_existing = set(addresses) & existing_addresses
-                if duplicate_existing:
-                    raise ValueError(f'이미 등록된 상담소 주소가 있습니다: {", ".join(duplicate_existing)}')
-                
-                # Initialize progress tracking
-                request.session['import_progress'] = {
-                    'total': len(data_rows),
-                    'processed': 0,
-                    'success': 0,
-                    'errors': []
-                }
-                
-                # Process rows in batches
-                batch_size = 10
-                for i in range(0, len(data_rows), batch_size):
-                    batch = data_rows[i:i + batch_size]
-                    with transaction.atomic():
-                        for row in batch:
-                            try:
-                                # Get geocode
-                                latitude, longitude = self.get_geocode(row['address'])
-                                
-                                # Process type field
-                                type_value = row.get('type', '').strip()
-                                if type_value == '정신건강의학과':
-                                    center_type = 'clinic'
-                                else:
-                                    center_type = 'counseling'  # 기본값 또는 "심리상담센터"인 경우
-                                
-                                # Create center
-                                center = Center(
-                                    name=row['name'].strip(),
-                                    type=center_type,
-                                    address=row['address'].strip(),
-                                    phone=row.get('phone', '').strip(),
-                                    url=row.get('url', '').strip(),
-                                    description=row.get('description', '').strip(),
-                                    operating_hours=row.get('operating_hours', '').strip(),
-                                    latitude=latitude,
-                                    longitude=longitude
-                                )
-                                center.save()
-                                print(f"상담소 생성 성공: {center.name}")
-                                
-                                # Process center images if zip file is provided
-                                if image_zip:
-                                    image_paths = self.process_image_zip(image_zip, center.name)
-                                    for image_path in image_paths:
-                                        CenterImage.objects.create(
-                                            center=center,
-                                            image=image_path
-                                        )
-                                        print(f"상담소 이미지 생성 성공: {image_path}")
-                                
-                                request.session['import_progress']['success'] += 1
-                            except Exception as e:
-                                print(f"오류 발생: {str(e)}")
-                                request.session['import_progress']['errors'].append({
-                                    'row': i + batch.index(row) + 1,
-                                    'error': str(e)
-                                })
-                            
-                            request.session['import_progress']['processed'] += 1
-                            request.session.modified = True
-                
-                # Final success message
-                success_count = request.session['import_progress']['success']
-                error_count = len(request.session['import_progress']['errors'])
-                messages.success(
-                    request,
-                    f'CSV 파일이 성공적으로 업로드되었습니다. (성공: {success_count}, 실패: {error_count})'
-                )
-                
-                # Clear progress data
-                del request.session['import_progress']
-                
-            except Exception as e:
-                print(f"전체 처리 중 오류 발생: {str(e)}")
-                messages.error(request, f'CSV 파일 처리 중 오류가 발생했습니다: {str(e)}')
+            self.validate_csv_file(csv_file)
             
-            return HttpResponseRedirect("..")
+            # CSV 데이터 읽기 및 검증
+            data_rows, fieldnames = self.read_csv_data(csv_file)
+            print(f"CSV 행 수: {len(data_rows)}")
+            print(f"CSV 필드: {fieldnames}")
+            
+            self.validate_required_fields(data_rows, ['name', 'address'])
+            
+            # 중복 주소 검사
+            addresses = [row['address'].strip() for row in data_rows]
+            duplicate_addresses = set([x for x in addresses if addresses.count(x) > 1])
+            if duplicate_addresses:
+                raise ValueError(f'중복된 주소가 있습니다: {", ".join(duplicate_addresses)}')
+            
+            # 기존 상담소 주소와 비교
+            existing_addresses = set(Center.objects.values_list('address', flat=True))
+            duplicate_existing = set(addresses) & existing_addresses
+            if duplicate_existing:
+                raise ValueError(f'이미 등록된 상담소 주소가 있습니다: {", ".join(duplicate_existing)}')
+            
+            # 이미지 추출
+            image_dict = self.extract_images_from_zip(image_zip)
+            print(f"추출된 이미지 수: {len(image_dict)}")
+            
+            # 진행 상황 추적 초기화
+            self.init_progress_tracking(request, len(data_rows))
+            print(f"진행 상황 추적 초기화 완료")
+            
+            # 배치 처리
+            for i, batch in self.process_batch(data_rows):
+                print(f"배치 처리 시작: {i} ~ {i + len(batch) - 1}")
+                for row in batch:
+                    try:
+                        with transaction.atomic():  # 개별 row마다 독립적인 트랜잭션
+                            center = self.create_center_from_row(row, image_dict)
+                            print(f"센터 생성 성공: {center.name}")
+                            self.update_progress(request, success=True)
+                    except Exception as e:
+                        print(f"센터 생성 실패: {str(e)}")
+                        self.update_progress(request, success=False, 
+                                           error_msg=str(e), 
+                                           row_num=i + batch.index(row) + 1)
+                print(f"배치 완료: {i} ~ {i + len(batch) - 1}")
+            
+            # 성공 응답
+            response = self.get_success_response(request)
+            print(f"성공 응답 생성: {response.content}")
+            self.clear_progress(request)
+            return response
+            
+        except Exception as e:
+            print(f"전체 오류: {str(e)}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
+            self.clear_progress(request)
+            return JsonResponse({
+                'success': False,
+                'error': f'CSV 파일 처리 중 오류가 발생했습니다: {str(e)}'
+            }, status=500)
+    
+    def create_center_from_row(self, row, image_dict):
+        """CSV 행에서 센터 생성"""
+        try:
+            # 기본 검증
+            if not row.get('name', '').strip():
+                raise ValueError(f"센터명이 비어있습니다")
+            if not row.get('address', '').strip():
+                raise ValueError(f"주소가 비어있습니다")
+            
+            # 좌표 변환
+            latitude, longitude = None, None
+            if row['address'].strip():
+                try:
+                    # 네이버 지도 API를 사용하여 주소를 좌표로 변환
+                    headers = {
+                        'X-NCP-APIGW-API-KEY-ID': settings.NAVER_CLIENT_ID,
+                        'X-NCP-APIGW-API-KEY': settings.NAVER_CLIENT_SECRET
+                    }
+                    response = requests.get(
+                        f'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode',
+                        params={'query': row['address'].strip()},
+                        headers=headers,
+                        timeout=10
+                    )
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        if result.get('addresses'):
+                            first_result = result['addresses'][0]
+                            latitude = first_result['y']
+                            longitude = first_result['x']
+                        else:
+                            print(f"주소 좌표 변환 실패: {row['address']} - 검색 결과 없음")
+                    else:
+                        print(f"주소 좌표 변환 API 오류: {response.status_code}")
+                except Exception as e:
+                    print(f"주소 변환 중 오류: {str(e)}")
+            
+            # 타입 처리
+            type_value = row.get('type', '').strip()
+            if type_value == '정신건강의학과':
+                center_type = 'clinic'
+            else:
+                center_type = 'counseling'  # 기본값 또는 "심리상담센터"인 경우
+            
+            # 중복 검사
+            if Center.objects.filter(name=row['name'].strip(), address=row['address'].strip()).exists():
+                raise ValueError(f"같은 이름과 주소의 센터가 이미 존재합니다: {row['name'].strip()}")
+            
+            # 센터 생성
+            center = Center.objects.create(
+                name=row['name'].strip(),
+                address=row['address'].strip(),
+                phone=row.get('phone', '').strip(),
+                url=row.get('url', '').strip(),
+                description=row.get('description', '').strip(),
+                operating_hours=row.get('operating_hours', '').strip(),
+                type=center_type,
+                latitude=latitude,
+                longitude=longitude
+            )
+            
+            # 이미지 처리
+            image_filename = row.get('image_filename', '').strip()
+            if image_filename and image_filename in image_dict:
+                try:
+                    image_path = f'centers/{center.name}_{image_filename}'
+                    saved_path = self.save_image(image_dict[image_filename], image_path)
+                    CenterImage.objects.create(center=center, image=saved_path)
+                    print(f"이미지 처리 성공: {image_path}")
+                except Exception as e:
+                    print(f"이미지 처리 실패 (센터는 생성됨): {str(e)}")
+            
+            print(f"센터 생성 성공: {center.name}")
+            return center
         
-        form = CsvImportForm()
-        payload = {"form": form}
-        return render(
-            request, "centers/admin/csv_form.html", payload
-        )
+        except Exception as e:
+            # 오류 발생 시 더 구체적인 정보 제공
+            error_msg = f"센터 '{row.get('name', 'Unknown')}' 생성 실패: {str(e)}"
+            print(error_msg)
+            raise ValueError(error_msg)
 
     def save_model(self, request, obj, form, change):
         if not obj.latitude or not obj.longitude:
@@ -738,15 +838,15 @@ class TherapistAdmin(CSVImportMixin, admin.ModelAdmin):
             
             # 배치 처리
             for i, batch in self.process_batch(data_rows):
-                with transaction.atomic():
-                    for row in batch:
-                        try:
+                for row in batch:
+                    try:
+                        with transaction.atomic():  # 개별 row마다 독립적인 트랜잭션
                             self.create_therapist_from_row(row, center, image_dict)
                             self.update_progress(request, success=True)
-                        except Exception as e:
-                            self.update_progress(request, success=False, 
-                                               error_msg=str(e), 
-                                               row_num=i + batch.index(row) + 1)
+                    except Exception as e:
+                        self.update_progress(request, success=False, 
+                                           error_msg=str(e), 
+                                           row_num=i + batch.index(row) + 1)
             
             # 성공 응답
             response = self.get_success_response(request)
@@ -845,9 +945,9 @@ class ExternalReviewAdmin(admin.ModelAdmin):
                 for i in range(0, len(data_rows), batch_size):
                     batch = data_rows[i:i + batch_size]
                     print(f"=== 배치 처리 시작 (행 {i+1} ~ {i+len(batch)}) ===")
-                    with transaction.atomic():
-                        for row in batch:
-                            try:
+                    for row in batch:
+                        try:
+                            with transaction.atomic():  # 개별 row마다 독립적인 트랜잭션
                                 print(f"외부 리뷰 생성 시도: {row['title']}")
                                 # Create external review
                                 external_review = ExternalReview(
@@ -874,17 +974,17 @@ class ExternalReviewAdmin(admin.ModelAdmin):
                                 print(f"외부 리뷰 생성 성공: {external_review.title}")
                                 
                                 request.session['import_progress']['success'] += 1
-                            except Exception as e:
-                                print(f"오류 발생: {str(e)}")
-                                print(f"오류가 발생한 행: {row}")
-                                request.session['import_progress']['errors'].append({
-                                    'row': i + batch.index(row) + 1,
-                                    'error': str(e)
-                                })
-                            
-                            request.session['import_progress']['processed'] += 1
-                            request.session.modified = True
-                            print(f"진행 상황: {request.session['import_progress']['processed']}/{request.session['import_progress']['total']}")
+                        except Exception as e:
+                            print(f"오류 발생: {str(e)}")
+                            print(f"오류가 발생한 행: {row}")
+                            request.session['import_progress']['errors'].append({
+                                'row': i + batch.index(row) + 1,
+                                'error': str(e)
+                            })
+                        
+                        request.session['import_progress']['processed'] += 1
+                        request.session.modified = True
+                        print(f"진행 상황: {request.session['import_progress']['processed']}/{request.session['import_progress']['total']}")
                 
                 # Final success message
                 success_count = request.session['import_progress']['success']
