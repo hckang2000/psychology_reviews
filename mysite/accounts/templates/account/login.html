@@ -25,15 +25,39 @@
             </div>
             {% endif %}
 
+            {% if form.errors %}
+            <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <p class="text-sm">{{ error }}</p>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <form method="POST" action="{% url 'account_login' %}" class="space-y-4">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="id_login" class="block text-sm font-medium text-gray-700 mb-1">아이디</label>
-                    <input type="text" name="login" id="id_login" class="form-input w-full" required>
+                    <input type="text" name="login" id="id_login" class="form-input w-full {% if form.login.errors %}border-red-300 focus:border-red-500 focus:ring-red-500{% endif %}" required>
+                    {% if form.login.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.login.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="form-group">
                     <label for="id_password" class="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
-                    <input type="password" name="password" id="id_password" class="form-input w-full" required>
+                    <input type="password" name="password" id="id_password" class="form-input w-full {% if form.password.errors %}border-red-300 focus:border-red-500 focus:ring-red-500{% endif %}" required>
+                    {% if form.password.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.password.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">

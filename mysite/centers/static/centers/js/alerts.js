@@ -14,11 +14,9 @@ class AlertManager {
         // 알림 컨테이너 생성
         this.createContainer();
         
-        // 기존 Django 메시지들을 새로운 스타일로 변환
-        this.convertExistingMessages();
-        
-        // 페이지 로드 시 기존 메시지들 처리
+        // 페이지 로드 시 Django 메시지들 처리
         document.addEventListener('DOMContentLoaded', () => {
+            this.processDjangoMessages();
             this.processExistingAlerts();
         });
     }
@@ -28,6 +26,32 @@ class AlertManager {
             this.container = document.createElement('div');
             this.container.className = 'alert-container';
             document.body.appendChild(this.container);
+        }
+    }
+
+    processDjangoMessages() {
+        // 숨겨진 Django 메시지 컨테이너 찾기
+        const djangoMessages = document.querySelector('.django-messages');
+        
+        if (djangoMessages) {
+            const alerts = djangoMessages.querySelectorAll('.alert');
+            
+            alerts.forEach(alert => {
+                const text = alert.textContent.trim();
+                const classList = Array.from(alert.classList);
+                
+                // 메시지 타입 결정
+                let type = 'info';
+                if (classList.includes('alert-success')) type = 'success';
+                else if (classList.includes('alert-error') || classList.includes('alert-danger')) type = 'error';
+                else if (classList.includes('alert-warning')) type = 'warning';
+                
+                // 새로운 스타일로 표시
+                this.show(text, type);
+            });
+            
+            // 원본 메시지 컨테이너 제거
+            djangoMessages.remove();
         }
     }
 
@@ -170,4 +194,29 @@ window.showAlert = (message, type, duration) => window.alertManager.show(message
 window.showSuccess = (message, duration) => window.alertManager.success(message, duration);
 window.showError = (message, duration) => window.alertManager.error(message, duration);
 window.showWarning = (message, duration) => window.alertManager.warning(message, duration);
-window.showInfo = (message, duration) => window.alertManager.info(message, duration); 
+window.showInfo = (message, duration) => window.alertManager.info(message, duration);
+
+// 폼 제출 관련 알림 처리
+document.addEventListener('DOMContentLoaded', function() {
+    // 폼 제출 시 로딩 상태 표시
+    const forms = document.querySelectorAll('form');
+    
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = '처리 중...';
+                submitBtn.disabled = true;
+                
+                // 3초 후에도 응답이 없으면 버튼 복원 (안전장치)
+                setTimeout(() => {
+                    if (submitBtn.disabled) {
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+                    }
+                }, 3000);
+            }
+        });
+    });
+}); 

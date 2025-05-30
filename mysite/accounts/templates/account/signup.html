@@ -25,23 +25,61 @@
             </div>
             {% endif %}
 
+            {% if form.errors %}
+            <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <p class="text-sm">{{ error }}</p>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <form method="POST" action="{% url 'account_signup' %}" class="space-y-4">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="id_email" class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-                    <input type="email" name="email" id="id_email" class="form-input w-full" required>
+                    <input type="email" name="email" id="id_email" class="form-input w-full {% if form.email.errors %}border-red-300 focus:border-red-500 focus:ring-red-500{% endif %}" required>
+                    {% if form.email.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.email.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="form-group">
                     <label for="id_username" class="block text-sm font-medium text-gray-700 mb-1">아이디</label>
-                    <input type="text" name="username" id="id_username" class="form-input w-full" required>
+                    <input type="text" name="username" id="id_username" class="form-input w-full {% if form.username.errors %}border-red-300 focus:border-red-500 focus:ring-red-500{% endif %}" required>
+                    {% if form.username.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.username.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="form-group">
                     <label for="id_password1" class="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
-                    <input type="password" name="password1" id="id_password1" class="form-input w-full" required>
+                    <input type="password" name="password1" id="id_password1" class="form-input w-full {% if form.password1.errors %}border-red-300 focus:border-red-500 focus:ring-red-500{% endif %}" required>
+                    {% if form.password1.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.password1.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="form-group">
                     <label for="id_password2" class="block text-sm font-medium text-gray-700 mb-1">비밀번호 확인</label>
-                    <input type="password" name="password2" id="id_password2" class="form-input w-full" required>
+                    <input type="password" name="password2" id="id_password2" class="form-input w-full {% if form.password2.errors %}border-red-300 focus:border-red-500 focus:ring-red-500{% endif %}" required>
+                    {% if form.password2.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.password2.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
                 <button type="submit" class="w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-primary-dark transition-colors duration-200">
                     회원가입
