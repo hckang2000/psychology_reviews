@@ -624,88 +624,47 @@ class CenterAdmin(CSVImportMixin, admin.ModelAdmin):
 
     def delete_queryset(self, request, queryset):
         """센터 삭제 시 연관된 데이터도 함께 삭제"""
-        from django.db import connection
-        
-        # Foreign Key 제약 조건 임시 비활성화
-        with connection.cursor() as cursor:
-            cursor.execute('PRAGMA foreign_keys = OFF;')
-        
-        try:
-            for center in queryset:
-                # 연관된 데이터 수 확인
-                therapist_count = center.therapists.count()
-                image_count = center.images.count()
-                review_count = center.reviews.count()
-                external_review_count = center.external_reviews.count()
-                
-                # 로그 출력
-                print(f"센터 '{center.name}' 삭제 중...")
-                print(f"  - 상담사: {therapist_count}개")
-                print(f"  - 이미지: {image_count}개")
-                print(f"  - 리뷰: {review_count}개")
-                print(f"  - 외부 리뷰: {external_review_count}개")
-                
-                # 리뷰 댓글 먼저 삭제
-                for review in center.reviews.all():
-                    review.comments.all().delete()
-                
-                # 연관된 데이터 삭제
-                center.therapists.all().delete()
-                center.images.all().delete()
-                center.reviews.all().delete()
-                center.external_reviews.all().delete()
-                
-                # 센터 삭제
-                center.delete()
-                
-                print(f"센터 '{center.name}' 삭제 완료")
-                
-        finally:
-            # Foreign Key 제약 조건 다시 활성화
-            with connection.cursor() as cursor:
-                cursor.execute('PRAGMA foreign_keys = ON;')
-
-    def delete_model(self, request, obj):
-        """단일 센터 삭제 시 연관된 데이터도 함께 삭제"""
-        from django.db import connection
-        
-        # Foreign Key 제약 조건 임시 비활성화
-        with connection.cursor() as cursor:
-            cursor.execute('PRAGMA foreign_keys = OFF;')
-        
-        try:
-            # 연관된 데이터 수 확인
-            therapist_count = obj.therapists.count()
-            image_count = obj.images.count()
-            review_count = obj.reviews.count()
-            external_review_count = obj.external_reviews.count()
+        # Django ORM을 사용하여 안전하게 CASCADE 삭제
+        for center in queryset:
+            # 연관된 데이터 수 확인 (로깅용)
+            therapist_count = center.therapists.count()
+            image_count = center.images.count()
+            review_count = center.reviews.count()
+            external_review_count = center.external_reviews.count()
             
             # 로그 출력
-            print(f"센터 '{obj.name}' 삭제 중...")
+            print(f"센터 '{center.name}' 삭제 중...")
             print(f"  - 상담사: {therapist_count}개")
             print(f"  - 이미지: {image_count}개")
             print(f"  - 리뷰: {review_count}개")
             print(f"  - 외부 리뷰: {external_review_count}개")
             
-            # 리뷰 댓글 먼저 삭제
-            for review in obj.reviews.all():
-                review.comments.all().delete()
+            # Django ORM의 CASCADE 삭제 사용
+            # models.py에서 ForeignKey에 on_delete=models.CASCADE로 설정되어 있으면
+            # 자동으로 연관된 데이터가 삭제됩니다.
+            center.delete()
             
-            # 연관된 데이터 삭제
-            obj.therapists.all().delete()
-            obj.images.all().delete()
-            obj.reviews.all().delete()
-            obj.external_reviews.all().delete()
-            
-            # 센터 삭제
-            obj.delete()
-            
-            print(f"센터 '{obj.name}' 삭제 완료")
-            
-        finally:
-            # Foreign Key 제약 조건 다시 활성화
-            with connection.cursor() as cursor:
-                cursor.execute('PRAGMA foreign_keys = ON;')
+            print(f"센터 '{center.name}' 삭제 완료")
+
+    def delete_model(self, request, obj):
+        """단일 센터 삭제 시 연관된 데이터도 함께 삭제"""
+        # 연관된 데이터 수 확인 (로깅용)
+        therapist_count = obj.therapists.count()
+        image_count = obj.images.count()
+        review_count = obj.reviews.count()
+        external_review_count = obj.external_reviews.count()
+        
+        # 로그 출력
+        print(f"센터 '{obj.name}' 삭제 중...")
+        print(f"  - 상담사: {therapist_count}개")
+        print(f"  - 이미지: {image_count}개")
+        print(f"  - 리뷰: {review_count}개")
+        print(f"  - 외부 리뷰: {external_review_count}개")
+        
+        # Django ORM의 CASCADE 삭제 사용
+        obj.delete()
+        
+        print(f"센터 '{obj.name}' 삭제 완료")
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
