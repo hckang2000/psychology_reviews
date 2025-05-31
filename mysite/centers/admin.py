@@ -503,28 +503,54 @@ class CenterAdmin(CSVImportMixin, admin.ModelAdmin):
                 try:
                     # 네이버 지도 API를 사용하여 주소를 좌표로 변환
                     headers = {
-                        'X-NCP-APIGW-API-KEY-ID': settings.NAVER_CLIENT_ID,
-                        'X-NCP-APIGW-API-KEY': settings.NAVER_CLIENT_SECRET
+                        'x-ncp-apigw-api-key-id': settings.NAVER_CLIENT_ID,
+                        'x-ncp-apigw-api-key': settings.NAVER_CLIENT_SECRET,
+                        'Accept': 'application/json'
                     }
+                    
+                    print(f"🔍 Geocoding 시도: {row['address'].strip()}")
+                    print(f"🔑 Client ID: {settings.NAVER_CLIENT_ID[:10]}...")
+                    
                     response = requests.get(
-                        f'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode',
+                        'https://maps.apigw.ntruss.com/map-geocode/v2/geocode',
                         params={'query': row['address'].strip()},
                         headers=headers,
                         timeout=10
                     )
                     
+                    print(f"📡 API 응답 상태 코드: {response.status_code}")
+                    
                     if response.status_code == 200:
                         result = response.json()
+                        print(f"📋 API 응답 데이터: {result}")
+                        
                         if result.get('addresses'):
                             first_result = result['addresses'][0]
                             latitude = first_result['y']
                             longitude = first_result['x']
+                            print(f"✅ 좌표 변환 성공: ({latitude}, {longitude})")
                         else:
-                            print(f"주소 좌표 변환 실패: {row['address']} - 검색 결과 없음")
+                            print(f"❌ 주소 좌표 변환 실패: {row['address']} - 검색 결과 없음")
+                            print(f"🔍 전체 응답: {result}")
                     else:
-                        print(f"주소 좌표 변환 API 오류: {response.status_code}")
+                        print(f"❌ 주소 좌표 변환 API 오류: {response.status_code}")
+                        print(f"📄 응답 내용: {response.text}")
+                        
+                        # 특정 오류 코드에 대한 상세 안내
+                        if response.status_code == 401:
+                            print("🔐 인증 실패: API 키를 확인하세요")
+                        elif response.status_code == 429:
+                            print("📊 API 호출 한도 초과: 일일 허용량을 확인하세요")
+                        elif response.status_code == 403:
+                            print("🚫 접근 권한 없음: NCP 콘솔에서 Geocoding API 서비스 활성화를 확인하세요")
+                            
+                except requests.exceptions.Timeout:
+                    print(f"⏰ 주소 변환 타임아웃: {row['address']}")
+                except requests.exceptions.ConnectionError:
+                    print(f"🌐 네트워크 연결 오류: {row['address']}")
                 except Exception as e:
-                    print(f"주소 변환 중 오류: {str(e)}")
+                    print(f"❌ 주소 변환 중 예상치 못한 오류: {str(e)}")
+                    print(f"🔍 오류 타입: {type(e).__name__}")
             
             # 타입 처리
             type_value = row.get('type', '').strip()
@@ -557,17 +583,17 @@ class CenterAdmin(CSVImportMixin, admin.ModelAdmin):
                     image_path = f'centers/{center.name}_{image_filename}'
                     saved_path = self.save_image(image_dict[image_filename], image_path)
                     CenterImage.objects.create(center=center, image=saved_path)
-                    print(f"이미지 처리 성공: {image_path}")
+                    print(f"🖼️ 이미지 처리 성공: {image_path}")
                 except Exception as e:
-                    print(f"이미지 처리 실패 (센터는 생성됨): {str(e)}")
+                    print(f"⚠️ 이미지 처리 실패 (센터는 생성됨): {str(e)}")
             
-            print(f"센터 생성 성공: {center.name}")
+            print(f"🎉 센터 생성 성공: {center.name}")
             return center
         
         except Exception as e:
             # 오류 발생 시 더 구체적인 정보 제공
             error_msg = f"센터 '{row.get('name', 'Unknown')}' 생성 실패: {str(e)}"
-            print(error_msg)
+            print(f"💥 {error_msg}")
             raise ValueError(error_msg)
 
     def save_model(self, request, obj, form, change):
@@ -575,11 +601,12 @@ class CenterAdmin(CSVImportMixin, admin.ModelAdmin):
             try:
                 # 네이버 지도 API를 사용하여 주소를 좌표로 변환
                 headers = {
-                    'X-NCP-APIGW-API-KEY-ID': settings.NAVER_CLIENT_ID,
-                    'X-NCP-APIGW-API-KEY': settings.NAVER_CLIENT_SECRET
+                    'x-ncp-apigw-api-key-id': settings.NAVER_CLIENT_ID,
+                    'x-ncp-apigw-api-key': settings.NAVER_CLIENT_SECRET,
+                    'Accept': 'application/json'
                 }
                 response = requests.get(
-                    f'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode',
+                    'https://maps.apigw.ntruss.com/map-geocode/v2/geocode',
                     params={'query': obj.address},
                     headers=headers
                 )
