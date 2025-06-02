@@ -576,16 +576,27 @@ class CenterAdmin(CSVImportMixin, admin.ModelAdmin):
                 longitude=longitude
             )
             
-            # 이미지 처리
+            # 이미지 처리 - 쉼표로 구분된 여러 이미지 지원
             image_filename = row.get('image_filename', '').strip()
-            if image_filename and image_filename in image_dict:
-                try:
-                    image_path = f'centers/{center.name}_{image_filename}'
-                    saved_path = self.save_image(image_dict[image_filename], image_path)
-                    CenterImage.objects.create(center=center, image=saved_path)
-                    print(f"🖼️ 이미지 처리 성공: {image_path}")
-                except Exception as e:
-                    print(f"⚠️ 이미지 처리 실패 (센터는 생성됨): {str(e)}")
+            if image_filename and image_dict:
+                # 쉼표로 구분된 이미지 파일명들을 분리
+                image_filenames = [name.strip() for name in image_filename.split(',') if name.strip()]
+                
+                for idx, filename in enumerate(image_filenames):
+                    if filename in image_dict:
+                        try:
+                            # 각 이미지별로 고유한 경로 생성
+                            image_path = f'centers/{center.name}_{filename}'
+                            saved_path = self.save_image(image_dict[filename], image_path)
+                            CenterImage.objects.create(center=center, image=saved_path)
+                            print(f"🖼️ 이미지 처리 성공 ({idx+1}/{len(image_filenames)}): {image_path}")
+                        except Exception as e:
+                            print(f"⚠️ 이미지 처리 실패 - {filename}: {str(e)}")
+                    else:
+                        print(f"⚠️ ZIP 파일에서 이미지를 찾을 수 없음: {filename}")
+                
+                if image_filenames:
+                    print(f"🎨 총 {len(image_filenames)}개 이미지 중 업로드 시도 완료")
             
             print(f"🎉 센터 생성 성공: {center.name}")
             return center
