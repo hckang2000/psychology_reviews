@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load cloudinary_tags %}
 
 {% block title %}{{ center.name }} 관리{% endblock %}
 
@@ -143,8 +144,14 @@
                         {% if form.photo.errors %}
                             <div class="error-message">{{ form.photo.errors.0 }}</div>
                         {% endif %}
-                        {% if form.instance.photo %}
-                            <img src="{{ form.instance.photo.url }}" alt="상담사 사진" class="therapist-photo-preview">
+                        {% if form.instance.id %}
+                            {% with therapist_photo_url=form.instance|cloudinary_url %}
+                                {% if therapist_photo_url %}
+                                    <img src="{{ therapist_photo_url|optimize_cloudinary:'w_200,h_200,c_fill,q_auto' }}" 
+                                         alt="상담사 사진" 
+                                         class="therapist-photo-preview">
+                                {% endif %}
+                            {% endwith %}
                         {% endif %}
                     </div>
                 </div>
@@ -173,8 +180,14 @@
                         {% if form.image.errors %}
                             <div class="error-message">{{ form.image.errors.0 }}</div>
                         {% endif %}
-                        {% if form.instance.image %}
-                            <img src="{{ form.instance.image.url }}" alt="센터 이미지" class="image-preview">
+                        {% if form.instance.id %}
+                            {% with center_image_url=form.instance|cloudinary_url %}
+                                {% if center_image_url %}
+                                    <img src="{{ center_image_url|optimize_cloudinary:'w_300,h_200,c_fill,q_auto' }}" 
+                                         alt="센터 이미지" 
+                                         class="image-preview">
+                                {% endif %}
+                            {% endwith %}
                         {% endif %}
                     </div>
                 </div>

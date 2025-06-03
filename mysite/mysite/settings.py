@@ -2,6 +2,9 @@ import os
 from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 # .env 파일 로드
 load_dotenv()
@@ -32,6 +35,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    
+    # Cloudinary apps (django.contrib.staticfiles 이후에 위치)
+    'cloudinary_storage',
+    'cloudinary',
     
     # Third party apps
     'accounts',
@@ -162,6 +169,28 @@ else:
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Cloudinary 설정
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+}
+
+# Cloudinary 초기화
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET')
+)
+
+# 운영환경에서는 Cloudinary, 개발환경에서는 로컬 저장소 사용
+if os.getenv('RENDER'):
+    # 운영환경: Cloudinary 사용
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+else:
+    # 개발환경: 로컬 미디어 저장소 사용
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

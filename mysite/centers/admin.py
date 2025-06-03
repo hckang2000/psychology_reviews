@@ -23,6 +23,9 @@ from datetime import datetime
 from django.core.cache import cache
 import uuid
 
+# Cloudinary imports 추가
+from .utils import upload_image_to_cloudinary, delete_image_from_cloudinary
+
 # CSV Import Mixin - 공통 로직 분리
 class CSVImportMixin:
     """CSV 업로드 공통 기능을 제공하는 Mixin"""
@@ -201,10 +204,33 @@ class CSVImportMixin:
         return image_dict
     
     def save_image(self, image_data, file_path):
-        """이미지 파일 저장"""
-        os.makedirs(os.path.dirname(os.path.join(settings.MEDIA_ROOT, file_path)), exist_ok=True)
-        default_storage.save(file_path, ContentFile(image_data))
-        return file_path
+        """이미지 파일 저장 - Cloudinary와 로컬 저장소 통합"""
+        try:
+            # Cloudinary 업로드 시도
+            upload_result = upload_image_to_cloudinary(
+                image_data, 
+                folder='centers' if 'centers/' in file_path else 'therapists'
+            )
+            
+            if upload_result['success']:
+                print(f"✅ Cloudinary 업로드 성공: {upload_result.get('url', 'URL 없음')}")
+                # 로컬에도 저장 (백업용)
+                os.makedirs(os.path.dirname(os.path.join(settings.MEDIA_ROOT, file_path)), exist_ok=True)
+                default_storage.save(file_path, ContentFile(image_data))
+                return file_path, upload_result.get('url')
+            else:
+                print(f"⚠️ Cloudinary 업로드 실패, 로컬 저장소만 사용: {upload_result.get('error', '알 수 없는 오류')}")
+                # Cloudinary 실패 시 로컬 저장소만 사용
+                os.makedirs(os.path.dirname(os.path.join(settings.MEDIA_ROOT, file_path)), exist_ok=True)
+                default_storage.save(file_path, ContentFile(image_data))
+                return file_path, None
+                
+        except Exception as e:
+            print(f"❌ 이미지 저장 중 오류: {str(e)}")
+            # 오류 발생 시 로컬 저장소만 사용
+            os.makedirs(os.path.dirname(os.path.join(settings.MEDIA_ROOT, file_path)), exist_ok=True)
+            default_storage.save(file_path, ContentFile(image_data))
+            return file_path, None
     
     def process_batch(self, data_rows, batch_size=10):
         """배치 단위로 데이터 처리"""
@@ -255,24 +281,22 @@ class CenterAdminForm(forms.ModelForm):
         model = Center
         fields = '__all__'
         widgets = {
-            'address': forms.TextInput(attrs={
-                'class': 'vLargeTextField',
-                'placeholder': '주소를 입력하면 자동으로 위도/경도가 변환됩니다.'
-            }),
-            'latitude': forms.NumberInput(attrs={
-                'readonly': 'readonly',
-                'class': 'readonly-field'
-            }),
-            'longitude': forms.NumberInput(attrs={
-                'readonly': 'readonly',
-                'class': 'readonly-field'
-            }),
+            'name': forms.TextInput(attrs={'style': 'width: 300px;'}),
+            'address': forms.TextInput(attrs={'style': 'width: 400px;'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'cols': 40}),
+            'operating_hours': forms.TextInput(attrs={'style': 'width: 300px;', 'placeholder': '예: 평일 9:00-18:00, 토요일 9:00-13:00'}),
+        }
+        help_texts = {
+            'latitude': '주소 저장 시 자동으로 계산됩니다.',
+            'longitude': '주소 저장 시 자동으로 계산됩니다.',
+            'type': '상담소의 유형을 선택하세요.',
+            'image_url': 'Cloudinary에 업로드된 이미지 URL이 자동으로 설정됩니다.'
         }
 
     class Media:
         js = ('centers/admin/js/geocoding.js',)
         css = {
-            'all': ('centers/admin/css/admin.css',)
+            'all': ('centers/admin/css/admin_custom.css',)
         }
 
 class CsvImportForm(forms.Form):
@@ -587,9 +611,23 @@ class CenterAdmin(CSVImportMixin, admin.ModelAdmin):
                         try:
                             # 각 이미지별로 고유한 경로 생성
                             image_path = f'centers/{center.name}_{filename}'
-                            saved_path = self.save_image(image_dict[filename], image_path)
-                            CenterImage.objects.create(center=center, image=saved_path)
+                            saved_path, cloudinary_url = self.save_image(image_dict[filename], image_path)
+                            
+                            # Center 이미지 생성 - Cloudinary URL 포함
+                            center_image = CenterImage.objects.create(
+                                center=center, 
+                                image=saved_path,
+                                image_url=cloudinary_url
+                            )
+                            
+                            # 첫 번째 이미지는 Center 모델의 image_url에도 저장
+                            if idx == 0 and cloudinary_url:
+                                center.image_url = cloudinary_url
+                                center.save()
+                            
                             print(f"🖼️ 이미지 처리 성공 ({idx+1}/{len(image_filenames)}): {image_path}")
+                            if cloudinary_url:
+                                print(f"🌐 Cloudinary URL: {cloudinary_url}")
                         except Exception as e:
                             print(f"⚠️ 이미지 처리 실패 - {filename}: {str(e)}")
                     else:
@@ -608,6 +646,7 @@ class CenterAdmin(CSVImportMixin, admin.ModelAdmin):
             raise ValueError(error_msg)
 
     def save_model(self, request, obj, form, change):
+        # 좌표가 없으면 Naver API로 변환
         if not obj.latitude or not obj.longitude:
             try:
                 # 네이버 지도 API를 사용하여 주소를 좌표로 변환
@@ -630,6 +669,18 @@ class CenterAdmin(CSVImportMixin, admin.ModelAdmin):
                         obj.longitude = first_result['x']
             except Exception as e:
                 self.message_user(request, f'주소 변환 중 오류가 발생했습니다: {str(e)}', level='ERROR')
+        
+        # 업로드된 이미지가 있는 경우 Cloudinary로 업로드
+        if hasattr(obj, '_image_file') and obj._image_file:
+            try:
+                upload_result = upload_image_to_cloudinary(obj._image_file, folder='centers')
+                if upload_result['success']:
+                    obj.image_url = upload_result['url']
+                    self.message_user(request, f'이미지가 Cloudinary에 성공적으로 업로드되었습니다.', level='SUCCESS')
+                else:
+                    self.message_user(request, f'이미지 업로드 실패: {upload_result.get("error", "알 수 없는 오류")}', level='ERROR')
+            except Exception as e:
+                self.message_user(request, f'이미지 업로드 중 오류가 발생했습니다: {str(e)}', level='ERROR')
         
         super().save_model(request, obj, form, change)
 
@@ -797,10 +848,13 @@ class TherapistAdmin(CSVImportMixin, admin.ModelAdmin):
             image_data = image_dict.get(image_filename)
             if image_data:
                 file_path = f'therapists/{center.name}/{therapist.name}/{image_filename}'
-                self.save_image(image_data, file_path)
-                therapist.photo = file_path
+                saved_path, cloudinary_url = self.save_image(image_data, file_path)
+                therapist.photo = saved_path
+                therapist.photo_url = cloudinary_url
                 therapist.save()
                 print(f"이미지 처리 성공: {file_path}")
+                if cloudinary_url:
+                    print(f"🌐 Cloudinary URL: {cloudinary_url}")
             else:
                 print(f"이미지 처리 실패: {image_filename}")
         

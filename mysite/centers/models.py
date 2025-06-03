@@ -25,6 +25,7 @@ class Center(models.Model):
     )
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+    image_url = models.URLField(blank=True, null=True, help_text='Cloudinary에 저장된 이미지 URL')
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -42,6 +43,7 @@ class Therapist(models.Model):
     specialty = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     photo = models.ImageField(upload_to='therapists/', blank=True, null=True)
+    photo_url = models.URLField(blank=True, null=True, help_text='Cloudinary에 저장된 상담사 사진 URL')
     experience = models.PositiveIntegerField(default=0, help_text='상담사의 경력 연차')
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -113,6 +115,7 @@ class ExternalReview(models.Model):
 class CenterImage(models.Model):
     center = models.ForeignKey(Center, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='centers/')
+    image_url = models.URLField(blank=True, null=True, help_text='Cloudinary에 저장된 이미지 URL')
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):

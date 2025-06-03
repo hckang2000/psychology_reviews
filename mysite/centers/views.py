@@ -58,9 +58,16 @@ def create_pagination_data(page_obj):
 
 def serialize_therapist(therapist):
     """상담사 객체 직렬화"""
+    # Cloudinary URL이 있으면 우선 사용, 없으면 로컬 이미지 URL 사용
+    photo_url = None
+    if therapist.photo_url:  # Cloudinary URL이 있는 경우
+        photo_url = therapist.photo_url
+    elif therapist.photo:  # 로컬 이미지가 있는 경우
+        photo_url = therapist.photo.url
+    
     return {
         'name': escape_quotes(therapist.name),
-        'photo': escape_quotes(therapist.photo.url) if therapist.photo else None,
+        'photo': escape_quotes(photo_url) if photo_url else None,
         'experience': therapist.experience,
         'specialty': escape_quotes(therapist.specialty),
         'description': escape_quotes(therapist.description)
@@ -107,6 +114,14 @@ def serialize_center(center, user=None):
         lat = float(center.latitude) if isinstance(center.latitude, Decimal) else center.latitude
         lng = float(center.longitude) if isinstance(center.longitude, Decimal) else center.longitude
         
+        # 센터 이미지 URL 처리 - Cloudinary URL 우선 사용
+        image_urls = []
+        for image in center.images.all():
+            if image.image_url:  # Cloudinary URL이 있는 경우
+                image_urls.append(escape_quotes(image.image_url))
+            elif image.image:  # 로컬 이미지가 있는 경우
+                image_urls.append(escape_quotes(image.image.url))
+        
         return {
             'id': center.id,
             'name': escape_quotes(center.name),
@@ -118,7 +133,7 @@ def serialize_center(center, user=None):
             'url': escape_quotes(center.url),
             'operating_hours': escape_quotes(center.operating_hours),
             'description': escape_quotes(center.description),
-            'images': [escape_quotes(image.image.url) for image in center.images.all()],
+            'images': image_urls,
             'therapists': [serialize_therapist(t) for t in center.therapists.all()],
             'reviews': [serialize_review(r, user) for r in center.reviews.all().prefetch_related('comments').order_by('-created_at')],
             'external_reviews': [serialize_external_review(r) for r in center.external_reviews.all().order_by('-created_at')],

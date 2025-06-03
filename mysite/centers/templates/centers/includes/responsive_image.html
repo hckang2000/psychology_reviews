@@ -1,0 +1,19 @@
+{% if image_url %}
+    {% if srcset %}
+        <img src="{{ image_url }}" 
+             srcset="{{ srcset }}" 
+             sizes="{{ sizes }}" 
+             alt="{{ alt_text }}" 
+             class="{{ css_class }}"
+             loading="lazy">
+    {% else %}
+        <img src="{{ image_url }}" 
+             alt="{{ alt_text }}" 
+             class="{{ css_class }}"
+             loading="lazy">
+    {% endif %}
+{% else %}
+    <div class="no-image-placeholder {{ css_class }}">
+        <span>이미지 없음</span>
+    </div>
+{% endif %} 
