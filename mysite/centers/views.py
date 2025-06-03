@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
 from .models import Center, Review, ExternalReview, Therapist, CenterImage, ReviewComment, BackupHistory, RestoreHistory
 from .forms import ReviewForm, CenterManagementForm, TherapistManagementForm, ReviewCommentForm
+from .utils import upload_image_to_cloudinary, delete_image_from_cloudinary  # Cloudinary 유틸리티 추가
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
@@ -522,9 +523,89 @@ class CenterManagementView(CenterManagerRequiredMixin, UpdateView):
         with transaction.atomic():
             if form.is_valid() and therapist_formset.is_valid() and image_formset.is_valid():
                 self.object = form.save()
+                
+                # 삭제될 상담사들의 Cloudinary 이미지 정리 (미리 파악)
+                therapists_to_delete = []
+                for form_instance in therapist_formset:
+                    if form_instance.cleaned_data.get('DELETE') and form_instance.instance.pk:
+                        therapists_to_delete.append(form_instance.instance)
+                
+                for therapist in therapists_to_delete:
+                    if hasattr(therapist, 'photo_url') and therapist.photo_url:
+                        print(f"🗑️ 상담사 사진 Cloudinary 삭제: {therapist.name}")
+                        try:
+                            # public_id 추출 방법 개선
+                            if 'cloudinary.com' in therapist.photo_url:
+                                url_parts = therapist.photo_url.split('/')
+                                # therapists/filename.jpg에서 therapists/filename 추출
+                                public_id_with_extension = '/'.join(url_parts[-2:])  # therapists/filename.jpg
+                                public_id = public_id_with_extension.split('.')[0]  # therapists/filename
+                                delete_result = delete_image_from_cloudinary(public_id)
+                                print(f"✅ Cloudinary 삭제 결과: {delete_result}")
+                        except Exception as e:
+                            print(f"⚠️ Cloudinary 삭제 실패: {e}")
+                
+                # 삭제될 센터 이미지들의 Cloudinary 이미지 정리 (미리 파악)
+                images_to_delete = []
+                for form_instance in image_formset:
+                    if form_instance.cleaned_data.get('DELETE') and form_instance.instance.pk:
+                        images_to_delete.append(form_instance.instance)
+                
+                for center_image in images_to_delete:
+                    if hasattr(center_image, 'image_url') and center_image.image_url:
+                        print(f"🗑️ 센터 이미지 Cloudinary 삭제: {self.object.name}")
+                        try:
+                            # public_id 추출 방법 개선
+                            if 'cloudinary.com' in center_image.image_url:
+                                url_parts = center_image.image_url.split('/')
+                                # centers/filename.jpg에서 centers/filename 추출
+                                public_id_with_extension = '/'.join(url_parts[-2:])  # centers/filename.jpg
+                                public_id = public_id_with_extension.split('.')[0]  # centers/filename
+                                delete_result = delete_image_from_cloudinary(public_id)
+                                print(f"✅ Cloudinary 삭제 결과: {delete_result}")
+                        except Exception as e:
+                            print(f"⚠️ Cloudinary 삭제 실패: {e}")
+                
+                # 상담사 폼셋 처리 (사진 Cloudinary 업로드)
                 therapist_formset.instance = self.object
+                therapist_instances = therapist_formset.save(commit=False)
+                
+                for therapist in therapist_instances:
+                    # 새로운 사진이 업로드된 경우 Cloudinary에 저장
+                    if therapist.photo:
+                        print(f"🏥 상담사 사진 Cloudinary 업로드: {therapist.name}")
+                        upload_result = upload_image_to_cloudinary(therapist.photo, folder='therapists')
+                        
+                        if upload_result.get('success') and upload_result.get('url'):
+                            therapist.photo_url = upload_result['url']
+                            print(f"✅ 상담사 사진 Cloudinary 업로드 성공: {upload_result['url']}")
+                        else:
+                            print(f"⚠️ 상담사 사진 Cloudinary 업로드 실패, 로컬 저장소 사용: {upload_result.get('error', '알 수 없는 오류')}")
+                    
+                    therapist.save()
+                
+                # 상담사 폼셋 최종 저장 (삭제 처리 포함)
                 therapist_formset.save()
+                
+                # 센터 이미지 폼셋 처리 (Cloudinary 업로드)
                 image_formset.instance = self.object
+                image_instances = image_formset.save(commit=False)
+                
+                for center_image in image_instances:
+                    # 새로운 이미지가 업로드된 경우 Cloudinary에 저장
+                    if center_image.image:
+                        print(f"🏢 센터 이미지 Cloudinary 업로드: {self.object.name}")
+                        upload_result = upload_image_to_cloudinary(center_image.image, folder='centers')
+                        
+                        if upload_result.get('success') and upload_result.get('url'):
+                            center_image.image_url = upload_result['url']
+                            print(f"✅ 센터 이미지 Cloudinary 업로드 성공: {upload_result['url']}")
+                        else:
+                            print(f"⚠️ 센터 이미지 Cloudinary 업로드 실패, 로컬 저장소 사용: {upload_result.get('error', '알 수 없는 오류')}")
+                    
+                    center_image.save()
+                
+                # 이미지 폼셋 최종 저장 (삭제 처리 포함)
                 image_formset.save()
                 
                 messages.success(self.request, '센터 정보가 성공적으로 업데이트되었습니다.')

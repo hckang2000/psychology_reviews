@@ -8,6 +8,159 @@
 <link rel="stylesheet" href="{% static 'centers/css/variables.css' %}">
 <link rel="stylesheet" href="{% static 'centers/css/common.css' %}">
 <link rel="stylesheet" href="{% static 'centers/css/management.css' %}">
+<style>
+    /* 삭제 예정 항목 스타일 */
+    .formset-item.to-delete {
+        opacity: 0.5;
+        background-color: #fee;
+        border: 2px solid #f87171;
+        position: relative;
+    }
+    
+    .formset-item.to-delete::before {
+        content: "삭제 예정";
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #ef4444;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .delete-checkbox {
+        margin-bottom: 10px;
+        padding: 10px;
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 4px;
+    }
+    
+    .delete-checkbox label {
+        color: #dc2626;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .delete-checkbox input[type="checkbox"] {
+        margin-right: 8px;
+        transform: scale(1.2);
+    }
+    
+    /* 동적 폼 관리 스타일 */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .formset-controls {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .formset-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: #f9fafb;
+        position: relative;
+    }
+    
+    .formset-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .formset-item-header h4 {
+        margin: 0;
+        color: #374151;
+        font-size: 18px;
+        font-weight: 600;
+    }
+    
+    .formset-item-controls {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .btn-success {
+        background-color: #10b981;
+        color: white;
+    }
+    
+    .btn-success:hover {
+        background-color: #059669;
+        transform: translateY(-1px);
+    }
+    
+    .btn-danger {
+        background-color: #ef4444;
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        background-color: #dc2626;
+        transform: translateY(-1px);
+    }
+    
+    .btn:active {
+        transform: translateY(0);
+    }
+    
+    /* 폼셋 아이템 애니메이션 */
+    .formset-item.fade-in {
+        animation: fadeInUp 0.3s ease-out;
+    }
+    
+    .formset-item.fade-out {
+        animation: fadeOutDown 0.3s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes fadeOutDown {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -90,108 +243,148 @@
         
         <!-- 상담사 정보 -->
         <div class="form-section">
-            <h2 class="section-title">👨‍⚕️ 상담사 정보</h2>
+            <div class="section-header">
+                <h2 class="section-title">👨‍⚕️ 상담사 정보</h2>
+                <div class="formset-controls">
+                    <button type="button" id="add-therapist" class="btn btn-success">
+                        ➕ 상담사 추가
+                    </button>
+                </div>
+            </div>
             
             {{ therapist_formset.management_form }}
-            {% for form in therapist_formset %}
-                <div class="formset-item">
-                    {% if form.DELETE %}
-                        <div class="delete-checkbox">
-                            {{ form.DELETE }}
-                            {{ form.DELETE.label_tag }}
+            <div id="therapist-forms-container">
+                {% for form in therapist_formset %}
+                    <div class="formset-item" data-form-index="{{ forloop.counter0 }}">
+                        <div class="formset-item-header">
+                            <h4>상담사 #{{ forloop.counter }}</h4>
+                            <div class="formset-item-controls">
+                                {% if not forloop.first %}
+                                    <button type="button" class="btn btn-danger remove-therapist">
+                                        ➖ 삭제
+                                    </button>
+                                {% endif %}
+                            </div>
                         </div>
-                    {% endif %}
-                    
-                    {{ form.id }}
-                    
-                    <div class="form-row">
+                        
+                        {% if form.DELETE %}
+                            <div class="delete-checkbox">
+                                {{ form.DELETE }}
+                                {{ form.DELETE.label_tag }}
+                            </div>
+                        {% endif %}
+                        
+                        {{ form.id }}
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                {{ form.name.label_tag }}
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="error-message">{{ form.name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                {{ form.experience.label_tag }}
+                                {{ form.experience }}
+                                {% if form.experience.errors %}
+                                    <div class="error-message">{{ form.experience.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
                         <div class="form-group">
-                            {{ form.name.label_tag }}
-                            {{ form.name }}
-                            {% if form.name.errors %}
-                                <div class="error-message">{{ form.name.errors.0 }}</div>
+                            {{ form.specialty.label_tag }}
+                            {{ form.specialty }}
+                            {% if form.specialty.errors %}
+                                <div class="error-message">{{ form.specialty.errors.0 }}</div>
                             {% endif %}
                         </div>
                         
                         <div class="form-group">
-                            {{ form.experience.label_tag }}
-                            {{ form.experience }}
-                            {% if form.experience.errors %}
-                                <div class="error-message">{{ form.experience.errors.0 }}</div>
+                            {{ form.description.label_tag }}
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="error-message">{{ form.description.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.photo.label_tag }}
+                            {{ form.photo }}
+                            {% if form.photo.errors %}
+                                <div class="error-message">{{ form.photo.errors.0 }}</div>
+                            {% endif %}
+                            {% if form.instance.id %}
+                                {% with therapist_photo_url=form.instance|cloudinary_url %}
+                                    {% if therapist_photo_url %}
+                                        <img src="{{ therapist_photo_url|optimize_cloudinary:'w_200,h_200,c_fill,q_auto' }}" 
+                                             alt="상담사 사진" 
+                                             class="therapist-photo-preview">
+                                    {% endif %}
+                                {% endwith %}
                             {% endif %}
                         </div>
                     </div>
-                    
-                    <div class="form-group">
-                        {{ form.specialty.label_tag }}
-                        {{ form.specialty }}
-                        {% if form.specialty.errors %}
-                            <div class="error-message">{{ form.specialty.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="form-group">
-                        {{ form.description.label_tag }}
-                        {{ form.description }}
-                        {% if form.description.errors %}
-                            <div class="error-message">{{ form.description.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="form-group">
-                        {{ form.photo.label_tag }}
-                        {{ form.photo }}
-                        {% if form.photo.errors %}
-                            <div class="error-message">{{ form.photo.errors.0 }}</div>
-                        {% endif %}
-                        {% if form.instance.id %}
-                            {% with therapist_photo_url=form.instance|cloudinary_url %}
-                                {% if therapist_photo_url %}
-                                    <img src="{{ therapist_photo_url|optimize_cloudinary:'w_200,h_200,c_fill,q_auto' }}" 
-                                         alt="상담사 사진" 
-                                         class="therapist-photo-preview">
-                                {% endif %}
-                            {% endwith %}
-                        {% endif %}
-                    </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
         
         <!-- 센터 이미지 -->
         <div class="form-section">
-            <h2 class="section-title">📸 센터 이미지</h2>
+            <div class="section-header">
+                <h2 class="section-title">📸 센터 이미지</h2>
+                <div class="formset-controls">
+                    <button type="button" id="add-image" class="btn btn-success">
+                        ➕ 이미지 추가
+                    </button>
+                </div>
+            </div>
             
             {{ image_formset.management_form }}
-            {% for form in image_formset %}
-                <div class="formset-item">
-                    {% if form.DELETE %}
-                        <div class="delete-checkbox">
-                            {{ form.DELETE }}
-                            {{ form.DELETE.label_tag }}
-                        </div>
-                    {% endif %}
-                    
-                    {{ form.id }}
-                    
-                    <div class="form-group">
-                        {{ form.image.label_tag }}
-                        {{ form.image }}
-                        {% if form.image.errors %}
-                            <div class="error-message">{{ form.image.errors.0 }}</div>
-                        {% endif %}
-                        {% if form.instance.id %}
-                            {% with center_image_url=form.instance|cloudinary_url %}
-                                {% if center_image_url %}
-                                    <img src="{{ center_image_url|optimize_cloudinary:'w_300,h_200,c_fill,q_auto' }}" 
-                                         alt="센터 이미지" 
-                                         class="image-preview">
+            <div id="image-forms-container">
+                {% for form in image_formset %}
+                    <div class="formset-item" data-form-index="{{ forloop.counter0 }}">
+                        <div class="formset-item-header">
+                            <h4>이미지 #{{ forloop.counter }}</h4>
+                            <div class="formset-item-controls">
+                                {% if not forloop.first %}
+                                    <button type="button" class="btn btn-danger remove-image">
+                                        ➖ 삭제
+                                    </button>
                                 {% endif %}
-                            {% endwith %}
+                            </div>
+                        </div>
+                        
+                        {% if form.DELETE %}
+                            <div class="delete-checkbox">
+                                {{ form.DELETE }}
+                                {{ form.DELETE.label_tag }}
+                            </div>
                         {% endif %}
+                        
+                        {{ form.id }}
+                        
+                        <div class="form-group">
+                            {{ form.image.label_tag }}
+                            {{ form.image }}
+                            {% if form.image.errors %}
+                                <div class="error-message">{{ form.image.errors.0 }}</div>
+                            {% endif %}
+                            {% if form.instance.id %}
+                                {% with center_image_url=form.instance|cloudinary_url %}
+                                    {% if center_image_url %}
+                                        <img src="{{ center_image_url|optimize_cloudinary:'w_300,h_200,c_fill,q_auto' }}" 
+                                             alt="센터 이미지" 
+                                             class="image-preview">
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
         
         <div class="submit-section">
@@ -217,6 +410,295 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // 동적 폼 관리
+    initDynamicFormsets();
 });
+
+function initDynamicFormsets() {
+    // 상담사 폼셋 관리
+    const therapistContainer = document.getElementById('therapist-forms-container');
+    const addTherapistBtn = document.getElementById('add-therapist');
+    const therapistTotalForms = document.getElementById('id_therapists-TOTAL_FORMS');
+    
+    // 이미지 폼셋 관리
+    const imageContainer = document.getElementById('image-forms-container');
+    const addImageBtn = document.getElementById('add-image');
+    const imageTotalForms = document.getElementById('id_centerimages-TOTAL_FORMS');
+    
+    // 상담사 추가 버튼 이벤트
+    if (addTherapistBtn && therapistContainer && therapistTotalForms) {
+        addTherapistBtn.addEventListener('click', function() {
+            addTherapistForm(therapistContainer, therapistTotalForms);
+        });
+        
+        // 기존 삭제 버튼 이벤트 등록
+        bindTherapistRemoveEvents();
+    }
+    
+    // 이미지 추가 버튼 이벤트
+    if (addImageBtn && imageContainer && imageTotalForms) {
+        addImageBtn.addEventListener('click', function() {
+            addImageForm(imageContainer, imageTotalForms);
+        });
+        
+        // 기존 삭제 버튼 이벤트 등록
+        bindImageRemoveEvents();
+    }
+}
+
+function addTherapistForm(container, totalFormsInput) {
+    const currentForms = parseInt(totalFormsInput.value);
+    const newFormIndex = currentForms;
+    
+    // 빈 폼 템플릿 (서버에서 받은 빈 폼을 기반으로)
+    const emptyFormHtml = getTherapistFormTemplate(newFormIndex);
+    
+    // 새 폼 엘리먼트 생성
+    const newFormDiv = document.createElement('div');
+    newFormDiv.className = 'formset-item fade-in';
+    newFormDiv.setAttribute('data-form-index', newFormIndex);
+    newFormDiv.innerHTML = emptyFormHtml;
+    
+    // 컨테이너에 추가
+    container.appendChild(newFormDiv);
+    
+    // 총 폼 개수 업데이트
+    totalFormsInput.value = currentForms + 1;
+    
+    // 새 폼의 삭제 버튼 이벤트 등록
+    bindTherapistRemoveEvents();
+    
+    // 번호 업데이트
+    updateTherapistNumbers();
+}
+
+function addImageForm(container, totalFormsInput) {
+    const currentForms = parseInt(totalFormsInput.value);
+    const newFormIndex = currentForms;
+    
+    // 빈 폼 템플릿
+    const emptyFormHtml = getImageFormTemplate(newFormIndex);
+    
+    // 새 폼 엘리먼트 생성
+    const newFormDiv = document.createElement('div');
+    newFormDiv.className = 'formset-item fade-in';
+    newFormDiv.setAttribute('data-form-index', newFormIndex);
+    newFormDiv.innerHTML = emptyFormHtml;
+    
+    // 컨테이너에 추가
+    container.appendChild(newFormDiv);
+    
+    // 총 폼 개수 업데이트
+    totalFormsInput.value = currentForms + 1;
+    
+    // 새 폼의 삭제 버튼 이벤트 등록
+    bindImageRemoveEvents();
+    
+    // 번호 업데이트
+    updateImageNumbers();
+}
+
+function bindTherapistRemoveEvents() {
+    const removeButtons = document.querySelectorAll('.remove-therapist');
+    removeButtons.forEach(function(button) {
+        // 기존 이벤트 리스너 제거
+        button.replaceWith(button.cloneNode(true));
+    });
+    
+    // 새로운 이벤트 리스너 등록
+    document.querySelectorAll('.remove-therapist').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const formItem = this.closest('.formset-item');
+            removeFormWithAnimation(formItem, function() {
+                const totalFormsInput = document.getElementById('id_therapists-TOTAL_FORMS');
+                totalFormsInput.value = parseInt(totalFormsInput.value) - 1;
+                updateTherapistNumbers();
+                reindexTherapistForms();
+            });
+        });
+    });
+}
+
+function bindImageRemoveEvents() {
+    const removeButtons = document.querySelectorAll('.remove-image');
+    removeButtons.forEach(function(button) {
+        // 기존 이벤트 리스너 제거
+        button.replaceWith(button.cloneNode(true));
+    });
+    
+    // 새로운 이벤트 리스너 등록
+    document.querySelectorAll('.remove-image').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const formItem = this.closest('.formset-item');
+            removeFormWithAnimation(formItem, function() {
+                const totalFormsInput = document.getElementById('id_centerimages-TOTAL_FORMS');
+                totalFormsInput.value = parseInt(totalFormsInput.value) - 1;
+                updateImageNumbers();
+                reindexImageForms();
+            });
+        });
+    });
+}
+
+function removeFormWithAnimation(formItem, callback) {
+    formItem.classList.add('fade-out');
+    setTimeout(function() {
+        formItem.remove();
+        if (callback) callback();
+    }, 300);
+}
+
+function updateTherapistNumbers() {
+    const therapistForms = document.querySelectorAll('#therapist-forms-container .formset-item');
+    therapistForms.forEach(function(form, index) {
+        const header = form.querySelector('.formset-item-header h4');
+        if (header) {
+            header.textContent = `상담사 #${index + 1}`;
+        }
+    });
+}
+
+function updateImageNumbers() {
+    const imageForms = document.querySelectorAll('#image-forms-container .formset-item');
+    imageForms.forEach(function(form, index) {
+        const header = form.querySelector('.formset-item-header h4');
+        if (header) {
+            header.textContent = `이미지 #${index + 1}`;
+        }
+    });
+}
+
+function reindexTherapistForms() {
+    const therapistForms = document.querySelectorAll('#therapist-forms-container .formset-item');
+    therapistForms.forEach(function(form, index) {
+        // 폼 인덱스 업데이트
+        form.setAttribute('data-form-index', index);
+        
+        // 모든 입력 필드의 name과 id 업데이트
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(function(input) {
+            const name = input.getAttribute('name');
+            const id = input.getAttribute('id');
+            
+            if (name && name.includes('therapists-')) {
+                const newName = name.replace(/therapists-\d+/, `therapists-${index}`);
+                input.setAttribute('name', newName);
+            }
+            
+            if (id && id.includes('therapists-')) {
+                const newId = id.replace(/therapists-\d+/, `therapists-${index}`);
+                input.setAttribute('id', newId);
+            }
+        });
+        
+        // 라벨의 for 속성도 업데이트
+        const labels = form.querySelectorAll('label');
+        labels.forEach(function(label) {
+            const forAttr = label.getAttribute('for');
+            if (forAttr && forAttr.includes('therapists-')) {
+                const newFor = forAttr.replace(/therapists-\d+/, `therapists-${index}`);
+                label.setAttribute('for', newFor);
+            }
+        });
+    });
+}
+
+function reindexImageForms() {
+    const imageForms = document.querySelectorAll('#image-forms-container .formset-item');
+    imageForms.forEach(function(form, index) {
+        // 폼 인덱스 업데이트
+        form.setAttribute('data-form-index', index);
+        
+        // 모든 입력 필드의 name과 id 업데이트
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(function(input) {
+            const name = input.getAttribute('name');
+            const id = input.getAttribute('id');
+            
+            if (name && name.includes('centerimages-')) {
+                const newName = name.replace(/centerimages-\d+/, `centerimages-${index}`);
+                input.setAttribute('name', newName);
+            }
+            
+            if (id && id.includes('centerimages-')) {
+                const newId = id.replace(/centerimages-\d+/, `centerimages-${index}`);
+                input.setAttribute('id', newId);
+            }
+        });
+        
+        // 라벨의 for 속성도 업데이트
+        const labels = form.querySelectorAll('label');
+        labels.forEach(function(label) {
+            const forAttr = label.getAttribute('for');
+            if (forAttr && forAttr.includes('centerimages-')) {
+                const newFor = forAttr.replace(/centerimages-\d+/, `centerimages-${index}`);
+                label.setAttribute('for', newFor);
+            }
+        });
+    });
+}
+
+function getTherapistFormTemplate(index) {
+    return `
+        <div class="formset-item-header">
+            <h4>상담사 #${index + 1}</h4>
+            <div class="formset-item-controls">
+                <button type="button" class="btn btn-danger remove-therapist">
+                    ➖ 삭제
+                </button>
+            </div>
+        </div>
+        
+        <input type="hidden" name="therapists-${index}-id" id="id_therapists-${index}-id">
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_therapists-${index}-name">이름:</label>
+                <input type="text" name="therapists-${index}-name" id="id_therapists-${index}-name" maxlength="100" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="id_therapists-${index}-experience">경력 (년):</label>
+                <input type="number" name="therapists-${index}-experience" id="id_therapists-${index}-experience" min="0">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_therapists-${index}-specialty">전문분야:</label>
+            <input type="text" name="therapists-${index}-specialty" id="id_therapists-${index}-specialty" maxlength="200">
+        </div>
+        
+        <div class="form-group">
+            <label for="id_therapists-${index}-description">설명:</label>
+            <textarea name="therapists-${index}-description" id="id_therapists-${index}-description" rows="3" style="width: 100% !important; box-sizing: border-box;"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_therapists-${index}-photo">사진:</label>
+            <input type="file" name="therapists-${index}-photo" id="id_therapists-${index}-photo" accept="image/*">
+        </div>
+    `;
+}
+
+function getImageFormTemplate(index) {
+    return `
+        <div class="formset-item-header">
+            <h4>이미지 #${index + 1}</h4>
+            <div class="formset-item-controls">
+                <button type="button" class="btn btn-danger remove-image">
+                    ➖ 삭제
+                </button>
+            </div>
+        </div>
+        
+        <input type="hidden" name="centerimages-${index}-id" id="id_centerimages-${index}-id">
+        
+        <div class="form-group">
+            <label for="id_centerimages-${index}-image">이미지:</label>
+            <input type="file" name="centerimages-${index}-image" id="id_centerimages-${index}-image" accept="image/*">
+        </div>
+    `;
+}
 </script>
 {% endblock %} 
