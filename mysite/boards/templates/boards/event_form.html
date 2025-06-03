@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if post %}이벤트 수정{% else %}이벤트 등록{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .event-form-container {
+        background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+        border: 2px solid #ffc107;
+        border-radius: 16px;
+        padding: 2rem;
+        margin: 2rem 0;
+    }
+    
+    .event-form-title {
+        color: #f57c00;
+        font-size: 2rem;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 2rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        display: block;
+        color: #e65100;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #ffcc02;
+        border-radius: 8px;
+        background: white;
+        transition: all 0.3s ease;
+    }
+    
+    .form-input:focus {
+        outline: none;
+        border-color: #ff9800;
+        box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2);
+    }
+    
+    .datetime-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    
+    .submit-button {
+        background: linear-gradient(45deg, #ffc107, #ff9800);
+        color: white;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .submit-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(255, 152, 0, 0.3);
+    }
+    
+    .cancel-button {
+        background: #6c757d;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 25px;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .cancel-button:hover {
+        background: #5a6268;
+        text-decoration: none;
+        color: white;
+    }
+    
+    @media (max-width: 768px) {
+        .datetime-group {
+            grid-template-columns: 1fr;
+        }
+        
+        .event-form-container {
+            margin: 1rem;
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 mt-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="event-form-container">
+            <div class="event-form-title">
+                <i class="fas fa-star mr-2"></i>
+                {% if post %}이벤트 수정{% else %}이벤트 등록{% endif %}
+                <i class="fas fa-star ml-2"></i>
+            </div>
+            
+            <form method="post" id="eventForm">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.title.id_for_label }}">
+                        <i class="fas fa-heading mr-2"></i>{{ form.title.label }}
+                    </label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.title.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.content.id_for_label }}">
+                        <i class="fas fa-align-left mr-2"></i>{{ form.content.label }}
+                    </label>
+                    {{ form.content }}
+                    {% if form.content.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.content.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.price.id_for_label }}">
+                        <i class="fas fa-tag mr-2"></i>{{ form.price.label }}
+                    </label>
+                    {{ form.price }}
+                    {% if form.price.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.price.errors.0 }}</div>
+                    {% endif %}
+                    <div class="text-sm text-gray-600 mt-1">{{ form.price.help_text }}</div>
+                </div>
+                
+                <div class="datetime-group">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.start_date.id_for_label }}">
+                            <i class="fas fa-calendar-alt mr-2"></i>{{ form.start_date.label }}
+                        </label>
+                        {{ form.start_date }}
+                        {% if form.start_date.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.start_date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.end_date.id_for_label }}">
+                            <i class="fas fa-calendar-check mr-2"></i>{{ form.end_date.label }}
+                        </label>
+                        {{ form.end_date }}
+                        {% if form.end_date.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.end_date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if form.non_field_errors %}
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        {{ form.non_field_errors.0 }}
+                    </div>
+                {% endif %}
+                
+                <div class="flex justify-between items-center mt-6">
+                    <a href="{% url 'boards:event_board' %}" class="cancel-button">
+                        <i class="fas fa-arrow-left mr-2"></i>취소
+                    </a>
+                    <button type="submit" class="submit-button flex-grow ml-4">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if post %}이벤트 수정{% else %}이벤트 등록{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+<div class="fixed bottom-4 right-4 z-50">
+    {% for message in messages %}
+    <div class="bg-gradient-to-r from-[#ffc107] to-[#ff9800] text-white px-6 py-4 rounded-lg shadow-lg mb-4 transform transition-all duration-300"
+         role="alert">
+        <div class="flex items-center">
+            <i class="fas fa-info-circle mr-3"></i>
+            {{ message }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 메시지 자동 사라짐
+        const alerts = document.querySelectorAll('[role="alert"]');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.classList.add('opacity-0', 'translate-x-full');
+                setTimeout(() => {
+                    alert.remove();
+                }, 300);
+            }, 3000);
+        });
+        
+        // 폼 유효성 검사
+        const form = document.getElementById('eventForm');
+        form.addEventListener('submit', function(e) {
+            const startDate = document.querySelector('input[name="start_date"]').value;
+            const endDate = document.querySelector('input[name="end_date"]').value;
+            
+            if (startDate && endDate) {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                
+                if (start >= end) {
+                    e.preventDefault();
+                    alert('종료일시는 시작일시보다 늦어야 합니다.');
+                    return false;
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

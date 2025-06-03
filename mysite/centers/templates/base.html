@@ -459,7 +459,7 @@
         <header class="header">
             <div class="header-content">
                 <div class="header-left">
-                    <h1><a href="{% url 'centers:index' %}" class="logo">MindScanner</a></h1>
+                    <h1><a href="{% url 'centers:home' %}" class="logo">MindScanner</a></h1>
                 </div>
                 <div class="header-right">
                     <button type="button" class="icon-button search-toggle-btn">
@@ -519,6 +519,10 @@
                     <a href="{% url 'boards:anonymous_board' %}" class="menu-item">
                         <i class="fas fa-user-secret"></i>
                         익명게시판
+                    </a>
+                    <a href="{% url 'boards:event_board' %}" class="menu-item">
+                        <i class="fas fa-star"></i>
+                        이벤트게시판
                     </a>
                     {% if user.is_authenticated and user.profile.role in 'admin,center_manager' %}
                         <a href="{% url 'centers:management_dashboard' %}" class="menu-item">

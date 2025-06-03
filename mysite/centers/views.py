@@ -163,6 +163,29 @@ def validate_review_data(data):
     return title, content, rating
 
 # 뷰 함수들
+def home(request):
+    """새로운 메인 홈페이지 뷰"""
+    # 최신 리뷰 5개 가져오기
+    latest_reviews = Review.objects.select_related('center', 'user').order_by('-created_at')[:5]
+    
+    # 자유게시판, 익명게시판, 이벤트게시판 최신 글 5개씩 가져오기 (boards 앱에서)
+    try:
+        from boards.models import Post
+        free_posts = Post.objects.filter(board_type='free').order_by('-created_at')[:5]
+        anonymous_posts = Post.objects.filter(board_type='anonymous').order_by('-created_at')[:5]
+        event_posts = Post.objects.filter(board_type='event').select_related('event_detail').order_by('-created_at')[:5]
+    except ImportError:
+        free_posts = []
+        anonymous_posts = []
+        event_posts = []
+    
+    return render(request, 'centers/home.html', {
+        'latest_reviews': latest_reviews,
+        'free_posts': free_posts,
+        'anonymous_posts': anonymous_posts,
+        'event_posts': event_posts,
+    })
+
 def index(request):
     centers = Center.objects.all().prefetch_related(
         'images', 

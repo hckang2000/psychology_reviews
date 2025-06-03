@@ -7,6 +7,7 @@ urlpatterns = [
     # 게시판 목록
     path('free/', views.board_list, {'board_type': 'free'}, name='free_board'),
     path('anonymous/', views.board_list, {'board_type': 'anonymous'}, name='anonymous_board'),
+    path('event/', views.board_list, {'board_type': 'event'}, name='event_board'),
     
     # 게시글 CRUD
     path('<str:board_type>/create/', views.post_create, name='post_create'),

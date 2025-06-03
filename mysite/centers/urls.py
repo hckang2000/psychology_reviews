@@ -4,7 +4,8 @@ from . import views
 app_name = 'centers'
 
 urlpatterns = [
-    path('', views.index, name='index'),
+    path('', views.home, name='home'),  # 새로운 메인 페이지
+    path('centers/', views.index, name='index'),  # 기존 index를 센터찾기 페이지로 변경
     path('search/', views.search_results, name='search_results'),
     path('api/geocode/', views.geocode_address, name='geocode_address'),
     path('reviews/<int:center_id>/', views.get_reviews, name='get_reviews'),

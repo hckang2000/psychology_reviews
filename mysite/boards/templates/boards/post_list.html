@@ -2,7 +2,10 @@
 {% load static %}
 
 {% block title %}
-    {% if board_type == 'free' %}자유게시판{% else %}익명게시판{% endif %}
+    {% if board_type == 'free' %}자유게시판
+    {% elif board_type == 'anonymous' %}익명게시판
+    {% elif board_type == 'event' %}이벤트게시판
+    {% endif %}
 {% endblock %}
 
 {% block extra_css %}
@@ -22,6 +25,22 @@
     .pagination-link.inactive {
         @apply text-gray-500 bg-white border-gray-300 hover:bg-gray-50;
     }
+    
+    /* 이벤트 게시판 전용 스타일 */
+    .event-post {
+        background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+        border-left: 4px solid #ffc107;
+    }
+    
+    .event-badge {
+        background: linear-gradient(45deg, #ffc107, #ff9800);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
 </style>
 {% endblock %}
 
@@ -31,64 +50,151 @@
         <div class="flex justify-between items-center mb-8">
             <div>
                 <h1 class="text-3xl font-bold bg-gradient-to-r from-[#4A90E2] to-[#357ABD] bg-clip-text text-transparent">
-                    {% if board_type == 'free' %}자유게시판{% else %}익명게시판{% endif %}
+                    {% if board_type == 'free' %}자유게시판
+                    {% elif board_type == 'anonymous' %}익명게시판
+                    {% elif board_type == 'event' %}이벤트게시판
+                    {% endif %}
                 </h1>
-                <p class="text-gray-600 mt-2">다양한 이야기를 나누는 공간입니다</p>
+                <p class="text-gray-600 mt-2">
+                    {% if board_type == 'event' %}
+                        특별한 이벤트와 소식을 확인하세요
+                    {% else %}
+                        다양한 이야기를 나누는 공간입니다
+                    {% endif %}
+                </p>
             </div>
             {% if user.is_authenticated %}
-                <a href="{% url 'boards:post_create' board_type=board_type %}" 
-                   class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#4A90E2] to-[#357ABD] text-white rounded-lg transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5">
-                    <i class="fas fa-pen mr-2"></i>
-                    글쓰기
-                </a>
+                {% if board_type == 'event' and not user.is_superuser %}
+                    <div class="inline-flex items-center px-6 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed opacity-60">
+                        <i class="fas fa-lock mr-2"></i>
+                        관리자만 등록 가능
+                    </div>
+                {% else %}
+                    <a href="{% url 'boards:post_create' board_type=board_type %}" 
+                       class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#4A90E2] to-[#357ABD] text-white rounded-lg transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5">
+                        <i class="fas fa-pen mr-2"></i>
+                        {% if board_type == 'event' %}이벤트 등록{% else %}글쓰기{% endif %}
+                    </a>
+                {% endif %}
             {% endif %}
         </div>
 
         <div class="space-y-4">
             {% for post in posts %}
-            <div class="post-card bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-100">
-                <div class="p-6">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="flex-grow">
-                            <a href="{% url 'boards:post_detail' pk=post.pk %}" 
-                               class="text-xl font-semibold text-gray-900 hover:text-[#4A90E2] transition duration-200 block">
-                                {{ post.title }}
-                            </a>
-                            <p class="mt-3 text-gray-600 line-clamp-2 text-sm leading-relaxed">{{ post.content }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between text-sm">
-                        <div class="flex items-center space-x-6">
-                            <span class="flex items-center text-gray-500">
-                                <i class="fas fa-user text-[#4A90E2] mr-2"></i>
-                                {% if is_anonymous %}
-                                    익명
-                                {% else %}
-                                    {{ post.author.username }}
+            {% if board_type == 'event' and post.event_detail %}
+                <!-- 이벤트 게시글 전용 디자인 -->
+                <div class="post-card bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-100 
+                            {% if post.event_detail.is_expired %}opacity-60 bg-gray-50{% endif %} 
+                            {% if board_type == 'event' %}event-post{% endif %}">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex-grow pr-4">
+                                <div class="flex items-center mb-2">
+                                    {% if post.event_detail.is_expired %}
+                                        <span class="event-badge bg-gray-400">
+                                            <i class="fas fa-clock mr-1"></i>종료
+                                        </span>
+                                    {% elif post.event_detail.is_active %}
+                                        <span class="event-badge bg-green-500">
+                                            <i class="fas fa-fire mr-1"></i>진행중
+                                        </span>
+                                    {% else %}
+                                        <span class="event-badge">
+                                            <i class="fas fa-star mr-1"></i>예정
+                                        </span>
+                                    {% endif %}
+                                    <a href="{% url 'boards:post_detail' pk=post.pk %}" 
+                                       class="text-xl font-semibold {% if post.event_detail.is_expired %}text-gray-500{% else %}text-gray-900 hover:text-[#4A90E2]{% endif %} transition duration-200">
+                                        {{ post.title }}
+                                    </a>
+                                </div>
+                                <p class="mt-3 {% if post.event_detail.is_expired %}text-gray-400{% else %}text-gray-600{% endif %} line-clamp-2 text-sm leading-relaxed">
+                                    {{ post.content|truncatechars:100 }}
+                                </p>
+                                <div class="flex items-center text-sm mt-3 space-x-4">
+                                    <span class="flex items-center {% if post.event_detail.is_expired %}text-gray-400{% else %}text-gray-500{% endif %}">
+                                        <i class="fas fa-calendar-alt text-[#4A90E2] mr-2"></i>
+                                        {{ post.event_detail.start_date|date:"m.d" }} ~ {{ post.event_detail.end_date|date:"m.d" }}
+                                    </span>
+                                    <span class="flex items-center {% if post.event_detail.is_expired %}text-gray-400{% else %}text-gray-500{% endif %}">
+                                        <i class="far fa-comment text-[#4A90E2] mr-2"></i>
+                                        {{ post.comments.count }}
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- 가격 표시 (우측 큰 글씨) -->
+                            <div class="flex-shrink-0 text-right">
+                                <div class="{% if post.event_detail.is_expired %}text-gray-400{% else %}text-orange-600{% endif %} font-bold text-2xl mb-1">
+                                    {{ post.event_detail.price }}
+                                </div>
+                                {% if not post.event_detail.is_expired %}
+                                    <div class="text-xs text-gray-500 bg-orange-100 px-2 py-1 rounded-full">
+                                        {{ post.event_detail.end_date|timeuntil }} 남음
+                                    </div>
                                 {% endif %}
-                            </span>
-                            <span class="flex items-center text-gray-500">
-                                <i class="far fa-clock text-[#4A90E2] mr-2"></i>
-                                {{ post.created_at|date:"Y.m.d H:i" }}
-                            </span>
-                            <span class="flex items-center text-gray-500">
-                                <i class="far fa-comment text-[#4A90E2] mr-2"></i>
-                                {{ post.comments.count }}
-                            </span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            {% else %}
+                <!-- 일반 게시글 디자인 -->
+                <div class="post-card bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-100 {% if board_type == 'event' %}event-post{% endif %}">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex-grow">
+                                <div class="flex items-center mb-2">
+                                    {% if board_type == 'event' %}
+                                        <span class="event-badge">
+                                            <i class="fas fa-star mr-1"></i>EVENT
+                                        </span>
+                                    {% endif %}
+                                    <a href="{% url 'boards:post_detail' pk=post.pk %}" 
+                                       class="text-xl font-semibold text-gray-900 hover:text-[#4A90E2] transition duration-200">
+                                        {{ post.title }}
+                                    </a>
+                                </div>
+                                <p class="mt-3 text-gray-600 line-clamp-2 text-sm leading-relaxed">{{ post.content }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="flex items-center space-x-6">
+                                <span class="flex items-center text-gray-500">
+                                    <i class="fas fa-user text-[#4A90E2] mr-2"></i>
+                                    {% if is_anonymous %}
+                                        익명
+                                    {% else %}
+                                        {{ post.author.username }}
+                                    {% endif %}
+                                </span>
+                                <span class="flex items-center text-gray-500">
+                                    <i class="far fa-clock text-[#4A90E2] mr-2"></i>
+                                    {{ post.created_at|date:"Y.m.d H:i" }}
+                                </span>
+                                <span class="flex items-center text-gray-500">
+                                    <i class="far fa-comment text-[#4A90E2] mr-2"></i>
+                                    {{ post.comments.count }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
             {% empty %}
             <div class="bg-white rounded-xl shadow-sm p-12 text-center border border-gray-100">
                 <div class="text-[#4A90E2] mb-4">
-                    <i class="fas fa-pen-fancy text-4xl"></i>
+                    {% if board_type == 'event' %}
+                        <i class="fas fa-calendar-star text-4xl"></i>
+                    {% else %}
+                        <i class="fas fa-pen-fancy text-4xl"></i>
+                    {% endif %}
                 </div>
-                <p class="text-gray-600 text-lg mb-4">아직 게시글이 없습니다</p>
+                <p class="text-gray-600 text-lg mb-4">
+                    {% if board_type == 'event' %}아직 등록된 이벤트가 없습니다{% else %}아직 게시글이 없습니다{% endif %}
+                </p>
                 {% if user.is_authenticated %}
                     <a href="{% url 'boards:post_create' board_type=board_type %}" 
                        class="inline-block text-[#4A90E2] hover:text-[#357ABD] font-medium">
-                        첫 게시글을 작성해보세요! →
+                        {% if board_type == 'event' %}첫 이벤트를 등록해보세요!{% else %}첫 게시글을 작성해보세요!{% endif %} →
                     </a>
                 {% endif %}
             </div>
