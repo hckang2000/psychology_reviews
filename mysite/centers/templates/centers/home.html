@@ -152,7 +152,7 @@
     }
     
     .content-sections {
-        padding: 3rem 0 !important;
+        padding: 1.5rem 0 !important; /* 3rem에서 1.5rem으로 절반 줄임 */
         background: #f8f9fa !important;
         width: 100% !important;
     }
@@ -161,7 +161,7 @@
         background: white !important;
         border-radius: 16px !important;
         padding: 2rem !important;
-        margin-bottom: 2rem !important;
+        margin-bottom: 1rem !important; /* 2rem에서 1rem으로 절반 줄임 */
         box-shadow: 0 4px 6px rgba(0,0,0,0.07) !important;
         transition: transform 0.2s ease !important;
         width: 100% !important;
@@ -238,59 +238,79 @@
         color: #666;
     }
     
-    .bottom-navigation {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: white;
-        border-top: 1px solid #e9ecef;
-        padding: 0.75rem 0;
-        z-index: 1000;
-    }
-    
-    .nav-items {
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        max-width: 600px;
-        margin: 0 auto;
-    }
-    
-    .nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-decoration: none;
-        color: #666;
-        transition: color 0.2s ease;
-        padding: 0.5rem;
-    }
-    
-    .nav-item:hover {
-        color: #4A90E2;
-        text-decoration: none;
-    }
-    
-    .nav-item.active {
-        color: #4A90E2;
-    }
-    
-    .nav-icon {
-        font-size: 1.5rem;
-        margin-bottom: 0.25rem;
-    }
-    
-    .nav-label {
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
+
     
     .empty-state {
         text-align: center;
         color: #666;
         font-style: italic;
         padding: 2rem;
+    }
+    
+    /* 새로운 리뷰 배지 디자인 */
+    .new-reviews-badge {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 50%, #FF6B6B 100%) !important;
+        color: white !important;
+        padding: 8px 16px !important;
+        border-radius: 20px !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3) !important;
+        position: relative !important;
+        overflow: hidden !important;
+        animation: pulse-glow 2s infinite !important;
+    }
+    
+    .new-reviews-badge::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+        transform: rotate(45deg);
+        animation: shimmer-badge 3s infinite;
+    }
+    
+    @keyframes shimmer-badge {
+        0%, 100% { transform: translateX(-100%) rotate(45deg); }
+        50% { transform: translateX(100%) rotate(45deg); }
+    }
+    
+    @keyframes pulse-glow {
+        0%, 100% { 
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3), 0 0 0 0 rgba(255, 107, 107, 0.4);
+        }
+        50% { 
+            box-shadow: 0 4px 16px rgba(255, 107, 107, 0.4), 0 0 20px 5px rgba(255, 107, 107, 0.2);
+        }
+    }
+    
+    .badge-text {
+        font-size: 12px !important;
+        opacity: 0.9 !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    .badge-count {
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        margin: 0 2px !important;
+        position: relative !important;
+        z-index: 1 !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+    }
+    
+    .badge-unit {
+        font-size: 12px !important;
+        opacity: 0.9 !important;
+        position: relative !important;
+        z-index: 1 !important;
     }
     
     /* 반응형 디자인 - 절대 단위 사용 */
@@ -330,12 +350,29 @@
         }
         
         .content-sections {
-            padding: 32px 0 80px 0 !important; /* rem 대신 px 사용, 하단 네비게이션 공간 확보 */
+            padding: 16px 0 16px 0 !important; /* 32px에서 16px로 절반 줄임 */
         }
         
         .section-card {
             margin: 16px 0 !important; /* 좌우 마진 제거 */
             padding: 24px !important; /* rem 대신 px 사용 */
+        }
+        
+        /* 모바일에서 새로운 리뷰 배지 스타일 조정 */
+        .new-reviews-badge {
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+        }
+        
+        .badge-count {
+            font-size: 16px !important;
+        }
+        
+        /* 모바일에서 제목과 배지가 세로로 배열될 때 */
+        .section-card .flex {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
         }
         
         .home-bottom-sheet {
@@ -347,11 +384,7 @@
         }
     }
     
-    @media (min-width: 769px) {
-        .bottom-navigation {
-            display: none; /* PC에서는 하단 네비게이션 숨김 */
-        }
-    }
+
 </style>
 {% endblock %}
 
@@ -388,11 +421,18 @@
 <!-- Content Sections -->
 <section class="content-sections">
     <div class="home-container">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             <!-- 최신 리뷰 섹션 -->
             <div class="section-card">
-                <h2 class="section-title">최신 리뷰</h2>
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="section-title mb-0">최신 리뷰</h2>
+                    <div class="new-reviews-badge">
+                        <span class="badge-text">새로운 리뷰</span>
+                        <span class="badge-count">{{ new_reviews_count }}</span>
+                        <span class="badge-unit">건</span>
+                    </div>
+                </div>
                 {% if latest_reviews %}
                     {% for review in latest_reviews %}
                     <div class="review-item" 
@@ -435,27 +475,11 @@
                 {% endif %}
             </div>
             
-            <!-- 익명게시판 섹션 -->
-            <div class="section-card">
-                <h2 class="section-title">익명게시판</h2>
-                {% if anonymous_posts %}
-                    {% for post in anonymous_posts %}
-                    <div class="post-item" data-board-type="anonymous" data-post-id="{{ post.id }}" onclick="goToPost(this.dataset.boardType, this.dataset.postId)">
-                        <div class="post-title">{{ post.title|truncatechars:30 }}</div>
-                        <div class="post-meta">
-                            익명 | {{ post.created_at|date:"m.d" }}
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="empty-state">작성된 글이 없습니다</div>
-                {% endif %}
-            </div>
-            
+
         </div>
         
         <!-- 이벤트 게시판 섹션 (전체 너비) -->
-        <div class="section-card mt-6">
+        <div class="section-card mt-3">
             <h2 class="section-title" style="border-bottom-color: #ffc107;">
                 <i class="fas fa-star text-yellow-500 mr-2"></i>
                 특별 이벤트
@@ -585,23 +609,7 @@
     </div>
 </div>
 
-<!-- Bottom Navigation (Mobile Only) -->
-<nav class="bottom-navigation">
-    <div class="nav-items">
-        <a href="{% url 'centers:index' %}" class="nav-item">
-            <div class="nav-icon">🏥</div>
-            <div class="nav-label">센터 찾기</div>
-        </a>
-        <a href="{% url 'boards:free_board' %}" class="nav-item">
-            <div class="nav-icon">💬</div>
-            <div class="nav-label">커뮤니티</div>
-        </a>
-        <a href="{% url 'boards:event_board' %}" class="nav-item">
-            <div class="nav-icon">🎉</div>
-            <div class="nav-label">이벤트</div>
-        </a>
-    </div>
-</nav>
+
 {% endblock %}
 
 {% block extra_js %}

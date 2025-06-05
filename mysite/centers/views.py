@@ -165,8 +165,15 @@ def validate_review_data(data):
 # 뷰 함수들
 def home(request):
     """새로운 메인 홈페이지 뷰"""
+    from datetime import timedelta
+    
     # 최신 리뷰 5개 가져오기
     latest_reviews = Review.objects.select_related('center', 'user').order_by('-created_at')[:5]
+    
+    # 48시간 내 새로운 리뷰 건수 계산
+    now = timezone.now()
+    two_days_ago = now - timedelta(hours=48)
+    new_reviews_count = Review.objects.filter(created_at__gte=two_days_ago).count()
     
     # 리뷰 데이터를 JSON으로 직렬화
     reviews_data = {}
@@ -182,22 +189,20 @@ def home(request):
             'center_name': review.center.name,
         }
     
-    # 자유게시판, 익명게시판, 이벤트게시판 최신 글 5개씩 가져오기 (boards 앱에서)
+    # 자유게시판, 이벤트게시판 최신 글 가져오기 (익명게시판 제거)
     try:
         from boards.models import Post
         free_posts = Post.objects.filter(board_type='free').order_by('-created_at')[:5]
-        anonymous_posts = Post.objects.filter(board_type='anonymous').order_by('-created_at')[:5]
         event_posts = Post.objects.filter(board_type='event').select_related('event_detail').order_by('-created_at')[:5]
     except ImportError:
         free_posts = []
-        anonymous_posts = []
         event_posts = []
     
     return render(request, 'centers/home.html', {
         'latest_reviews': latest_reviews,
+        'new_reviews_count': new_reviews_count,
         'reviews_data_json': json.dumps(reviews_data, ensure_ascii=False),
         'free_posts': free_posts,
-        'anonymous_posts': anonymous_posts,
         'event_posts': event_posts,
     })
 
