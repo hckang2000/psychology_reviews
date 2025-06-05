@@ -6,113 +6,108 @@
 {% block extra_css %}
 <style>
     .hero-section {
-        background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
-        color: white;
-        padding: 4rem 0 5rem 0;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
+        padding: 2rem 0;
+        background: #f8f9fa;
     }
     
-    .hero-section::before {
+    .center-finder-button {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        padding: 2rem 2.5rem;
+        background: linear-gradient(135deg, #4A90E2 0%, #357ABD 50%, #4A90E2 100%);
+        color: white;
+        border-radius: 20px;
+        text-decoration: none;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 8px 32px rgba(74, 144, 226, 0.3);
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+        width: 100%;
+    }
+    
+    .center-finder-button::before {
         content: '';
         position: absolute;
         top: -50%;
         left: -50%;
         width: 200%;
         height: 200%;
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.08"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.08"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.08"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-        animation: float 20s infinite linear;
-        pointer-events: none;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+        transform: rotate(45deg);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0%, 100% { transform: translateX(-100%) rotate(45deg); }
+        50% { transform: translateX(100%) rotate(45deg); }
+    }
+    
+    .center-finder-button:hover::before {
+        animation-duration: 1s;
+    }
+    
+    .center-finder-button:hover {
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 16px 48px rgba(74, 144, 226, 0.4);
+        text-decoration: none;
+        color: white;
+    }
+    
+    .center-finder-button .button-icon {
+        font-size: 3rem;
+        animation: float 3s ease-in-out infinite;
+        position: relative;
+        z-index: 1;
     }
     
     @keyframes float {
-        0% { transform: translateX(-50px) translateY(-50px); }
-        100% { transform: translateX(50px) translateY(50px); }
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        25% { transform: translateY(-8px) rotate(-2deg); }
+        50% { transform: translateY(-4px) rotate(0deg); }
+        75% { transform: translateY(-8px) rotate(2deg); }
     }
     
-    .hero-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 1rem;
+    .center-finder-button .button-content {
+        flex: 1;
         position: relative;
         z-index: 1;
     }
     
-    .hero-subtitle {
-        font-size: 1.2rem;
-        margin-bottom: 3rem;
+    .center-finder-button .button-content h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1.2;
+        text-align: center;
+        color: white;
+    }
+    
+    .center-finder-button .button-content p {
+        margin: 0 0 1rem 0;
         opacity: 0.9;
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+    
+    .center-finder-button .button-arrow {
+        font-size: 2rem;
+        transition: transform 0.3s ease;
         position: relative;
         z-index: 1;
     }
     
-    .cta-button-container {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
-    }
-    
-    .search-cta-button {
-        background: linear-gradient(45deg, #ffffff, #f8f9fa);
-        color: #4A90E2;
-        padding: 1.5rem 3rem;
-        border-radius: 60px;
-        font-weight: 700;
-        font-size: 1.1rem;
-        text-decoration: none;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        display: inline-flex;
-        align-items: center;
-        gap: 0.75rem;
-        box-shadow: 
-            0 10px 30px rgba(0,0,0,0.2),
-            0 6px 20px rgba(74, 144, 226, 0.3),
-            inset 0 1px 0 rgba(255,255,255,0.8);
-        position: relative;
-        overflow: hidden;
-        border: 2px solid rgba(255,255,255,0.3);
-    }
-    
-    .search-cta-button::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-        transition: left 0.6s;
-    }
-    
-    .search-cta-button:hover {
-        transform: translateY(-4px) scale(1.02);
-        box-shadow: 
-            0 20px 40px rgba(0,0,0,0.25),
-            0 10px 30px rgba(74, 144, 226, 0.4),
-            inset 0 1px 0 rgba(255,255,255,0.9);
-        color: #357ABD;
-        text-decoration: none;
-    }
-    
-    .search-cta-button:hover::before {
-        left: 100%;
-    }
-    
-    .cta-icon-main {
-        font-size: 1.3rem;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    .center-finder-button:hover .button-arrow {
+        transform: translateX(8px);
     }
     
     .cta-features {
         display: flex;
         gap: 2rem;
-        margin-top: 1rem;
         justify-content: center;
         flex-wrap: wrap;
+        opacity: 0.9;
     }
     
     .cta-feature {
@@ -268,210 +263,36 @@
         padding: 2rem;
     }
     
-    /* 바텀시트 스타일 */
-    .home-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0, 0, 0, 0.5);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease-in-out;
-        z-index: 1000;
-    }
-    
-    .home-overlay.show {
-        opacity: 1;
-        pointer-events: auto;
-    }
-    
-    .home-bottom-sheet {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: white;
-        border-radius: 20px 20px 0 0;
-        transform: translateY(100%);
-        transition: transform 0.3s ease-out;
-        max-height: 80vh;
-        overflow: hidden;
-        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
-        z-index: 1001;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .home-bottom-sheet.show {
-        transform: translateY(0);
-    }
-    
-    .home-bottom-sheet-header {
-        position: sticky;
-        top: 0;
-        background: white;
-        padding: 1rem;
-        border-radius: 20px 20px 0 0;
-        border-bottom: 1px solid #e9ecef;
-        z-index: 1002;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 44px;
-    }
-    
-    .home-drag-handle {
-        width: 40px;
-        height: 4px;
-        background: #ccc;
-        border-radius: 2px;
-        cursor: grab;
-    }
-    
-    .home-drag-handle:active {
-        cursor: grabbing;
-    }
-    
-    .home-close-button {
-        position: absolute;
-        right: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 28px;
-        height: 28px;
-        background: #f1f3f4;
-        border: none;
-        border-radius: 50%;
-        color: #666;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-    }
-    
-    .home-close-button:hover {
-        background: #e8eaed;
-        color: #333;
-    }
-    
-    .home-bottom-sheet-content {
-        flex: 1;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        padding: 1.5rem;
-    }
-    
-    .center-header {
-        margin-bottom: 1.5rem;
-    }
-    
-    .center-name {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1a1a1a;
-        margin-bottom: 0.5rem;
-    }
-    
-    .center-type-badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: white;
-        border-radius: 1rem;
-        margin-bottom: 1rem;
-    }
-    
-    .center-info-grid {
-        display: grid;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .center-info-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.75rem;
-    }
-    
-    .center-info-icon {
-        color: #4A90E2;
-        margin-top: 0.125rem;
-        flex-shrink: 0;
-    }
-    
-    .center-description {
-        color: #666;
-        line-height: 1.6;
-        margin-bottom: 1.5rem;
-    }
-    
-    .center-actions {
-        display: flex;
-        gap: 0.75rem;
-        margin-top: 1.5rem;
-    }
-    
-    .action-button {
-        flex: 1;
-        padding: 0.75rem 1rem;
-        border: none;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        text-align: center;
-        text-decoration: none;
-        display: block;
-    }
-    
-    .action-button-primary {
-        background: #4A90E2;
-        color: white;
-    }
-    
-    .action-button-primary:hover {
-        background: #357ABD;
-        color: white;
-        text-decoration: none;
-    }
-    
-    .action-button-secondary {
-        background: #f8f9fa;
-        color: #4A90E2;
-        border: 1px solid #e9ecef;
-    }
-    
-    .action-button-secondary:hover {
-        background: #e9ecef;
-        color: #357ABD;
-        text-decoration: none;
-    }
-    
     /* 반응형 디자인 */
     @media (max-width: 768px) {
-        .hero-title {
-            font-size: 2rem;
+        .center-finder-button {
+            flex-direction: row;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            margin: 0 1rem;
+            width: auto;
         }
         
-        .hero-subtitle {
-            font-size: 1rem;
+        .center-finder-button .button-content h1 {
+            font-size: 1.2rem;
+            text-align: left;
+            margin: 0;
         }
         
-        .search-cta-button {
-            padding: 1.25rem 2.5rem;
-            font-size: 1rem;
+        .center-finder-button .button-content p {
+            display: none;
+        }
+        
+        .center-finder-button .button-arrow {
+            font-size: 1.2rem;
+        }
+        
+        .center-finder-button .button-icon {
+            font-size: 1.8rem;
         }
         
         .cta-features {
-            gap: 1rem;
-        }
-        
-        .cta-feature {
-            font-size: 0.8rem;
+            display: none;
         }
         
         .content-sections {
@@ -504,31 +325,29 @@
 <!-- Hero Section -->
 <section class="hero-section">
     <div class="container mx-auto px-4">
-        <h1 class="hero-title">지도에서 상담센터 찾기</h1>
-        <p class="hero-subtitle">당신에게 맞는 심리상담센터를 쉽고 빠르게 찾아보세요</p>
-        
-        <div class="cta-button-container">
-            <a href="{% url 'centers:index' %}" class="search-cta-button">
-                <i class="fas fa-map-marked-alt cta-icon-main"></i>
-                센터 찾기 시작하기
-                <i class="fas fa-arrow-right" style="font-size: 0.9rem; margin-left: 0.5rem;"></i>
-            </a>
-            
-            <div class="cta-features">
-                <div class="cta-feature">
-                    <i class="fas fa-search-location cta-feature-icon"></i>
-                    <span>실시간 위치 검색</span>
-                </div>
-                <div class="cta-feature">
-                    <i class="fas fa-star cta-feature-icon"></i>
-                    <span>리뷰 & 평점</span>
-                </div>
-                <div class="cta-feature">
-                    <i class="fas fa-user-md cta-feature-icon"></i>
-                    <span>전문 상담사 정보</span>
+        <a href="{% url 'centers:index' %}" class="center-finder-button">
+            <div class="button-icon">
+                🗺️
+            </div>
+            <div class="button-content">
+                <h1>지도에서 상담센터 찾기</h1>
+                <div class="cta-features">
+                    <div class="cta-feature">
+                        <i class="fas fa-search-location cta-feature-icon"></i>
+                        <span>실시간 위치 검색</span>
+                    </div>
+                    <div class="cta-feature">
+                        <i class="fas fa-star cta-feature-icon"></i>
+                        <span>리뷰 & 평점</span>
+                    </div>
+                    <div class="cta-feature">
+                        <i class="fas fa-user-md cta-feature-icon"></i>
+                        <span>전문 상담사 정보</span>
+                    </div>
                 </div>
             </div>
-        </div>
+            <div class="button-arrow">→</div>
+        </a>
     </div>
 </section>
 
@@ -544,12 +363,8 @@
                     {% for review in latest_reviews %}
                     <div class="review-item" 
                          data-center-id="{{ review.center.id }}" 
-                         data-center-name="{{ review.center.name }}"
-                         data-center-type="{{ review.center.type }}"
-                         data-center-address="{{ review.center.address }}"
-                         data-center-phone="{{ review.center.phone }}"
-                         data-center-description="{{ review.center.description|default:'설명이 없습니다.' }}"
-                         onclick="openCenterBottomSheet(this)">
+                         data-review-id="{{ review.id }}"
+                         onclick="goToReviewOnMap(this)">
                         <div class="review-title">{{ review.title }}</div>
                         <div class="review-meta">
                             <span class="review-rating">
@@ -677,120 +492,19 @@
         </a>
     </div>
 </nav>
-
-<!-- 센터 정보 바텀시트 -->
-<div id="homeOverlay" class="home-overlay" onclick="closeCenterBottomSheet()"></div>
-
-<div id="homeCenterBottomSheet" class="home-bottom-sheet">
-    <!-- 헤더 섹션 -->
-    <div class="home-bottom-sheet-header">
-        <!-- 드래그 핸들 -->
-        <div id="homeDragHandle" class="home-drag-handle"></div>
-        
-        <!-- 닫기 버튼 -->
-        <button onclick="closeCenterBottomSheet()" class="home-close-button">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-        </button>
-    </div>
-
-    <!-- 콘텐츠 섹션 -->
-    <div class="home-bottom-sheet-content">
-        <div class="center-header">
-            <h2 class="center-name" id="centerName"></h2>
-            <span class="center-type-badge" id="centerTypeBadge"></span>
-        </div>
-        
-        <div class="center-info-grid">
-            <div class="center-info-item">
-                <svg class="w-5 h-5 center-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                <div id="centerAddress"></div>
-            </div>
-            <div class="center-info-item">
-                <svg class="w-5 h-5 center-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                </svg>
-                <div id="centerPhone"></div>
-            </div>
-        </div>
-        
-        <div class="center-description" id="centerDescription"></div>
-        
-        <div class="center-actions">
-            <a href="#" id="viewOnMapButton" class="action-button action-button-primary">
-                <i class="fas fa-map-marker-alt mr-2"></i>
-                지도에서 보기
-            </a>
-            <a href="#" id="viewDetailsButton" class="action-button action-button-secondary">
-                <i class="fas fa-info-circle mr-2"></i>
-                상세 정보
-            </a>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     let currentCenterId = null;
     
-    // 센터 바텀시트 열기 함수
-    function openCenterBottomSheet(element) {
+    // 리뷰를 지도에서 보기 위해 index.html로 이동하는 함수
+    function goToReviewOnMap(element) {
         const centerId = element.dataset.centerId;
-        const centerName = element.dataset.centerName;
-        const centerType = element.dataset.centerType;
-        const centerAddress = element.dataset.centerAddress;
-        const centerPhone = element.dataset.centerPhone;
-        const centerDescription = element.dataset.centerDescription;
+        const reviewId = element.dataset.reviewId;
         
-        currentCenterId = centerId;
-        
-        // 센터 정보 업데이트
-        document.getElementById('centerName').textContent = centerName;
-        document.getElementById('centerAddress').textContent = centerAddress;
-        document.getElementById('centerPhone').textContent = centerPhone || '정보 없음';
-        document.getElementById('centerDescription').textContent = centerDescription;
-        
-        // 타입 배지 설정
-        const typeBadge = document.getElementById('centerTypeBadge');
-        if (centerType === 'counseling') {
-            typeBadge.textContent = '심리상담센터';
-            typeBadge.className = 'center-type-badge';
-            typeBadge.style.backgroundColor = '#4A90E2';
-        } else if (centerType === 'clinic') {
-            typeBadge.textContent = '정신건강의학과';
-            typeBadge.className = 'center-type-badge';
-            typeBadge.style.backgroundColor = '#28a745';
-        } else {
-            typeBadge.textContent = '미분류';
-            typeBadge.className = 'center-type-badge';
-            typeBadge.style.backgroundColor = '#6c757d';
-        }
-        
-        // 버튼 링크 업데이트
-        document.getElementById('viewOnMapButton').href = `{% url 'centers:index' %}?center_id=${centerId}`;
-        document.getElementById('viewDetailsButton').href = `{% url 'centers:index' %}?center_id=${centerId}`;
-        
-        // 바텀시트 표시
-        document.getElementById('homeOverlay').classList.add('show');
-        document.getElementById('homeCenterBottomSheet').classList.add('show');
-        
-        // 스크롤 방지
-        document.body.style.overflow = 'hidden';
-    }
-    
-    // 센터 바텀시트 닫기 함수
-    function closeCenterBottomSheet() {
-        document.getElementById('homeOverlay').classList.remove('show');
-        document.getElementById('homeCenterBottomSheet').classList.remove('show');
-        
-        // 스크롤 복원
-        document.body.style.overflow = '';
-        currentCenterId = null;
+        // index.html로 이동하면서 파라미터 전달
+        window.location.href = `{% url 'centers:index' %}?center_id=${centerId}&review_id=${reviewId}`;
     }
     
     // 게시판 글로 이동하는 함수
@@ -803,90 +517,5 @@
             window.location.href = `{% url 'boards:event_board' %}`;
         }
     }
-    
-    // 드래그 기능
-    let isDragging = false;
-    let startY = 0;
-    let startTranslateY = 0;
-    
-    function setupDragHandlers() {
-        const dragHandle = document.getElementById('homeDragHandle');
-        const bottomSheet = document.getElementById('homeCenterBottomSheet');
-        
-        if (!dragHandle || !bottomSheet) return;
-        
-        function getTranslateY(element) {
-            const style = window.getComputedStyle(element);
-            const matrix = new WebKitCSSMatrix(style.transform);
-            return matrix.m42 || 0;
-        }
-        
-        function startDrag(event) {
-            isDragging = true;
-            startY = event.type.startsWith('touch') ? event.touches[0].clientY : event.clientY;
-            startTranslateY = getTranslateY(bottomSheet);
-            bottomSheet.style.transition = 'none';
-            
-            if (event.type.startsWith('touch')) {
-                document.addEventListener('touchmove', moveDrag, { passive: false });
-                document.addEventListener('touchend', endDrag);
-            } else {
-                document.addEventListener('mousemove', moveDrag);
-                document.addEventListener('mouseup', endDrag);
-            }
-        }
-        
-        function moveDrag(event) {
-            if (!isDragging) return;
-            event.preventDefault();
-            
-            const clientY = event.type.startsWith('touch') ? event.touches[0].clientY : event.clientY;
-            const deltaY = clientY - startY + startTranslateY;
-            
-            if (deltaY >= 0) {
-                bottomSheet.style.transform = `translateY(${deltaY}px)`;
-            }
-        }
-        
-        function endDrag(event) {
-            if (!isDragging) return;
-            isDragging = false;
-            
-            bottomSheet.style.transition = 'transform 0.3s ease-out';
-            
-            const clientY = event.type.startsWith('touch') ? event.changedTouches[0].clientY : event.clientY;
-            const deltaY = clientY - startY + startTranslateY;
-            
-            if (deltaY > 150) {
-                closeCenterBottomSheet();
-            } else {
-                bottomSheet.style.transform = 'translateY(0)';
-            }
-            
-            if (event.type.startsWith('touch')) {
-                document.removeEventListener('touchmove', moveDrag);
-                document.removeEventListener('touchend', endDrag);
-            } else {
-                document.removeEventListener('mousemove', moveDrag);
-                document.removeEventListener('mouseup', endDrag);
-            }
-        }
-        
-        // 이벤트 리스너 등록
-        dragHandle.addEventListener('mousedown', startDrag);
-        dragHandle.addEventListener('touchstart', startDrag, { passive: true });
-    }
-    
-    // ESC 키로 바텀시트 닫기
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape' && currentCenterId) {
-            closeCenterBottomSheet();
-        }
-    });
-    
-    // 페이지 로드 시 초기화
-    document.addEventListener('DOMContentLoaded', function() {
-        setupDragHandlers();
-    });
 </script>
 {% endblock %} 

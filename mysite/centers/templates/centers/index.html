@@ -383,6 +383,40 @@
         </div>
     </div>
 
+    <!-- 리뷰 상세보기 모달 -->
+    <div id="reviewDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-lg">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-xl font-bold">리뷰 상세보기</h3>
+                <button onclick="closeReviewDetailModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="reviewDetailContent" class="space-y-4">
+                <div>
+                    <h4 id="reviewDetailTitle" class="text-lg font-semibold text-gray-800"></h4>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div id="reviewDetailRating" class="flex text-yellow-400 text-lg"></div>
+                    <span id="reviewDetailAuthor" class="text-sm text-gray-600"></span>
+                    <span id="reviewDetailDate" class="text-sm text-gray-500"></span>
+                </div>
+                
+                <div class="border-t pt-4">
+                    <p id="reviewDetailContentText" class="text-gray-700 leading-relaxed whitespace-pre-wrap"></p>
+                </div>
+                
+                <div class="border-t pt-4">
+                    <p class="text-sm text-gray-600">작성 센터: <span id="reviewDetailCenter" class="font-medium"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 상담사 모달 -->
     <div class="therapist-modal" id="therapistModal">
         <div class="therapist-modal-content">

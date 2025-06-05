@@ -211,6 +211,7 @@ function loadCenters(centers) {
     // URL에서 center_id 파라미터 확인
     const urlParams = new URLSearchParams(window.location.search);
     const centerId = urlParams.get('center_id');
+    const reviewId = urlParams.get('review_id');
     
     if (centerId) {
         console.log("Found center_id in URL:", centerId);
@@ -218,6 +219,13 @@ function loadCenters(centers) {
         if (center) {
             console.log("Found matching center:", center);
             showCenterDetails(center);
+            
+            // 리뷰 ID가 있는 경우 해당 리뷰를 modal로 표시
+            if (reviewId) {
+                setTimeout(() => {
+                    showReviewDetail(parseInt(reviewId));
+                }, 500); // bottom sheet가 열린 후 실행
+            }
         } else {
             console.error("No matching center found for ID:", centerId);
         }
@@ -1231,10 +1239,19 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
     // 선택된 센터가 있는 경우 상세 정보 표시
     const urlParams = new URLSearchParams(window.location.search);
     const centerId = urlParams.get('center_id');
+    const reviewId = urlParams.get('review_id');
+    
     if (centerId) {
         const center = centersData.find(c => c.id === parseInt(centerId));
         if (center) {
             showCenterDetails(center);
+            
+            // 리뷰 ID가 있는 경우 해당 리뷰를 modal로 표시
+            if (reviewId) {
+                setTimeout(() => {
+                    showReviewDetail(parseInt(reviewId));
+                }, 500); // bottom sheet가 열린 후 실행
+            }
         }
     }
 
@@ -1307,3 +1324,38 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// 리뷰 상세보기 함수
+function showReviewDetail(reviewId) {
+    fetch(`/centers/api/review/${reviewId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const review = data.review;
+                
+                // 모달에 데이터 설정
+                document.getElementById('reviewDetailTitle').textContent = review.title;
+                document.getElementById('reviewDetailAuthor').textContent = review.author;
+                document.getElementById('reviewDetailDate').textContent = formatDate(review.created_at);
+                document.getElementById('reviewDetailContentText').textContent = review.content;
+                document.getElementById('reviewDetailCenter').textContent = review.center_name;
+                
+                // 별점 표시
+                const ratingContainer = document.getElementById('reviewDetailRating');
+                ratingContainer.innerHTML = generateStars(review.rating);
+                
+                // 모달 표시
+                document.getElementById('reviewDetailModal').classList.remove('hidden');
+            } else {
+                console.error('리뷰를 가져오는데 실패했습니다:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('리뷰 상세 정보 요청 중 오류 발생:', error);
+        });
+}
+
+// 리뷰 상세보기 모달 닫기 함수
+function closeReviewDetailModal() {
+    document.getElementById('reviewDetailModal').classList.add('hidden');
+}

@@ -210,20 +210,50 @@ def index(request):
     })
 
 def get_reviews(request, center_id):
-    center = get_object_or_404(Center, pk=center_id)
-    reviews = Review.objects.filter(center=center).order_by('-created_at').prefetch_related('comments')
+    center = get_object_or_404(Center, id=center_id)
+    page = int(request.GET.get('page', 1))
+    per_page = 5  # 페이지당 5개 리뷰
     
-    page_number = request.GET.get('page', 1)
-    paginator = Paginator(reviews, 10)
-    page_obj = paginator.get_page(page_number)
+    reviews = center.reviews.all().prefetch_related('comments').order_by('-created_at')
+    paginator = Paginator(reviews, per_page)
+    page_obj = paginator.get_page(page)
     
     reviews_data = [serialize_review(review, request.user) for review in page_obj]
-    pagination_data = create_pagination_data(page_obj)
     
     return JsonResponse({
         'reviews': reviews_data,
-        'pagination': pagination_data
+        'pagination': create_pagination_data(page_obj)
     })
+
+def get_review_detail(request, review_id):
+    """리뷰 상세 정보를 제공하는 API endpoint"""
+    try:
+        review = get_object_or_404(Review, id=review_id)
+        
+        review_data = {
+            'id': review.id,
+            'title': review.title,
+            'content': review.content,
+            'author': review.user.username,
+            'rating': review.rating,
+            'created_at': review.created_at.strftime('%Y년 %m월 %d일'),
+            'center_name': review.center.name,
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'review': review_data
+        })
+    except Review.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': '리뷰를 찾을 수 없습니다.'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
 
 @login_required
 def add_review(request, center_id):

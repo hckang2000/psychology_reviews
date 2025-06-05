@@ -12,6 +12,7 @@ urlpatterns = [
     path('reviews/<int:review_id>/update/', views.update_review, name='update_review'),
     path('reviews/<int:review_id>/delete/', views.delete_review, name='delete_review'),
     path('reviews/<int:center_id>/add/', views.add_review, name='add_review'),
+    path('api/review/<int:review_id>/', views.get_review_detail, name='get_review_detail'),
     path('check-auth/', views.check_auth, name='check_auth'),
     path('<int:center_id>/', views.center_detail, name='center_detail'),
     path('review-form/<int:center_id>/', views.review_form, name='review_form'),
