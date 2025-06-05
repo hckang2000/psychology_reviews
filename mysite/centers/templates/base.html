@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <!-- 개선된 viewport 설정 - 배포 환경 호환성 향상 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
+    <!-- 최적화된 viewport 설정 - 브라우저 호환성 우선 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     
     <!-- iOS Safari 전용 설정 -->
     <meta name="format-detection" content="telephone=no">
@@ -71,22 +71,29 @@
     <link rel="stylesheet" href="{% static 'centers/style.css' %}?v=2">
     {% block extra_css %}{% endblock %}
     <style>
-        /* 배포 환경 호환성을 위한 기본 설정 */
+        /* 브라우저별 일관된 렌더링을 위한 기본 설정 */
         html {
-            font-size: 16px; /* 기본 폰트 크기 고정 */
-            -webkit-text-size-adjust: 100%; /* iOS에서 텍스트 크기 자동 조정 방지 */
-            -ms-text-size-adjust: 100%; /* IE/Edge에서 텍스트 크기 자동 조정 방지 */
-            text-size-adjust: 100%; /* 표준 텍스트 크기 자동 조정 방지 */
+            font-size: 16px !important; /* 기본 폰트 크기 강제 고정 */
+            -webkit-text-size-adjust: none !important; /* 모든 텍스트 크기 자동 조정 완전 방지 */
+            -ms-text-size-adjust: none !important; 
+            text-size-adjust: none !important;
+            box-sizing: border-box;
+        }
+        
+        *, *:before, *:after {
+            box-sizing: inherit;
         }
         
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0 !important;
+            padding: 0 !important;
             min-height: 100vh;
-            font-size: 1rem; /* 상대 크기 대신 절대 크기 사용 */
+            font-size: 16px !important; /* 절대 크기로 고정 */
             line-height: 1.5;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
         }
         
         /* iOS Safari 확대/축소 방지 (기존 기능 유지) */

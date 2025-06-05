@@ -5,26 +5,53 @@
 
 {% block extra_css %}
 <style>
+    /* 브라우저별 일관된 레이아웃을 위한 기본 설정 */
+    .home-container {
+        width: 100% !important;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
+        padding: 0 1rem !important;
+        font-size: 16px !important;
+        box-sizing: border-box !important;
+    }
+    
+    @media (min-width: 640px) {
+        .home-container {
+            padding: 0 2rem !important;
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .home-container {
+            padding: 0 3rem !important;
+        }
+    }
+    
     .hero-section {
-        padding: 2rem 0;
-        background: #f8f9fa;
+        padding: 2rem 0 !important;
+        background: #f8f9fa !important;
+        width: 100% !important;
+        margin: 0 !important;
     }
     
     .center-finder-button {
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-        padding: 2rem 2.5rem;
-        background: linear-gradient(135deg, #4A90E2 0%, #357ABD 50%, #4A90E2 100%);
-        color: white;
-        border-radius: 20px;
-        text-decoration: none;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        box-shadow: 0 8px 32px rgba(74, 144, 226, 0.3);
-        position: relative;
-        overflow: hidden;
-        backdrop-filter: blur(10px);
-        width: 100%;
+        display: flex !important;
+        align-items: center !important;
+        gap: 2rem !important;
+        padding: 2rem 2.5rem !important;
+        background: linear-gradient(135deg, #4A90E2 0%, #357ABD 50%, #4A90E2 100%) !important;
+        color: white !important;
+        border-radius: 20px !important;
+        text-decoration: none !important;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        box-shadow: 0 8px 32px rgba(74, 144, 226, 0.3) !important;
+        position: relative !important;
+        overflow: hidden !important;
+        backdrop-filter: blur(10px) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        font-size: 16px !important;
     }
     
     .center-finder-button::before {
@@ -76,19 +103,19 @@
     }
     
     .center-finder-button .button-content h1 {
-        margin: 0 0 0.5rem 0;
-        font-size: 1.8rem;
-        font-weight: 700;
-        line-height: 1.2;
-        text-align: center;
-        color: white;
+        margin: 0 0 0.5rem 0 !important;
+        font-size: 28px !important; /* 상대 단위 대신 절대 단위 사용 */
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        text-align: center !important;
+        color: white !important;
     }
     
     .center-finder-button .button-content p {
-        margin: 0 0 1rem 0;
-        opacity: 0.9;
-        font-size: 1rem;
-        line-height: 1.4;
+        margin: 0 0 1rem 0 !important;
+        opacity: 0.9 !important;
+        font-size: 16px !important; /* 상대 단위 대신 절대 단위 사용 */
+        line-height: 1.4 !important;
     }
     
     .center-finder-button .button-arrow {
@@ -125,30 +152,33 @@
     }
     
     .content-sections {
-        padding: 3rem 0;
-        background: #f8f9fa;
+        padding: 3rem 0 !important;
+        background: #f8f9fa !important;
+        width: 100% !important;
     }
     
     .section-card {
-        background: white;
-        border-radius: 16px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-        transition: transform 0.2s ease;
+        background: white !important;
+        border-radius: 16px !important;
+        padding: 2rem !important;
+        margin-bottom: 2rem !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.07) !important;
+        transition: transform 0.2s ease !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     .section-card:hover {
-        transform: translateY(-2px);
+        transform: translateY(-2px) !important;
     }
     
     .section-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-        color: #1a1a1a;
-        border-bottom: 2px solid #4A90E2;
-        padding-bottom: 0.5rem;
+        font-size: 24px !important; /* 상대 단위 대신 절대 단위 사용 */
+        font-weight: 600 !important;
+        margin-bottom: 1.5rem !important;
+        color: #1a1a1a !important;
+        border-bottom: 2px solid #4A90E2 !important;
+        padding-bottom: 0.5rem !important;
     }
     
     .review-item {
@@ -263,32 +293,36 @@
         padding: 2rem;
     }
     
-    /* 반응형 디자인 */
+    /* 반응형 디자인 - 절대 단위 사용 */
     @media (max-width: 768px) {
+        .home-container {
+            padding: 0 1rem !important;
+        }
+        
         .center-finder-button {
-            flex-direction: row;
-            gap: 1rem;
-            padding: 1.25rem 1.5rem;
-            margin: 0 1rem;
-            width: auto;
+            flex-direction: row !important;
+            gap: 1rem !important;
+            padding: 20px 24px !important; /* rem 대신 px 사용 */
+            margin: 0 !important;
+            width: 100% !important;
         }
         
         .center-finder-button .button-content h1 {
-            font-size: 1.2rem;
-            text-align: left;
-            margin: 0;
+            font-size: 19px !important; /* rem 대신 px 사용 */
+            text-align: left !important;
+            margin: 0 !important;
         }
         
         .center-finder-button .button-content p {
-            display: none;
+            display: none !important;
         }
         
         .center-finder-button .button-arrow {
-            font-size: 1.2rem;
+            font-size: 19px !important; /* rem 대신 px 사용 */
         }
         
         .center-finder-button .button-icon {
-            font-size: 1.8rem;
+            font-size: 29px !important; /* rem 대신 px 사용 */
         }
         
         .cta-features {
@@ -296,12 +330,12 @@
         }
         
         .content-sections {
-            padding: 2rem 0 5rem 0; /* 하단 네비게이션 공간 확보 */
+            padding: 32px 0 80px 0 !important; /* rem 대신 px 사용, 하단 네비게이션 공간 확보 */
         }
         
         .section-card {
-            margin: 1rem;
-            padding: 1.5rem;
+            margin: 16px 0 !important; /* 좌우 마진 제거 */
+            padding: 24px !important; /* rem 대신 px 사용 */
         }
         
         .home-bottom-sheet {
@@ -324,7 +358,7 @@
 {% block content %}
 <!-- Hero Section -->
 <section class="hero-section">
-    <div class="container mx-auto px-4">
+    <div class="home-container">
         <a href="{% url 'centers:index' %}" class="center-finder-button">
             <div class="button-icon">
                 🗺️
@@ -353,7 +387,7 @@
 
 <!-- Content Sections -->
 <section class="content-sections">
-    <div class="container mx-auto px-4">
+    <div class="home-container">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
             <!-- 최신 리뷰 섹션 -->
