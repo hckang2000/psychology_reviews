@@ -761,6 +761,16 @@ function closeBottomSheet() {
         bottomSheet.classList.add('translate-y-full');
         bottomSheet.style.transform = '';
         overlay.classList.add('hidden');
+        
+        // URL 파라미터가 있으면 제거 (재발생 방지)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('center_id') || urlParams.has('review_id')) {
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+        
+        // 세션 스토리지 정리
+        sessionStorage.removeItem('selectedCenterId');
     }
 }
 
@@ -1178,12 +1188,17 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
         const currentLocation = await getCurrentLocation();
         console.log("Current location:", currentLocation);
         
-        // URL에서 center_id 파라미터가 있는 경우 해당 센터의 좌표 사용
+        // URL에서 center_id 파라미터 확인 (기존 기능 유지)
         const urlParams = new URLSearchParams(window.location.search);
         const centerId = urlParams.get('center_id');
         
-        if (centerId) {
-            const center = centersData.find(c => c.id === parseInt(centerId));
+        // 세션 스토리지에서 센터 ID 확인 (새로운 기능)
+        const sessionCenterId = sessionStorage.getItem('selectedCenterId');
+        
+        let targetCenterId = centerId || sessionCenterId;
+        
+        if (targetCenterId) {
+            const center = centersData.find(c => c.id === parseInt(targetCenterId));
             if (center) {
                 initialLat = parseFloat(center.lat);
                 initialLng = parseFloat(center.lng);
@@ -1225,8 +1240,16 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
 
     // 지도 이벤트 리스너 추가
     naver.maps.Event.addListener(map, 'idle', function() {
-        // 지도 이동이나 확대/축소가 끝났을 때 마커 업데이트
-        if (typeof centersData !== 'undefined') {
+        // URL 파라미터나 세션 스토리지에 센터 ID가 있는 경우에는 마커 재로딩 방지
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasUrlCenterId = urlParams.has('center_id');
+        const hasSessionCenterId = sessionStorage.getItem('selectedCenterId');
+        
+        // 파라미터가 없고 bottom sheet가 닫혀있을 때만 마커 업데이트
+        const bottomSheet = document.getElementById('bottomSheet');
+        const isBottomSheetClosed = !bottomSheet || bottomSheet.classList.contains('translate-y-full');
+        
+        if (!hasUrlCenterId && !hasSessionCenterId && isBottomSheetClosed && typeof centersData !== 'undefined') {
             loadCenters(centersData);
         }
     });
@@ -1240,9 +1263,12 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
     const urlParams = new URLSearchParams(window.location.search);
     const centerId = urlParams.get('center_id');
     const reviewId = urlParams.get('review_id');
+    const sessionCenterId = sessionStorage.getItem('selectedCenterId');
     
-    if (centerId) {
-        const center = centersData.find(c => c.id === parseInt(centerId));
+    let targetCenterId = centerId || sessionCenterId;
+    
+    if (targetCenterId) {
+        const center = centersData.find(c => c.id === parseInt(targetCenterId));
         if (center) {
             showCenterDetails(center);
             
@@ -1251,6 +1277,16 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
                 setTimeout(() => {
                     showReviewDetail(parseInt(reviewId));
                 }, 500); // bottom sheet가 열린 후 실행
+            }
+            
+            // 세션 스토리지와 URL 파라미터 정리
+            if (sessionCenterId) {
+                sessionStorage.removeItem('selectedCenterId');
+            }
+            if (centerId) {
+                // URL에서 파라미터 제거 (뒤로 가기 시 재발생 방지)
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
             }
         }
     }

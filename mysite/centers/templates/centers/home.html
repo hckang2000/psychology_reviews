@@ -364,7 +364,7 @@
                     <div class="review-item" 
                          data-center-id="{{ review.center.id }}" 
                          data-review-id="{{ review.id }}"
-                         onclick="showReviewModal({{ review.center.id }}, {{ review.id }})">
+                         onclick="showReviewModal(this.dataset.centerId, this.dataset.reviewId)">
                         <div class="review-title">{{ review.title }}</div>
                         <div class="review-meta">
                             <span class="review-rating">
@@ -633,11 +633,11 @@
             // 모달 닫기
             closeReviewDetailModal();
             
-            // URL을 안전하게 구성 (center_id만 전달)
-            const url = indexUrl + '?center_id=' + currentCenterId;
+            // 세션 스토리지에 센터 ID 저장 (URL에 노출하지 않음)
+            sessionStorage.setItem('selectedCenterId', currentCenterId);
             
-            // index.html로 이동하면서 파라미터 전달
-            window.location.href = url;
+            // 파라미터 없이 index.html로 이동
+            window.location.href = indexUrl;
         } else {
             console.error('❌ 센터 ID가 없습니다. 페이지를 새로고침 후 다시 시도해주세요.');
         }
@@ -688,11 +688,11 @@
                     // 모달 닫기
                     closeReviewDetailModal();
                     
-                    // URL을 안전하게 구성 (center_id만 전달)
-                    const url = indexUrl + '?center_id=' + currentCenterId;
+                    // 세션 스토리지에 센터 ID 저장 (URL에 노출하지 않음)
+                    sessionStorage.setItem('selectedCenterId', currentCenterId);
                     
-                    // index.html로 이동하면서 파라미터 전달
-                    window.location.href = url;
+                    // 파라미터 없이 index.html로 이동
+                    window.location.href = indexUrl;
                 } else {
                     console.error('❌ 센터 ID가 없습니다. 페이지를 새로고침 후 다시 시도해주세요.');
                 }
