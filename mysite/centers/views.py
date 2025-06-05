@@ -168,6 +168,20 @@ def home(request):
     # 최신 리뷰 5개 가져오기
     latest_reviews = Review.objects.select_related('center', 'user').order_by('-created_at')[:5]
     
+    # 리뷰 데이터를 JSON으로 직렬화
+    reviews_data = {}
+    for review in latest_reviews:
+        reviews_data[review.id] = {
+            'id': review.id,
+            'title': review.title,
+            'content': review.content,
+            'author': review.user.username,
+            'rating': review.rating,
+            'created_at': review.created_at.strftime('%Y년 %m월 %d일'),
+            'center_id': review.center.id,
+            'center_name': review.center.name,
+        }
+    
     # 자유게시판, 익명게시판, 이벤트게시판 최신 글 5개씩 가져오기 (boards 앱에서)
     try:
         from boards.models import Post
@@ -181,6 +195,7 @@ def home(request):
     
     return render(request, 'centers/home.html', {
         'latest_reviews': latest_reviews,
+        'reviews_data_json': json.dumps(reviews_data, ensure_ascii=False),
         'free_posts': free_posts,
         'anonymous_posts': anonymous_posts,
         'event_posts': event_posts,
