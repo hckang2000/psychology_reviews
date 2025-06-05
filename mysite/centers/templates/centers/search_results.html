@@ -147,7 +147,7 @@
                         <p class="center-description" title="{{ center.description }}">{{ center.description|truncatechars:20 }}</p>
                     {% endif %}
                     <div class="card-buttons">
-                        <a href="/?center_id={{ center.id }}" class="center-link">지도에서 보기</a>
+                        <a href="#" class="center-link" data-center-id="{{ center.id }}" onclick="event.preventDefault(); goToCenterFromSearch(this.dataset.centerId);">지도에서 보기</a>
                         {% if center.url %}
                             {% with url=center.url %}
                                 {% if not url|slice:":4" == 'http' %}
@@ -165,4 +165,24 @@
         <p class="no-results">검색 결과가 없습니다.</p>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Django URL을 JavaScript 변수로 저장
+    const centersIndexUrl = "{% url 'centers:index' %}";
+    
+    // 검색 결과에서 센터로 이동하는 함수 (goToCenterFromModal과 동일한 방식)
+    function goToCenterFromSearch(centerId) {
+        if (centerId) {
+            // 세션 스토리지에 센터 ID 저장 (URL에 노출하지 않음)
+            sessionStorage.setItem('selectedCenterId', centerId);
+            
+            // 파라미터 없이 index.html로 이동
+            window.location.href = centersIndexUrl;
+        } else {
+            console.error('❌ 센터 ID가 없습니다.');
+        }
+    }
+</script>
 {% endblock %}
