@@ -313,6 +313,40 @@
         z-index: 1 !important;
     }
     
+    /* 최신리뷰 섹션 헤더 스타일링 */
+    .review-section-header {
+        margin-bottom: 1.5rem;
+    }
+    
+    .section-title-only {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0;
+    }
+    
+    .section-divider {
+        width: 100%;
+        height: 2px;
+        background-color: #4A90E2;
+        margin-top: 0.5rem;
+    }
+    
+    /* 데스크탑에서 제목과 배지 정렬 개선 */
+    @media (min-width: 769px) {
+        .review-section-header .flex {
+            align-items: baseline;
+        }
+        
+        .section-title-only {
+            line-height: 1.2;
+        }
+        
+        .new-reviews-badge {
+            align-self: flex-start;
+        }
+    }
+    
     /* 반응형 디자인 - 절대 단위 사용 */
     @media (max-width: 768px) {
         .home-container {
@@ -390,17 +424,17 @@
             margin-bottom: 1.5rem !important;
         }
         
-        /* 최신 리뷰 섹션: flex 컨테이너가 있는 경우만 개별 제목 스타일 재정의 */
-        .section-card .flex.items-center.justify-between .section-title {
-            border-bottom: none !important;
-            margin-bottom: 0 !important;
-            padding-bottom: 0 !important;
+        /* 모바일에서 리뷰 섹션 헤더 조정 */
+        .review-section-header {
+            margin-bottom: 1rem !important;
         }
         
-        .section-card .flex.items-center.justify-between {
-            border-bottom: 2px solid #4A90E2 !important;
-            padding-bottom: 0.5rem !important;
-            margin-bottom: 1.5rem !important;
+        .section-title-only {
+            font-size: 18px !important;
+        }
+        
+        .section-divider {
+            margin-top: 0.25rem !important;
         }
         
         .home-bottom-sheet {
@@ -516,13 +550,16 @@
             
             <!-- 최신 리뷰 섹션 -->
             <div class="section-card">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="section-title mb-0">최신 리뷰</h2>
-                    <div class="new-reviews-badge">
-                        <span class="badge-text">새로운 리뷰</span>
-                        <span class="badge-count">{{ new_reviews_count }}</span>
-                        <span class="badge-unit">건</span>
+                <div class="review-section-header">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="section-title-only">최신 리뷰</h2>
+                        <div class="new-reviews-badge">
+                            <span class="badge-text">새로운 리뷰</span>
+                            <span class="badge-count">{{ new_reviews_count }}</span>
+                            <span class="badge-unit">건</span>
+                        </div>
                     </div>
+                    <div class="section-divider"></div>
                 </div>
                 {% if latest_reviews %}
                     {% for review in latest_reviews %}
