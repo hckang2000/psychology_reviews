@@ -377,15 +377,16 @@
             justify-content: space-between !important;
         }
         
+        /* 모든 섹션 제목 기본 스타일 */
         .section-card .section-title {
-            margin-bottom: 1.5rem !important;
             flex: 1 !important;
             font-size: 20px !important;
-            border-bottom: 2px solid #4A90E2 !important; /* 모든 섹션 제목에 파란 선 적용 */
+            border-bottom: 2px solid #4A90E2 !important;
             padding-bottom: 0.5rem !important;
+            margin-bottom: 1.5rem !important;
         }
         
-        /* 최신 리뷰 섹션: flex 컨테이너가 있는 경우 개별 제목 border 제거하고 컨테이너에 적용 */
+        /* 최신 리뷰 섹션: flex 컨테이너가 있는 경우만 개별 제목 스타일 재정의 */
         .section-card .flex.items-center.justify-between .section-title {
             border-bottom: none !important;
             margin-bottom: 0 !important;
@@ -406,15 +407,67 @@
             flex-direction: column;
         }
         
-        /* 모바일에서 리뷰 모달 스타일 조정 */
-        #reviewDetailModal .bg-white {
-            max-width: 90% !important;
-            max-height: 75vh !important;
-            margin-top: 80px !important; /* 헤더바 높이만큼 위쪽 마진 추가 */
+        /* 모바일 모달 전체 리팩토링 - 간단하고 명확하게 */
+        #reviewDetailModal {
+            padding: 80px 16px 16px 16px !important; /* 상단에 헤더바 공간 확보 */
         }
         
-        #reviewDetailModal .overflow-y-auto {
-            max-height: calc(75vh - 180px) !important; /* 모달 높이에 맞춰 조정 */
+        #reviewDetailModal .bg-white.rounded-2xl {
+            max-width: 100% !important;
+            max-height: 80vh !important;
+            margin: 0 !important;
+            width: 100% !important;
+        }
+        
+        /* 모달 헤더 간격 최소화 - 더 구체적으로 */
+        #reviewDetailModal .bg-gradient-to-r.from-blue-500.to-blue-600.px-6.py-4 {
+            padding: 16px 16px 16px 16px !important;
+        }
+        
+        #reviewDetailModal .flex.justify-between.items-center {
+            margin-bottom: 16px !important;
+        }
+        
+        /* 모달 내용 영역 */
+        #reviewDetailModal .p-6 {
+            padding: 12px 16px !important;
+        }
+        
+        #reviewDetailModal .space-y-6 {
+            gap: 12px !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        
+        #reviewDetailModal .space-y-6 > * {
+            margin-top: 0 !important;
+        }
+        
+        /* 모든 내용 영역 전체 너비 강제 적용 */
+        #reviewDetailModal .border-b,
+        #reviewDetailModal .bg-gray-50,
+        #reviewDetailModal .bg-white.border,
+        #reviewDetailModal .bg-blue-50 {
+            width: 100% !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* 리뷰 내용 텍스트 영역 직접 수정 */
+        #reviewDetailModal p#reviewDetailContentText {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* 리뷰 내용을 감싸는 div 클래스로 직접 타겟팅 */
+        #reviewDetailModal .bg-white.border.border-gray-200.rounded-lg {
+            width: 100% !important;
+            padding: 12px !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
         }
     }
     
@@ -747,15 +800,30 @@
                 e.preventDefault();
                 e.stopPropagation();
                 
+                console.log('🔍 goToCenterBtn 클릭됨, currentCenterId:', currentCenterId);
+                
                 if (currentCenterId) {
                     // 모달 닫기
                     closeReviewDetailModal();
                     
                     // 세션 스토리지에 센터 ID 저장 (URL에 노출하지 않음)
                     sessionStorage.setItem('selectedCenterId', currentCenterId);
+                    console.log('💾 세션 스토리지에 저장된 센터 ID:', currentCenterId);
                     
-                    // 파라미터 없이 index.html로 이동
-                    window.location.href = indexUrl;
+                    // localStorage에도 백업 저장 (render 환경에서 sessionStorage가 제한될 수 있음)
+                    try {
+                        localStorage.setItem('selectedCenterId', currentCenterId);
+                        console.log('💾 로컬 스토리지에도 백업 저장됨');
+                    } catch(e) {
+                        console.warn('⚠️ 로컬 스토리지 저장 실패:', e);
+                    }
+                    
+                    // URL 파라미터로도 전달 (백업 방법)
+                    const targetUrl = indexUrl + '?centerId=' + encodeURIComponent(currentCenterId);
+                    console.log('🔗 이동할 URL:', targetUrl);
+                    
+                    // 파라미터와 함께 index.html로 이동
+                    window.location.href = targetUrl;
                 } else {
                     console.error('❌ 센터 ID가 없습니다. 페이지를 새로고침 후 다시 시도해주세요.');
                 }
