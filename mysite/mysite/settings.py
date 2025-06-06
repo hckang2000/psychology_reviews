@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.naver',
     'django_extensions',  # URL 디버깅을 위해 추가
     
     # Local apps
@@ -226,6 +227,10 @@ ACCOUNT_FORMS = {
     'signup': 'accounts.forms.CustomSignupForm',
 }
 
+# Social account settings - 중간 확인 페이지 건너뛰기
+SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_AUTO_SIGNUP = True
+
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
@@ -390,3 +395,28 @@ if DEBUG or not os.getenv('RENDER'):
     for logger_name in ['centers.tasks', 'django']:
         if logger_name in LOGGING['loggers']:
             LOGGING['loggers'][logger_name]['handlers'].append('file')
+
+# Social Login Settings
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+            'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
+            'key': ''
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    },
+    'naver': {
+        'APP': {
+            'client_id': os.getenv('NAVER_LOGIN_CLIENT_ID'),
+            'secret': os.getenv('NAVER_LOGIN_CLIENT_SECRET'),
+            'key': ''
+        }
+    }
+}
