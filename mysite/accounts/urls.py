@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import CustomLoginView, CustomSignupView, CustomConfirmEmailView, custom_logout, custom_email_verification_sent, CustomPasswordResetView, CustomPasswordResetDoneView
+from .views import CustomLoginView, CustomSignupView, CustomConfirmEmailView, custom_logout, custom_email_verification_sent, CustomPasswordResetView, CustomPasswordResetDoneView, profile_update, account_delete
 
 app_name = 'accounts'
 
@@ -11,5 +11,7 @@ urlpatterns = [
     path('password/reset/', CustomPasswordResetView.as_view(), name='account_reset_password'),
     path('password/reset/done/', CustomPasswordResetDoneView.as_view(), name='account_reset_password_done'),
     path('logout/', custom_logout, name='account_logout'),
+    path('profile/', profile_update, name='profile_update'),
+    path('delete/', account_delete, name='account_delete'),
     path('', include('allauth.urls')),
 ]

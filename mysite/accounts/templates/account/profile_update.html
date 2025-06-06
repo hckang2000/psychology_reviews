@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}회원정보 수정 | MindScanner{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="content-wrapper p-8 max-w-md mx-auto">
+        <div class="bg-white rounded-xl shadow-sm p-8">
+            <h1 class="section-title mb-8 text-center">회원정보 수정</h1>
+            
+            <!-- 현재 사용자 정보 표시 -->
+            <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800">{{ user.username }}</h3>
+                        <p class="text-sm text-gray-600">{{ user.email }}</p>
+                        {% if user.first_name or user.last_name %}
+                            <p class="text-sm text-gray-600">{{ user.last_name }}{{ user.first_name }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if form.errors %}
+            <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <p class="text-sm">{{ error }}</p>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="id_username" class="block text-sm font-medium text-gray-700 mb-1">아이디</label>
+                    <input type="text" name="username" id="id_username" value="{{ form.username.value|default:user.username }}" class="form-input w-full {% if form.username.errors %}border-red-300 focus:border-red-500 focus:ring-red-500{% endif %}" required>
+                    {% if form.username.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.username.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_email" class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+                    <input type="email" name="email" id="id_email" value="{{ form.email.value|default:user.email }}" class="form-input w-full {% if form.email.errors %}border-red-300 focus:border-red-500 focus:ring-red-500{% endif %}" required>
+                    {% if form.email.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.email.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_first_name" class="block text-sm font-medium text-gray-700 mb-1">이름 (선택사항)</label>
+                    <input type="text" name="first_name" id="id_first_name" value="{{ form.first_name.value|default:user.first_name }}" class="form-input w-full {% if form.first_name.errors %}border-red-300 focus:border-red-500 focus:ring-red-500{% endif %}">
+                    {% if form.first_name.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.first_name.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_last_name" class="block text-sm font-medium text-gray-700 mb-1">성 (선택사항)</label>
+                    <input type="text" name="last_name" id="id_last_name" value="{{ form.last_name.value|default:user.last_name }}" class="form-input w-full {% if form.last_name.errors %}border-red-300 focus:border-red-500 focus:ring-red-500{% endif %}">
+                    {% if form.last_name.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.last_name.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-primary-dark transition-colors duration-200">
+                    정보 수정하기
+                </button>
+            </form>
+
+            <!-- 회원탈퇴 섹션 -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-red-800 mb-2">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        회원탈퇴
+                    </h3>
+                    <p class="text-red-700 text-sm mb-4">
+                        회원탈퇴를 하시면 모든 데이터가 삭제되며 복구할 수 없습니다. 신중하게 결정해주세요.
+                    </p>
+                    <button type="button" onclick="confirmAccountDelete()" class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors duration-200">
+                        회원탈퇴
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-6 text-center">
+                <a href="{% url 'centers:home' %}" class="text-gray-600 hover:text-primary">홈으로 돌아가기</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 회원탈퇴 확인 모달 -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4">
+        <div class="p-6">
+            <div class="text-center mb-4">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">정말 탈퇴하시겠습니까?</h3>
+                <p class="text-gray-600 text-sm mb-4">
+                    이 작업은 되돌릴 수 없습니다.<br>
+                    모든 데이터가 영구적으로 삭제됩니다.
+                </p>
+            </div>
+            
+            <form method="POST" action="{% url 'accounts:account_delete' %}">
+                {% csrf_token %}
+                <input type="hidden" name="confirmation" value="delete">
+                <div class="flex space-x-3">
+                    <button type="button" onclick="closeDeleteModal()" class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors duration-200">
+                        취소
+                    </button>
+                    <button type="submit" class="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors duration-200">
+                        탈퇴하기
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmAccountDelete() {
+    document.getElementById('deleteModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// 모달 외부 클릭 시 닫기
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeDeleteModal();
+            }
+        });
+    }
+    
+    // ESC 키로 모달 닫기
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDeleteModal();
+        }
+    });
+});
+</script>
+{% endblock %} 

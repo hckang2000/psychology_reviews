@@ -50,3 +50,35 @@ class CustomSignupForm(SignupForm):
             'class': 'form-input w-full',
             'placeholder': '비밀번호 확인'
         })
+
+class ProfileUpdateForm(forms.ModelForm):
+    """회원정보 수정 폼"""
+    
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({
+            'class': 'form-input w-full',
+            'placeholder': '아이디'
+        })
+        self.fields['email'].widget.attrs.update({
+            'class': 'form-input w-full',
+            'placeholder': '이메일'
+        })
+        self.fields['first_name'].widget.attrs.update({
+            'class': 'form-input w-full',
+            'placeholder': '이름 (선택사항)'
+        })
+        self.fields['last_name'].widget.attrs.update({
+            'class': 'form-input w-full',
+            'placeholder': '성 (선택사항)'
+        })
+        
+        # 필수 필드 설정
+        self.fields['username'].required = True
+        self.fields['email'].required = True
+        self.fields['first_name'].required = False
+        self.fields['last_name'].required = False

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, ProfileUpdateForm
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from allauth.account.views import LoginView, SignupView, ConfirmEmailView, PasswordResetView, PasswordResetDoneView
@@ -10,6 +10,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse_lazy
 from .forms import CustomLoginForm, CustomSignupForm
 from django.utils.translation import gettext as _
+from django.http import JsonResponse
 
 def login_view(request):
     if request.method == 'POST':
@@ -192,3 +193,54 @@ def custom_logout(request):
 def custom_email_verification_sent(request):
     print("==== [디버그] custom_email_verification_sent 뷰가 호출됨 ====")
     return render(request, 'account/email_verification_sent.html')
+
+@login_required
+def profile_update(request):
+    """회원정보 수정 뷰"""
+    if request.method == 'POST':
+        form = ProfileUpdateForm(request.POST, instance=request.user)
+        if form.is_valid():
+            # 사용자명 중복 체크 (현재 사용자 제외)
+            username = form.cleaned_data['username']
+            if User.objects.filter(username=username).exclude(pk=request.user.pk).exists():
+                messages.error(request, '이미 사용 중인 아이디입니다.')
+                return render(request, 'account/profile_update.html', {'form': form})
+            
+            # 이메일 중복 체크 (현재 사용자 제외)
+            email = form.cleaned_data['email']
+            if User.objects.filter(email=email).exclude(pk=request.user.pk).exists():
+                messages.error(request, '이미 사용 중인 이메일입니다.')
+                return render(request, 'account/profile_update.html', {'form': form})
+            
+            form.save()
+            messages.success(request, '회원정보가 성공적으로 수정되었습니다.')
+            return redirect('accounts:profile_update')
+        else:
+            error_messages = []
+            for field, errors in form.errors.items():
+                for error in errors:
+                    error_messages.append(str(error))
+            messages.error(request, '정보 수정에 실패했습니다. ' + ' '.join(error_messages))
+    else:
+        form = ProfileUpdateForm(instance=request.user)
+    
+    return render(request, 'account/profile_update.html', {'form': form})
+
+@login_required
+def account_delete(request):
+    """회원탈퇴 뷰"""
+    if request.method == 'POST':
+        # POST 요청에 confirmation 파라미터가 있는지 확인
+        if request.POST.get('confirmation') == 'delete':
+            username = request.user.username
+            # 회원탈퇴 처리
+            request.user.delete()
+            auth_logout(request)
+            messages.success(request, f'{username}님의 계정이 성공적으로 삭제되었습니다. 그동안 이용해주셔서 감사했습니다.')
+            return redirect('centers:home')
+        else:
+            messages.error(request, '회원탈퇴 확인이 필요합니다.')
+            return redirect('accounts:profile_update')
+    
+    # GET 요청은 profile_update 페이지로 리다이렉트
+    return redirect('accounts:profile_update')
