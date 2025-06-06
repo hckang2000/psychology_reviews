@@ -354,25 +354,48 @@
         }
         
         .section-card {
-            margin: 16px 0 !important; /* 좌우 마진 제거 */
+            margin: 8px 0 !important; /* 16px에서 8px로 절반 줄임 */
             padding: 24px !important; /* rem 대신 px 사용 */
         }
         
         /* 모바일에서 새로운 리뷰 배지 스타일 조정 */
         .new-reviews-badge {
-            padding: 6px 12px !important;
-            font-size: 12px !important;
+            padding: 4px 8px !important;
+            font-size: 11px !important;
+            flex-shrink: 0 !important;
         }
         
         .badge-count {
-            font-size: 16px !important;
+            font-size: 14px !important;
         }
         
-        /* 모바일에서 제목과 배지가 세로로 배열될 때 */
+        /* 모바일에서도 제목과 배지를 가로로 유지 */
         .section-card .flex {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 12px !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 8px !important;
+            justify-content: space-between !important;
+        }
+        
+        .section-card .section-title {
+            margin-bottom: 1.5rem !important;
+            flex: 1 !important;
+            font-size: 20px !important;
+            border-bottom: 2px solid #4A90E2 !important; /* 모든 섹션 제목에 파란 선 적용 */
+            padding-bottom: 0.5rem !important;
+        }
+        
+        /* 최신 리뷰 섹션: flex 컨테이너가 있는 경우 개별 제목 border 제거하고 컨테이너에 적용 */
+        .section-card .flex.items-center.justify-between .section-title {
+            border-bottom: none !important;
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
+        }
+        
+        .section-card .flex.items-center.justify-between {
+            border-bottom: 2px solid #4A90E2 !important;
+            padding-bottom: 0.5rem !important;
+            margin-bottom: 1.5rem !important;
         }
         
         .home-bottom-sheet {
@@ -381,6 +404,17 @@
         
         .center-actions {
             flex-direction: column;
+        }
+        
+        /* 모바일에서 리뷰 모달 스타일 조정 */
+        #reviewDetailModal .bg-white {
+            max-width: 90% !important;
+            max-height: 75vh !important;
+            margin-top: 80px !important; /* 헤더바 높이만큼 위쪽 마진 추가 */
+        }
+        
+        #reviewDetailModal .overflow-y-auto {
+            max-height: calc(75vh - 180px) !important; /* 모달 높이에 맞춰 조정 */
         }
     }
     
@@ -670,20 +704,7 @@
     }
     
     // 모달에서 센터로 이동하는 함수
-    function goToCenterFromModal() {
-        if (currentCenterId) {
-            // 모달 닫기
-            closeReviewDetailModal();
-            
-            // 세션 스토리지에 센터 ID 저장 (URL에 노출하지 않음)
-            sessionStorage.setItem('selectedCenterId', currentCenterId);
-            
-            // 파라미터 없이 index.html로 이동
-            window.location.href = indexUrl;
-        } else {
-            console.error('❌ 센터 ID가 없습니다. 페이지를 새로고침 후 다시 시도해주세요.');
-        }
-    }
+ 
     
     // 별점 생성 함수
     function generateStars(rating) {
