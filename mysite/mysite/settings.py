@@ -24,6 +24,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     'mindscanner.onrender.com',  # 도메인 수정
     '.onrender.com'
+    'mindscanner.app'
+    'www.mindscanner.app'
 ]
 
 # Application definition
