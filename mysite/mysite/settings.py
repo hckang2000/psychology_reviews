@@ -19,14 +19,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-your-secret-key-here')
 # Render 환경에서는 자동으로 DEBUG=False, 로컬에서는 DEBUG=True
 DEBUG = not bool(os.getenv('RENDER'))  # RENDER 환경변수가 있으면 False, 없으면 True
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'mindscanner.onrender.com',  # 도메인 수정
-    '.onrender.com'
-    'mindscanner.app'
-    'www.mindscanner.app'
-]
+# ALLOWED_HOSTS를 환경변수에서 읽어오기
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host.strip()]
 
 # Application definition
 INSTALLED_APPS = [
