@@ -61,7 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
+    # 'allauth.account.middleware.AccountMiddleware',  # 0.54.0에서는 존재하지 않음
 ]
 
 ROOT_URLCONF = 'mysite.urls'
@@ -204,13 +204,7 @@ SITE_ID = 1
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-# 새로운 방식의 로그인 시도 제한 설정 (기존 deprecated 설정 대체)
-ACCOUNT_RATE_LIMITS = {
-    'login_failed': '5/300s',      # 로그인 실패 제한: 5분 내 5회 실패 시 차단
-    'signup': '3/3600s',           # 회원가입 제한: 1시간 내 3회 가입 시도만 허용
-    'reset_password': '5/3600s',   # 비밀번호 재설정 제한: 1시간 내 5회만 허용
-    'confirm_email': '3/3600s',    # 이메일 인증 제한: 1시간 내 3회만 허용
-}
+# Rate limiting 설정 제거 (django-allauth 0.54.0 호환)
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
@@ -226,6 +220,10 @@ ACCOUNT_FORMS = {
     'login': 'accounts.forms.CustomLoginForm',
     'signup': 'accounts.forms.CustomSignupForm',
 }
+
+# Custom adapters for social login
+ACCOUNT_ADAPTER = 'accounts.adapters.CustomAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'accounts.adapters.CustomSocialAccountAdapter'
 
 # Social account settings - 중간 확인 페이지 건너뛰기
 SOCIALACCOUNT_LOGIN_ON_GET = True
