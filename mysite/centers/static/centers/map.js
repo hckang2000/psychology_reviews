@@ -1188,9 +1188,9 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
         const currentLocation = await getCurrentLocation();
         console.log("Current location:", currentLocation);
         
-        // URL에서 center_id 파라미터 확인 (기존 기능 유지)
+        // URL에서 center_id 또는 centerId 파라미터 확인
         const urlParams = new URLSearchParams(window.location.search);
-        const centerId = urlParams.get('center_id');
+        const centerId = urlParams.get('center_id') || urlParams.get('centerId');
         
         // 세션 스토리지에서 센터 ID 확인 (새로운 기능)
         const sessionCenterId = sessionStorage.getItem('selectedCenterId');
@@ -1242,7 +1242,7 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
     naver.maps.Event.addListener(map, 'idle', function() {
         // URL 파라미터나 세션 스토리지에 센터 ID가 있는 경우에는 마커 재로딩 방지
         const urlParams = new URLSearchParams(window.location.search);
-        const hasUrlCenterId = urlParams.has('center_id');
+        const hasUrlCenterId = urlParams.has('center_id') || urlParams.has('centerId');
         const hasSessionCenterId = sessionStorage.getItem('selectedCenterId');
         
         // 파라미터가 없고 bottom sheet가 닫혀있을 때만 마커 업데이트
@@ -1261,15 +1261,25 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
 
     // 선택된 센터가 있는 경우 상세 정보 표시
     const urlParams = new URLSearchParams(window.location.search);
-    const centerId = urlParams.get('center_id');
+    const centerId = urlParams.get('center_id') || urlParams.get('centerId'); // 두 가지 파라미터 모두 지원
     const reviewId = urlParams.get('review_id');
     const sessionCenterId = sessionStorage.getItem('selectedCenterId');
+    
+    console.log('🔍 URL 파라미터 확인:', {
+        center_id: urlParams.get('center_id'),
+        centerId: urlParams.get('centerId'),
+        sessionCenterId: sessionCenterId,
+        finalCenterId: centerId
+    });
     
     let targetCenterId = centerId || sessionCenterId;
     
     if (targetCenterId) {
+        console.log('🎯 타겟 센터 ID:', targetCenterId);
         const center = centersData.find(c => c.id === parseInt(targetCenterId));
+        console.log('🏢 찾은 센터:', center ? center.name : '센터를 찾을 수 없음');
         if (center) {
+            console.log('📋 센터 상세 정보 표시 시작');
             showCenterDetails(center);
             
             // 리뷰 ID가 있는 경우 해당 리뷰를 modal로 표시

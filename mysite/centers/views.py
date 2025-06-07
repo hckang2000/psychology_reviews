@@ -220,7 +220,8 @@ def index(request):
         if serialized:
             center_list.append(serialized)
 
-    selected_center_id = request.GET.get('center_id')
+    # URL 파라미터 처리 (center_id 또는 centerId 모두 지원)
+    selected_center_id = request.GET.get('center_id') or request.GET.get('centerId')
     
     return render(request, 'centers/index.html', {
         'centers_json': json.dumps(center_list, ensure_ascii=False),
