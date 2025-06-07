@@ -223,11 +223,16 @@ def index(request):
     # URL 파라미터 처리 (center_id 또는 centerId 모두 지원)
     selected_center_id = request.GET.get('center_id') or request.GET.get('centerId')
     
+    # 캐시 버스팅을 위한 타임스탬프
+    import time
+    timestamp = int(time.time())
+    
     return render(request, 'centers/index.html', {
         'centers_json': json.dumps(center_list, ensure_ascii=False),
         'selected_center_id_json': json.dumps(selected_center_id) if selected_center_id else 'null',
         'is_authenticated_json': json.dumps(request.user.is_authenticated),
-        'naver_client_id': settings.NAVER_CLIENT_ID
+        'naver_client_id': settings.NAVER_CLIENT_ID,
+        'timestamp': timestamp
     })
 
 def get_reviews(request, center_id):

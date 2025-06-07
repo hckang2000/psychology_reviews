@@ -456,7 +456,7 @@
         function initMap() {
             // map.js 로드
             const script = document.createElement('script');
-            script.src = "{% static 'centers/map.js' %}";
+            script.src = "{% static 'centers/map.js' %}?v={{ timestamp }}";
             script.onload = function() {
                 console.log('Map script loaded - Initializing map');
                 // 지도 초기화 (서울시청 좌표로 초기화)
