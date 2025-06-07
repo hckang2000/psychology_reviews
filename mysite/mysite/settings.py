@@ -395,11 +395,29 @@ if DEBUG or not os.getenv('RENDER'):
             LOGGING['loggers'][logger_name]['handlers'].append('file')
 
 # Social Login Settings
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
+# 환경변수 디버깅
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+NAVER_LOGIN_CLIENT_ID = os.getenv('NAVER_LOGIN_CLIENT_ID')
+NAVER_LOGIN_CLIENT_SECRET = os.getenv('NAVER_LOGIN_CLIENT_SECRET')
+
+# 운영환경에서 환경변수 로드 상태 확인 (로그에 기록)
+import logging
+logger = logging.getLogger(__name__)
+
+logger.info(f"GOOGLE_CLIENT_ID loaded: {'Yes' if GOOGLE_CLIENT_ID else 'No'}")
+logger.info(f"GOOGLE_CLIENT_SECRET loaded: {'Yes' if GOOGLE_CLIENT_SECRET else 'No'}")
+logger.info(f"NAVER_LOGIN_CLIENT_ID loaded: {'Yes' if NAVER_LOGIN_CLIENT_ID else 'No'}")
+logger.info(f"NAVER_LOGIN_CLIENT_SECRET loaded: {'Yes' if NAVER_LOGIN_CLIENT_SECRET else 'No'}")
+
+# 환경변수가 없으면 소셜 로그인을 비활성화
+SOCIALACCOUNT_PROVIDERS = {}
+
+if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
+    SOCIALACCOUNT_PROVIDERS['google'] = {
         'APP': {
-            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
-            'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
+            'client_id': GOOGLE_CLIENT_ID,
+            'secret': GOOGLE_CLIENT_SECRET,
             'key': ''
         },
         'SCOPE': [
@@ -409,12 +427,19 @@ SOCIALACCOUNT_PROVIDERS = {
         'AUTH_PARAMS': {
             'access_type': 'online',
         }
-    },
-    'naver': {
+    }
+    logger.info("Google OAuth configured successfully")
+else:
+    logger.error("Google OAuth not configured - missing environment variables")
+
+if NAVER_LOGIN_CLIENT_ID and NAVER_LOGIN_CLIENT_SECRET:
+    SOCIALACCOUNT_PROVIDERS['naver'] = {
         'APP': {
-            'client_id': os.getenv('NAVER_LOGIN_CLIENT_ID'),
-            'secret': os.getenv('NAVER_LOGIN_CLIENT_SECRET'),
+            'client_id': NAVER_LOGIN_CLIENT_ID,
+            'secret': NAVER_LOGIN_CLIENT_SECRET,
             'key': ''
         }
     }
-}
+    logger.info("Naver OAuth configured successfully")
+else:
+    logger.error("Naver OAuth not configured - missing environment variables")
