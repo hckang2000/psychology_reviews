@@ -764,13 +764,16 @@ function closeBottomSheet() {
         
         // URL 파라미터가 있으면 제거 (재발생 방지)
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('center_id') || urlParams.has('review_id')) {
+        if (urlParams.has('center_id') || urlParams.has('centerId') || urlParams.has('review_id')) {
+            console.log('🧹 Bottom Sheet 닫힘: URL 파라미터 정리');
             const newUrl = window.location.pathname;
             window.history.replaceState({}, document.title, newUrl);
         }
         
-        // 세션 스토리지 정리
+        // 세션 스토리지와 로컬 스토리지 정리
         sessionStorage.removeItem('selectedCenterId');
+        localStorage.removeItem('selectedCenterId');
+        console.log('🧹 세션/로컬 스토리지 정리 완료');
     }
 }
 
@@ -1249,8 +1252,18 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
         const bottomSheet = document.getElementById('bottomSheet');
         const isBottomSheetClosed = !bottomSheet || bottomSheet.classList.contains('translate-y-full');
         
+        console.log('🗺️ 지도 idle 이벤트:', {
+            hasUrlCenterId,
+            hasSessionCenterId,
+            isBottomSheetClosed,
+            currentUrl: window.location.href
+        });
+        
         if (!hasUrlCenterId && !hasSessionCenterId && isBottomSheetClosed && typeof centersData !== 'undefined') {
+            console.log('🔄 마커 재로딩 실행');
             loadCenters(centersData);
+        } else {
+            console.log('⚠️ 마커 재로딩 스킵');
         }
     });
 
@@ -1282,21 +1295,23 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
             console.log('📋 센터 상세 정보 표시 시작');
             showCenterDetails(center);
             
+            // 즉시 URL 파라미터와 세션 스토리지 정리 (재발생 방지)
+            console.log('🧹 즉시 정리 시작');
+            if (sessionCenterId) {
+                console.log('🗑️ 세션 스토리지 정리');
+                sessionStorage.removeItem('selectedCenterId');
+            }
+            if (centerId) {
+                console.log('🗑️ URL 파라미터 정리');
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+            
             // 리뷰 ID가 있는 경우 해당 리뷰를 modal로 표시
             if (reviewId) {
                 setTimeout(() => {
                     showReviewDetail(parseInt(reviewId));
                 }, 500); // bottom sheet가 열린 후 실행
-            }
-            
-            // 세션 스토리지와 URL 파라미터 정리
-            if (sessionCenterId) {
-                sessionStorage.removeItem('selectedCenterId');
-            }
-            if (centerId) {
-                // URL에서 파라미터 제거 (뒤로 가기 시 재발생 방지)
-                const newUrl = window.location.pathname;
-                window.history.replaceState({}, document.title, newUrl);
             }
         }
     }
