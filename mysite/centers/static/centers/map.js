@@ -10,12 +10,8 @@ var map;
 var markers = [];
 var currentCenterId = null; // 현재 선택된 센터 ID를 저장할 변수
 
-// Bottom sheet 상태 관리 플래그들
-var isBottomSheetProcessed = false; // URL 파라미터로 인한 bottom sheet 처리 완료 여부
-var isBottomSheetManuallyOpened = false; // 사용자가 수동으로 연 경우
-
-// 디바운싱을 위한 타이머
-var mapIdleTimer = null;
+// URL 파라미터 처리 완료 플래그 (한 번만 실행)
+var urlParameterProcessed = false;
 
 // 드래그 핸들 관련 변수들
 let isDragging = false;
@@ -206,16 +202,7 @@ function loadCenters(centers) {
 
             // 마커 클릭 이벤트
             naver.maps.Event.addListener(marker, 'click', function() {
-                // 사용자가 수동으로 연 것으로 표시
-                isBottomSheetManuallyOpened = true;
-                isBottomSheetProcessed = false;
-                
-                console.log('👆 마커 클릭 - 수동 열기:', {
-                    centerName: center.name,
-                    isBottomSheetManuallyOpened,
-                    isBottomSheetProcessed
-                });
-                
+                console.log('👆 마커 클릭:', center.name);
                 showCenterDetails(center);
             });
 
@@ -779,29 +766,12 @@ function closeBottomSheet() {
         bottomSheet.style.transform = '';
         overlay.classList.add('hidden');
         
-        // 플래그 초기화 - 사용자가 수동으로 닫았음을 표시
-        isBottomSheetManuallyOpened = false;
-        isBottomSheetProcessed = true; // URL 파라미터 처리 완료로 표시
+        console.log('🚪 Bottom Sheet 닫기');
         
-        console.log('🚪 Bottom Sheet 수동 닫기 - 플래그 초기화', {
-            isBottomSheetProcessed,
-            isBottomSheetManuallyOpened
-        });
-        
-        // URL 파라미터 정리 (지연 실행으로 확실히 처리)
-        setTimeout(() => {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('center_id') || urlParams.has('centerId') || urlParams.has('review_id')) {
-                console.log('🧹 URL 파라미터 지연 정리');
-                const newUrl = window.location.pathname;
-                window.history.replaceState({}, document.title, newUrl);
-            }
-            
-            // 스토리지 정리
-            sessionStorage.removeItem('selectedCenterId');
-            localStorage.removeItem('selectedCenterId');
-            console.log('🧹 스토리지 정리 완료');
-        }, 100);
+        // 스토리지 정리
+        sessionStorage.removeItem('selectedCenterId');
+        localStorage.removeItem('selectedCenterId');
+        console.log('🧹 스토리지 정리 완료');
     }
 }
 
@@ -1269,49 +1239,24 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
         map.setSize(new naver.maps.Size(window.innerWidth, newHeight));
     });
 
-    // 지도 이벤트 리스너 추가 (디바운싱 적용)
+    // 지도 이벤트 리스너 추가 (단순화)
     naver.maps.Event.addListener(map, 'idle', function() {
-        // 이전 타이머 제거
-        if (mapIdleTimer) {
-            clearTimeout(mapIdleTimer);
+        // URL 파라미터 처리가 완료된 후에만 마커 로딩
+        if (!urlParameterProcessed) {
+            console.log('⏸️ URL 파라미터 처리 대기 중...');
+            return;
         }
         
-        // 300ms 후에 실행 (디바운싱)
-        mapIdleTimer = setTimeout(() => {
-            // URL 파라미터나 세션 스토리지 체크
-            const urlParams = new URLSearchParams(window.location.search);
-            const hasUrlCenterId = urlParams.has('center_id') || urlParams.has('centerId');
-            const hasSessionCenterId = sessionStorage.getItem('selectedCenterId');
-            
-            // Bottom sheet 상태 체크
-            const bottomSheet = document.getElementById('bottomSheet');
-            const isBottomSheetClosed = !bottomSheet || bottomSheet.classList.contains('translate-y-full');
-            
-            console.log('🗺️ 지도 idle 이벤트 (디바운싱됨):', {
-                hasUrlCenterId,
-                hasSessionCenterId,
-                isBottomSheetClosed,
-                isBottomSheetProcessed,
-                isBottomSheetManuallyOpened,
-                currentUrl: window.location.href
-            });
-            
-            // 새로운 조건: 플래그를 고려한 마커 로딩
-            const shouldLoadMarkers = (
-                !hasUrlCenterId && 
-                !hasSessionCenterId && 
-                isBottomSheetClosed && 
-                !isBottomSheetManuallyOpened &&
-                typeof centersData !== 'undefined'
-            );
-            
-            if (shouldLoadMarkers) {
-                console.log('🔄 마커 재로딩 실행');
-                loadCenters(centersData);
-            } else {
-                console.log('⚠️ 마커 재로딩 스킵 - 플래그 체크 실패');
-            }
-        }, 300);
+        // Bottom sheet가 닫혀있을 때만 마커 업데이트
+        const bottomSheet = document.getElementById('bottomSheet');
+        const isBottomSheetClosed = !bottomSheet || bottomSheet.classList.contains('translate-y-full');
+        
+        if (isBottomSheetClosed && typeof centersData !== 'undefined') {
+            console.log('🔄 마커 재로딩 실행');
+            loadCenters(centersData);
+        } else {
+            console.log('⚠️ 마커 재로딩 스킵 - Bottom sheet 열려있음');
+        }
     });
 
     // 센터 데이터 로드
@@ -1319,59 +1264,54 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
         loadCenters(centersData);
     }
 
-    // 선택된 센터가 있는 경우 상세 정보 표시
-    const urlParams = new URLSearchParams(window.location.search);
-    const centerId = urlParams.get('center_id') || urlParams.get('centerId'); // 두 가지 파라미터 모두 지원
-    const reviewId = urlParams.get('review_id');
-    const sessionCenterId = sessionStorage.getItem('selectedCenterId');
-    
-    console.log('🔍 URL 파라미터 확인:', {
-        center_id: urlParams.get('center_id'),
-        centerId: urlParams.get('centerId'),
-        sessionCenterId: sessionCenterId,
-        finalCenterId: centerId
-    });
-    
-    let targetCenterId = centerId || sessionCenterId;
-    
-    if (targetCenterId) {
-        console.log('🎯 타겟 센터 ID:', targetCenterId);
-        const center = centersData.find(c => c.id === parseInt(targetCenterId));
-        console.log('🏢 찾은 센터:', center ? center.name : '센터를 찾을 수 없음');
-        if (center) {
-            console.log('📋 센터 상세 정보 표시 시작');
+    // URL 파라미터 처리 (한 번만 실행)
+    if (!urlParameterProcessed) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const centerId = urlParams.get('center_id') || urlParams.get('centerId'); // 두 가지 파라미터 모두 지원
+        const reviewId = urlParams.get('review_id');
+        const sessionCenterId = sessionStorage.getItem('selectedCenterId');
+        
+        console.log('🔍 URL 파라미터 처리 시작 (한 번만 실행):', {
+            center_id: urlParams.get('center_id'),
+            centerId: urlParams.get('centerId'),
+            sessionCenterId: sessionCenterId,
+            finalCenterId: centerId
+        });
+        
+        let targetCenterId = centerId || sessionCenterId;
+        
+        if (targetCenterId) {
+            urlParameterProcessed = true; // 플래그 설정으로 재실행 방지
             
-            // 플래그 설정 - URL 파라미터로 인한 처리임을 표시
-            isBottomSheetProcessed = true;
-            isBottomSheetManuallyOpened = false; // URL 파라미터로 열린 것이므로 수동이 아님
+            console.log('🎯 타겟 센터 ID:', targetCenterId);
+            const center = centersData.find(c => c.id === parseInt(targetCenterId));
+            console.log('🏢 찾은 센터:', center ? center.name : '센터를 찾을 수 없음');
             
-            console.log('🏷️ Bottom Sheet 플래그 설정:', {
-                isBottomSheetProcessed,
-                isBottomSheetManuallyOpened
-            });
-            
-            showCenterDetails(center);
-            
-            // 지연된 정리 (다른 이벤트들이 완료된 후)
-            setTimeout(() => {
-                console.log('🧹 지연된 정리 시작');
+            if (center) {
+                console.log('📋 센터 상세 정보 표시 시작');
+                showCenterDetails(center);
+                
+                // 즉시 URL과 스토리지 정리
+                console.log('🧹 즉시 정리 시작');
                 if (sessionCenterId) {
-                    console.log('🗑️ 세션 스토리지 정리');
                     sessionStorage.removeItem('selectedCenterId');
                 }
                 if (centerId) {
-                    console.log('🗑️ URL 파라미터 정리');
+                    // URL에서 파라미터 즉시 제거
                     const newUrl = window.location.pathname;
                     window.history.replaceState({}, document.title, newUrl);
+                    console.log('🗑️ URL 정리 완료:', newUrl);
                 }
-            }, 1000); // 1초 후 정리
-            
-            // 리뷰 ID가 있는 경우 해당 리뷰를 modal로 표시
-            if (reviewId) {
-                setTimeout(() => {
-                    showReviewDetail(parseInt(reviewId));
-                }, 500); // bottom sheet가 열린 후 실행
+                
+                // 리뷰 ID가 있는 경우 해당 리뷰를 modal로 표시
+                if (reviewId) {
+                    setTimeout(() => {
+                        showReviewDetail(parseInt(reviewId));
+                    }, 500); // bottom sheet가 열린 후 실행
+                }
             }
+        } else {
+            urlParameterProcessed = true; // 파라미터가 없어도 플래그 설정
         }
     }
 
