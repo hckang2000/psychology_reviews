@@ -1,0 +1,729 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}최신 리뷰 모아보기 | MindScanner{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 기본 컨테이너 스타일 */
+    .latest-reviews-container {
+        width: 100% !important;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
+        padding: 2rem 1rem !important;
+        font-size: 16px !important;
+        box-sizing: border-box !important;
+    }
+    
+    @media (min-width: 640px) {
+        .latest-reviews-container {
+            padding: 2rem 2rem !important;
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .latest-reviews-container {
+            padding: 2rem 3rem !important;
+        }
+    }
+    
+    /* 헤더 섹션 */
+    .page-header {
+        display: flex !important;
+        align-items: center !important;
+        gap: 2rem !important;
+        padding: 2rem 2.5rem !important;
+        background: linear-gradient(135deg, #4A90E2 0%, #357ABD 50%, #4A90E2 100%) !important;
+        color: white !important;
+        border-radius: 20px !important;
+        margin-bottom: 2rem !important;
+        position: relative !important;
+        overflow: hidden !important;
+        backdrop-filter: blur(10px) !important;
+        box-shadow: 0 8px 32px rgba(74, 144, 226, 0.3) !important;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+        transform: rotate(45deg);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0%, 100% { transform: translateX(-100%) rotate(45deg); }
+        50% { transform: translateX(100%) rotate(45deg); }
+    }
+    
+    .page-header:hover::before {
+        animation-duration: 1s;
+    }
+    
+    .page-header:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 12px 40px rgba(74, 144, 226, 0.4) !important;
+    }
+    
+    .page-icon {
+        font-size: 3rem !important;
+        animation: float 3s ease-in-out infinite !important;
+        position: relative !important;
+        z-index: 1 !important;
+        flex-shrink: 0 !important;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        25% { transform: translateY(-8px) rotate(-2deg); }
+        50% { transform: translateY(-4px) rotate(0deg); }
+        75% { transform: translateY(-8px) rotate(2deg); }
+    }
+    
+    .page-content {
+        flex: 1 !important;
+        text-align: center !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    .page-title {
+        font-size: 2rem !important;
+        font-weight: 700 !important;
+        margin: 0 0 0.5rem 0 !important;
+        color: white !important;
+        line-height: 1.2 !important;
+        text-align: center !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    .page-subtitle {
+        font-size: 1rem !important;
+        opacity: 0.9 !important;
+        color: white !important;
+        margin: 0 0 1rem 0 !important;
+        line-height: 1.4 !important;
+        text-align: center !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    /* 통계 정보 */
+    .stats-container {
+        display: flex !important;
+        gap: 1rem !important;
+        justify-content: center !important;
+        margin-top: 1rem !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    .stat-item {
+        background: rgba(255,255,255,0.2) !important;
+        padding: 0.5rem 1rem !important;
+        border-radius: 12px !important;
+        backdrop-filter: blur(10px) !important;
+    }
+    
+    /* 리뷰 리스트 섹션 */
+    .reviews-section {
+        background: white !important;
+        border-radius: 16px !important;
+        padding: 2rem !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.07) !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    .section-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        margin-bottom: 1.5rem !important;
+        flex-wrap: wrap !important;
+        gap: 1rem !important;
+    }
+    
+    .section-title {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: #333 !important;
+        margin: 0 !important;
+    }
+    
+    /* 새로운 리뷰 배지 (home.html과 동일) */
+    .new-reviews-badge {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 50%, #FF6B6B 100%) !important;
+        color: white !important;
+        padding: 8px 16px !important;
+        border-radius: 20px !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3) !important;
+        position: relative !important;
+        overflow: hidden !important;
+        animation: pulse-glow 2s infinite !important;
+    }
+    
+    .new-reviews-badge::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+        transform: rotate(45deg);
+        animation: shimmer-badge 3s infinite;
+    }
+    
+    @keyframes shimmer-badge {
+        0%, 100% { transform: translateX(-100%) rotate(45deg); }
+        50% { transform: translateX(100%) rotate(45deg); }
+    }
+    
+    @keyframes pulse-glow {
+        0%, 100% { 
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3), 0 0 0 0 rgba(255, 107, 107, 0.4);
+        }
+        50% { 
+            box-shadow: 0 4px 16px rgba(255, 107, 107, 0.4), 0 0 20px 5px rgba(255, 107, 107, 0.2);
+        }
+    }
+    
+    .badge-text {
+        font-size: 12px !important;
+        opacity: 0.9 !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    .badge-count {
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        margin: 0 2px !important;
+        position: relative !important;
+        z-index: 1 !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+    }
+    
+    .badge-unit {
+        font-size: 12px !important;
+        opacity: 0.9 !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    /* 리뷰 아이템 (home.html과 동일) */
+    .review-item {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border-left: 4px solid #4A90E2;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .review-item:hover {
+        background: #e9ecef;
+        transform: translateX(4px);
+    }
+    
+    .review-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+    
+    .review-meta {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+    
+    .review-rating {
+        color: #ffc107;
+        margin-right: 0.5rem;
+    }
+    
+    /* 페이지네이션 스타일 */
+    .pagination-container {
+        display: flex !important;
+        justify-content: center !important;
+        margin-top: 2rem !important;
+    }
+    
+    .pagination {
+        display: flex !important;
+        gap: 0.5rem !important;
+        align-items: center !important;
+    }
+    
+    .page-item {
+        display: inline-block !important;
+    }
+    
+    .page-link {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 40px !important;
+        height: 40px !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 8px !important;
+        background: white !important;
+        color: #6c757d !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
+        font-weight: 500 !important;
+    }
+    
+    .page-link:hover {
+        background: #4A90E2 !important;
+        color: white !important;
+        border-color: #4A90E2 !important;
+        transform: translateY(-1px) !important;
+    }
+    
+    .page-item.active .page-link {
+        background: #4A90E2 !important;
+        color: white !important;
+        border-color: #4A90E2 !important;
+    }
+    
+    .page-item.disabled .page-link {
+        background: #f8f9fa !important;
+        color: #adb5bd !important;
+        cursor: not-allowed !important;
+    }
+    
+    .page-item.disabled .page-link:hover {
+        background: #f8f9fa !important;
+        color: #adb5bd !important;
+        transform: none !important;
+    }
+    
+    .empty-state {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        padding: 3rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+    }
+    
+    /* 반응형 디자인 */
+    @media (max-width: 768px) {
+        .latest-reviews-container {
+            padding: 1rem !important;
+        }
+        
+        .page-header {
+            flex-direction: row !important;
+            gap: 1rem !important;
+            padding: 20px 24px !important;
+            margin: 0 !important;
+            width: 100% !important;
+        }
+        
+        .page-icon {
+            font-size: 29px !important;
+        }
+        
+        .page-content {
+            text-align: left !important;
+        }
+        
+        .page-title {
+            font-size: 19px !important;
+            text-align: left !important;
+            margin: 0 0 0.25rem 0 !important;
+        }
+        
+        .page-subtitle {
+            font-size: 14px !important;
+            text-align: left !important;
+            margin: 0 0 0.5rem 0 !important;
+        }
+        
+        .reviews-section {
+            padding: 1.5rem !important;
+        }
+        
+        .section-header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+        }
+        
+        .stats-container {
+            flex-direction: row !important;
+            gap: 0.5rem !important;
+            justify-content: flex-start !important;
+            flex-wrap: wrap !important;
+        }
+        
+        .stat-item {
+            font-size: 0.75rem !important;
+            padding: 0.25rem 0.75rem !important;
+        }
+        
+        .new-reviews-badge {
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+        }
+        
+        .badge-count {
+            font-size: 16px !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="latest-reviews-container">
+    <!-- 페이지 헤더 -->
+    <div class="page-header">
+        <div class="page-icon">
+            📝
+        </div>
+        <div class="page-content">
+            <h1 class="page-title">최신 리뷰 모아보기</h1>
+            <p class="page-subtitle">모든 상담센터의 최신 리뷰를 한눈에 확인하세요</p>
+            <div class="stats-container">
+                <div class="stat-item">
+                    <i class="fas fa-comments"></i> 전체 리뷰 {{ total_reviews }}개
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-clock"></i> 최근 48시간 내 {{ new_reviews_count }}개
+                </div>
+            </div>
+        </div>
+        <div class="page-icon">
+            →
+        </div>
+    </div>
+
+    <!-- 리뷰 목록 섹션 -->
+    <div class="reviews-section">
+        <div class="section-header">
+            <h2 class="section-title">최신 리뷰</h2>
+            {% if new_reviews_count > 0 %}
+            <div class="new-reviews-badge">
+                <span class="badge-text">새로운 리뷰</span>
+                <span class="badge-count">{{ new_reviews_count }}</span>
+                <span class="badge-unit">건</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if reviews %}
+            {% for review in reviews %}
+            <div class="review-item" 
+                 data-center-id="{{ review.center.id }}" 
+                 data-review-id="{{ review.id }}"
+                 onclick="showReviewModal(this.dataset.centerId, this.dataset.reviewId)">
+                <div class="review-title">{{ review.title }}</div>
+                <div class="review-meta">
+                    <span class="review-rating">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}
+                        {% endfor %}
+                    </span>
+                    {{ review.center.name }} | {{ review.user.username }} | {{ review.created_at|date:"m.d" }}
+                </div>
+                <div class="text-sm text-gray-600 mt-1">
+                    {{ review.content|truncatechars:80 }}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-comments text-4xl mb-4 text-gray-400"></i>
+                <p>아직 작성된 리뷰가 없습니다.</p>
+                <p class="text-sm text-gray-500 mt-2">첫 번째 리뷰를 작성해보세요!</p>
+            </div>
+        {% endif %}
+
+        <!-- 페이지네이션 -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pagination-container">
+            <nav class="pagination">
+                {% if page_obj.has_previous %}
+                    <div class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="첫 페이지">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </div>
+                    <div class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="이전 페이지">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+                    </div>
+                    <div class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-left"></i></span>
+                    </div>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <div class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </div>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <div class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <div class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="다음 페이지">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </div>
+                    <div class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="마지막 페이지">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                    </div>
+                    <div class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                    </div>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 리뷰 상세 모달 (home.html과 동일) -->
+<div id="reviewDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-hidden">
+        <!-- 모달 헤더 -->
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-xl font-bold text-white">리뷰 상세보기</h3>
+                <button onclick="closeReviewDetailModal()" class="text-white hover:text-gray-200 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- 상담센터 보러가기 버튼 -->
+            <button id="goToCenterBtn" onclick="goToCenterFromModal()" 
+                    class="w-full bg-white text-blue-600 font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span>상담센터 보러가기</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- 모달 컨텐츠 -->
+        <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+            <div id="reviewDetailContent" class="space-y-6">
+                <!-- 리뷰 제목 -->
+                <div class="border-b pb-4">
+                    <h4 id="reviewDetailTitle" class="text-2xl font-bold text-gray-800 mb-2"></h4>
+                    <div class="flex items-center space-x-4">
+                        <div id="reviewDetailRating" class="flex text-yellow-400 text-xl"></div>
+                        <span id="reviewDetailDate" class="text-sm text-gray-500"></span>
+                    </div>
+                </div>
+                
+                <!-- 작성자 정보 -->
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-800">작성자</p>
+                            <p id="reviewDetailAuthor" class="text-sm text-gray-600"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 리뷰 내용 -->
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h5 class="font-semibold text-gray-800 mb-3">리뷰 내용</h5>
+                    <p id="reviewDetailContentText" class="text-gray-700 leading-relaxed whitespace-pre-wrap"></p>
+                </div>
+                
+                <!-- 센터 정보 -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                        <h5 class="font-semibold text-blue-800">작성된 상담센터</h5>
+                    </div>
+                    <p id="reviewDetailCenter" class="text-blue-700 font-medium"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentCenterId = null;
+    let currentReviewId = null;
+    
+    // Django에서 전달받은 리뷰 데이터
+    const reviewsData = JSON.parse('{{ reviews_data_json|escapejs }}');
+    
+    // Django URL을 JavaScript 변수로 저장
+    const indexUrl = "{% url 'centers:index' %}";
+    
+    // 리뷰 모달 표시 함수 (home.html과 동일)
+    function showReviewModal(centerId, reviewId) {
+        // 현재 ID 저장
+        currentCenterId = centerId;
+        currentReviewId = reviewId;
+        
+        // 리뷰 데이터 가져오기
+        const reviewData = reviewsData[reviewId];
+        
+        if (!reviewData) {
+            console.error('❌ 리뷰 데이터를 찾을 수 없습니다:', reviewId);
+            return;
+        }
+        
+        // 모달에 데이터 설정
+        document.getElementById('reviewDetailTitle').textContent = reviewData.title;
+        document.getElementById('reviewDetailAuthor').textContent = reviewData.author;
+        document.getElementById('reviewDetailDate').textContent = reviewData.created_at;
+        document.getElementById('reviewDetailContentText').textContent = reviewData.content;
+        document.getElementById('reviewDetailCenter').textContent = reviewData.center_name;
+        
+        // 별점 표시
+        const ratingContainer = document.getElementById('reviewDetailRating');
+        ratingContainer.innerHTML = generateStars(reviewData.rating);
+        
+        // 모달 표시
+        const modal = document.getElementById('reviewDetailModal');
+        modal.classList.remove('hidden');
+        
+        // 배경 스크롤 방지
+        document.body.style.overflow = 'hidden';
+    }
+    
+    // 리뷰 모달 닫기 함수
+    function closeReviewDetailModal() {
+        const modal = document.getElementById('reviewDetailModal');
+        modal.classList.add('hidden');
+        
+        // 배경 스크롤 복원
+        document.body.style.overflow = 'auto';
+    }
+    
+    // 별점 생성 함수
+    function generateStars(rating) {
+        let stars = '';
+        for (let i = 1; i <= 5; i++) {
+            if (i <= rating) {
+                stars += '<span class="text-yellow-400">★</span>';
+            } else {
+                stars += '<span class="text-gray-300">☆</span>';
+            }
+        }
+        return stars;
+    }
+    
+    // 모달 외부 클릭 시 닫기
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('reviewDetailModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeReviewDetailModal();
+                }
+            });
+        }
+        
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeReviewDetailModal();
+            }
+        });
+        
+        // 상담센터 보러가기 버튼 이벤트 리스너
+        const goToCenterBtn = document.getElementById('goToCenterBtn');
+        if (goToCenterBtn) {
+            goToCenterBtn.removeAttribute('onclick');
+            
+            goToCenterBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('🔍 goToCenterBtn 클릭됨, currentCenterId:', currentCenterId);
+                
+                if (currentCenterId) {
+                    // 모달 닫기
+                    closeReviewDetailModal();
+                    
+                    // 모든 기존 스토리지 정리
+                    try {
+                        sessionStorage.removeItem('selectedCenterId');
+                        localStorage.removeItem('selectedCenterId');
+                        console.log('🧹 기존 스토리지 정리 완료');
+                    } catch(e) {
+                        console.warn('⚠️ 기존 스토리지 정리 실패:', e);
+                    }
+                    
+                    // 새로운 센터 ID를 스토리지에 저장
+                    try {
+                        sessionStorage.setItem('selectedCenterId', currentCenterId);
+                        localStorage.setItem('selectedCenterId', currentCenterId);
+                        console.log('💾 새로운 센터 ID 저장 완료:', currentCenterId);
+                    } catch(e) {
+                        console.warn('⚠️ 스토리지 저장 실패:', e);
+                    }
+                    
+                    // URL 파라미터로도 전달
+                    const targetUrl = indexUrl + '?center_id=' + encodeURIComponent(currentCenterId) + '&t=' + Date.now();
+                    console.log('🔗 이동할 URL:', targetUrl);
+                    
+                    // 추가 안전장치
+                    sessionStorage.setItem('shouldCleanupUrl', 'true');
+                    
+                    // 센터 지도로 이동
+                    window.location.href = targetUrl;
+                } else {
+                    console.error('❌ 센터 ID가 없습니다.');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

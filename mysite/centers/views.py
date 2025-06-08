@@ -198,13 +198,56 @@ def home(request):
         free_posts = []
         event_posts = []
     
-    return render(request, 'centers/home.html', {
+    context = {
         'latest_reviews': latest_reviews,
         'new_reviews_count': new_reviews_count,
         'reviews_data_json': json.dumps(reviews_data, ensure_ascii=False),
         'free_posts': free_posts,
         'event_posts': event_posts,
-    })
+    }
+    
+    return render(request, 'centers/home.html', context)
+
+def latest_reviews(request):
+    """최신 리뷰 게시판"""
+    from datetime import timedelta
+    
+    # 모든 리뷰를 최신 순으로 가져오기
+    all_reviews = Review.objects.select_related('center', 'user').order_by('-created_at')
+    
+    # 페이지네이션 (한 페이지에 10개)
+    paginator = Paginator(all_reviews, 10)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # 48시간 내 새로운 리뷰 건수 계산
+    now = timezone.now()
+    two_days_ago = now - timedelta(hours=48)
+    new_reviews_count = Review.objects.filter(created_at__gte=two_days_ago).count()
+    
+    # 리뷰 데이터를 JSON으로 직렬화 (현재 페이지의 리뷰들만)
+    reviews_data = {}
+    for review in page_obj:
+        reviews_data[review.id] = {
+            'id': review.id,
+            'title': review.title,
+            'content': review.content,
+            'author': review.user.username,
+            'rating': review.rating,
+            'created_at': review.created_at.strftime('%Y년 %m월 %d일'),
+            'center_id': review.center.id,
+            'center_name': review.center.name,
+        }
+    
+    context = {
+        'reviews': page_obj,
+        'new_reviews_count': new_reviews_count,
+        'reviews_data_json': json.dumps(reviews_data, ensure_ascii=False),
+        'page_obj': page_obj,
+        'total_reviews': all_reviews.count(),
+    }
+    
+    return render(request, 'centers/latest_reviews.html', context)
 
 def index(request):
     centers = Center.objects.all().prefetch_related(

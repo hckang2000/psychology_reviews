@@ -552,12 +552,14 @@
             <div class="section-card">
                 <div class="review-section-header">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="section-title-only">최신 리뷰</h2>
-                        <div class="new-reviews-badge">
+                        <a href="{% url 'centers:latest_reviews' %}" style="text-decoration: none;">
+                            <h2 class="section-title-only" style="color: #333; cursor: pointer;">최신 리뷰</h2>
+                        </a>
+                        <a href="{% url 'centers:latest_reviews' %}" class="new-reviews-badge" style="text-decoration: none;">
                             <span class="badge-text">새로운 리뷰</span>
                             <span class="badge-count">{{ new_reviews_count }}</span>
                             <span class="badge-unit">건</span>
-                        </div>
+                        </a>
                     </div>
                     <div class="section-divider"></div>
                 </div>
@@ -588,13 +590,29 @@
             
             <!-- 자유게시판 섹션 -->
             <div class="section-card">
-                <h2 class="section-title">자유게시판</h2>
+                <div class="review-section-header">
+                    <div class="flex items-center justify-between mb-4">
+                        <a href="{% url 'boards:free_board' %}" style="text-decoration: none;">
+                            <h2 class="section-title-only" style="color: #333; cursor: pointer;">자유게시판</h2>
+                        </a>
+                    </div>
+                    <div class="section-divider"></div>
+                </div>
                 {% if free_posts %}
                     {% for post in free_posts %}
-                    <div class="post-item" data-board-type="free" data-post-id="{{ post.id }}" onclick="goToPost(this.dataset.boardType, this.dataset.postId)">
-                        <div class="post-title">{{ post.title|truncatechars:30 }}</div>
-                        <div class="post-meta">
+                    <div class="review-item" 
+                         data-board-type="free" 
+                         data-post-id="{{ post.id }}"
+                         onclick="goToPost(this.dataset.boardType, this.dataset.postId)">
+                        <div class="review-title">{{ post.title|truncatechars:40 }}</div>
+                        <div class="review-meta">
+                            <span class="review-rating">
+                                <i class="fas fa-user text-gray-500 mr-1"></i>
+                            </span>
                             {{ post.author.username }} | {{ post.created_at|date:"m.d" }}
+                        </div>
+                        <div class="text-sm text-gray-600 mt-1">
+                            {{ post.content|truncatechars:80 }}
                         </div>
                     </div>
                     {% endfor %}
@@ -883,13 +901,9 @@
     
     // 게시판 글로 이동하는 함수
     function goToPost(boardType, postId) {
-        if (boardType === 'free') {
-            window.location.href = `{% url 'boards:free_board' %}`;
-        } else if (boardType === 'anonymous') {
-            window.location.href = `{% url 'boards:anonymous_board' %}`;
-        } else if (boardType === 'event') {
-            window.location.href = `{% url 'boards:event_board' %}`;
-        }
+        // 개별 게시글로 이동 (URL 패턴: /board/post/<id>/)
+        const postDetailUrl = `/board/post/${postId}/`;
+        window.location.href = postDetailUrl;
     }
 </script>
 {% endblock %} 
