@@ -847,21 +847,30 @@
                     // 모달 닫기
                     closeReviewDetailModal();
                     
-                    // 세션 스토리지에 센터 ID 저장 (URL에 노출하지 않음)
-                    sessionStorage.setItem('selectedCenterId', currentCenterId);
-                    console.log('💾 세션 스토리지에 저장된 센터 ID:', currentCenterId);
-                    
-                    // localStorage에도 백업 저장 (render 환경에서 sessionStorage가 제한될 수 있음)
+                    // 모든 기존 스토리지 정리 먼저
                     try {
-                        localStorage.setItem('selectedCenterId', currentCenterId);
-                        console.log('💾 로컬 스토리지에도 백업 저장됨');
+                        sessionStorage.removeItem('selectedCenterId');
+                        localStorage.removeItem('selectedCenterId');
+                        console.log('🧹 기존 스토리지 정리 완료');
                     } catch(e) {
-                        console.warn('⚠️ 로컬 스토리지 저장 실패:', e);
+                        console.warn('⚠️ 기존 스토리지 정리 실패:', e);
                     }
                     
-                    // URL 파라미터로도 전달 (백업 방법)
-                    const targetUrl = indexUrl + '?center_id=' + encodeURIComponent(currentCenterId);
-                    console.log('🔗 이동할 URL:', targetUrl);
+                    // 새로운 센터 ID를 스토리지에 저장
+                    try {
+                        sessionStorage.setItem('selectedCenterId', currentCenterId);
+                        localStorage.setItem('selectedCenterId', currentCenterId);
+                        console.log('💾 새로운 센터 ID 저장 완료:', currentCenterId);
+                    } catch(e) {
+                        console.warn('⚠️ 스토리지 저장 실패:', e);
+                    }
+                    
+                    // URL 파라미터로도 전달 (일회성)
+                    const targetUrl = indexUrl + '?center_id=' + encodeURIComponent(currentCenterId) + '&t=' + Date.now();
+                    console.log('🔗 이동할 URL (타임스탬프 포함):', targetUrl);
+                    
+                    // 추가 안전장치: 이동 후 일정 시간 후 URL 정리하도록 플래그 설정
+                    sessionStorage.setItem('shouldCleanupUrl', 'true');
                     
                     // 파라미터와 함께 index.html로 이동
                     window.location.href = targetUrl;

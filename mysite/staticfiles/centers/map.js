@@ -10,6 +10,10 @@ var map;
 var markers = [];
 var currentCenterId = null; // 현재 선택된 센터 ID를 저장할 변수
 
+// URL 파라미터 처리 완료 플래그 (한 번만 실행)
+var urlParameterProcessed = false;
+var isInitialLoad = true; // 초기 로드 여부를 추적하는 플래그
+
 // 드래그 핸들 관련 변수들
 let isDragging = false;
 let startY = 0;
@@ -199,6 +203,7 @@ function loadCenters(centers) {
 
             // 마커 클릭 이벤트
             naver.maps.Event.addListener(marker, 'click', function() {
+                console.log('👆 마커 클릭:', center.name);
                 showCenterDetails(center);
             });
 
@@ -208,20 +213,8 @@ function loadCenters(centers) {
         }
     });
     
-    // URL에서 center_id 파라미터 확인
-    const urlParams = new URLSearchParams(window.location.search);
-    const centerId = urlParams.get('center_id');
-    
-    if (centerId) {
-        console.log("Found center_id in URL:", centerId);
-        const center = centers.find(c => c.id === parseInt(centerId));
-        if (center) {
-            console.log("Found matching center:", center);
-            showCenterDetails(center);
-        } else {
-            console.error("No matching center found for ID:", centerId);
-        }
-    }
+    // URL 파라미터 처리는 initializeMap에서만 수행하므로 여기서는 제거
+    // 이는 중복 처리를 방지합니다.
 }
 
 function createTherapistCard(therapist) {
@@ -753,6 +746,30 @@ function closeBottomSheet() {
         bottomSheet.classList.add('translate-y-full');
         bottomSheet.style.transform = '';
         overlay.classList.add('hidden');
+        
+        console.log('🚪 Bottom Sheet 닫기');
+        
+        // 스토리지 완전 정리
+        try {
+            sessionStorage.removeItem('selectedCenterId');
+            localStorage.removeItem('selectedCenterId');
+            console.log('🧹 스토리지 정리 완료');
+        } catch(e) {
+            console.warn('⚠️ 스토리지 정리 실패:', e);
+        }
+        
+        // URL에서 파라미터 제거 (추가 보안)
+        const currentUrl = new URL(window.location);
+        if (currentUrl.searchParams.has('center_id') || currentUrl.searchParams.has('centerId')) {
+            currentUrl.searchParams.delete('center_id');
+            currentUrl.searchParams.delete('centerId');
+            const newUrl = currentUrl.toString();
+            window.history.replaceState({}, document.title, newUrl);
+            console.log('🗑️ URL 파라미터 추가 정리 완료:', newUrl);
+        }
+        
+        // 현재 센터 ID 초기화
+        currentCenterId = null;
     }
 }
 
@@ -1170,12 +1187,17 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
         const currentLocation = await getCurrentLocation();
         console.log("Current location:", currentLocation);
         
-        // URL에서 center_id 파라미터가 있는 경우 해당 센터의 좌표 사용
+        // URL에서 center_id 또는 centerId 파라미터 확인
         const urlParams = new URLSearchParams(window.location.search);
-        const centerId = urlParams.get('center_id');
+        const centerId = urlParams.get('center_id') || urlParams.get('centerId');
         
-        if (centerId) {
-            const center = centersData.find(c => c.id === parseInt(centerId));
+        // 세션 스토리지에서 센터 ID 확인 (새로운 기능)
+        const sessionCenterId = sessionStorage.getItem('selectedCenterId');
+        
+        let targetCenterId = centerId || sessionCenterId;
+        
+        if (targetCenterId) {
+            const center = centersData.find(c => c.id === parseInt(targetCenterId));
             if (center) {
                 initialLat = parseFloat(center.lat);
                 initialLng = parseFloat(center.lng);
@@ -1215,11 +1237,30 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
         map.setSize(new naver.maps.Size(window.innerWidth, newHeight));
     });
 
-    // 지도 이벤트 리스너 추가
+    // 지도 이벤트 리스너 추가 (개선된 로직)
     naver.maps.Event.addListener(map, 'idle', function() {
-        // 지도 이동이나 확대/축소가 끝났을 때 마커 업데이트
-        if (typeof centersData !== 'undefined') {
+        // URL 파라미터 처리가 완료된 후에만 마커 로딩
+        if (!urlParameterProcessed) {
+            console.log('⏸️ URL 파라미터 처리 대기 중...');
+            return;
+        }
+        
+        // 초기 로드 시에는 마커 로딩 스킵 (이미 loadCenters에서 처리됨)
+        if (isInitialLoad) {
+            console.log('⏸️ 초기 로드 중 - 마커 재로딩 스킵');
+            isInitialLoad = false;
+            return;
+        }
+        
+        // Bottom sheet가 닫혀있을 때만 마커 업데이트
+        const bottomSheet = document.getElementById('bottomSheet');
+        const isBottomSheetClosed = !bottomSheet || bottomSheet.classList.contains('translate-y-full');
+        
+        if (isBottomSheetClosed && typeof centersData !== 'undefined') {
+            console.log('🔄 마커 재로딩 실행');
             loadCenters(centersData);
+        } else {
+            console.log('⚠️ 마커 재로딩 스킵 - Bottom sheet 열려있음');
         }
     });
 
@@ -1228,13 +1269,92 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
         loadCenters(centersData);
     }
 
-    // 선택된 센터가 있는 경우 상세 정보 표시
-    const urlParams = new URLSearchParams(window.location.search);
-    const centerId = urlParams.get('center_id');
-    if (centerId) {
-        const center = centersData.find(c => c.id === parseInt(centerId));
-        if (center) {
-            showCenterDetails(center);
+    // URL 파라미터 처리 (한 번만 실행)
+    if (!urlParameterProcessed) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const centerId = urlParams.get('center_id') || urlParams.get('centerId'); // 두 가지 파라미터 모두 지원
+        const reviewId = urlParams.get('review_id');
+        const sessionCenterId = sessionStorage.getItem('selectedCenterId');
+        
+        console.log('🔍 URL 파라미터 처리 시작 (한 번만 실행):', {
+            center_id: urlParams.get('center_id'),
+            centerId: urlParams.get('centerId'),
+            sessionCenterId: sessionCenterId,
+            finalCenterId: centerId
+        });
+        
+        let targetCenterId = centerId || sessionCenterId;
+        
+        if (targetCenterId) {
+            urlParameterProcessed = true; // 플래그 설정으로 재실행 방지
+            
+            console.log('🎯 타겟 센터 ID:', targetCenterId);
+            const center = centersData.find(c => c.id === parseInt(targetCenterId));
+            console.log('🏢 찾은 센터:', center ? center.name : '센터를 찾을 수 없음');
+            
+            if (center) {
+                console.log('📋 센터 상세 정보 표시 시작');
+                showCenterDetails(center);
+                
+                // 즉시 URL과 스토리지 정리 (더 확실한 방법)
+                console.log('🧹 즉시 정리 시작');
+                
+                // 스토리지 정리
+                if (sessionCenterId) {
+                    sessionStorage.removeItem('selectedCenterId');
+                    console.log('🗑️ 세션 스토리지 정리 완료');
+                }
+                
+                // localStorage도 정리
+                try {
+                    localStorage.removeItem('selectedCenterId');
+                    console.log('🗑️ 로컬 스토리지 정리 완료');
+                } catch(e) {
+                    console.warn('⚠️ 로컬 스토리지 정리 실패:', e);
+                }
+                
+                // URL에서 파라미터 완전 제거
+                if (centerId) {
+                    const newUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+                    window.history.replaceState({}, document.title, newUrl);
+                    console.log('🗑️ URL 정리 완료:', newUrl);
+                    
+                    // 추가 보안: URL 파라미터가 완전히 제거되었는지 확인
+                    setTimeout(() => {
+                        const checkParams = new URLSearchParams(window.location.search);
+                        if (checkParams.get('center_id') || checkParams.get('centerId')) {
+                            console.warn('⚠️ URL 파라미터가 완전히 제거되지 않음, 재시도');
+                            window.history.replaceState({}, document.title, newUrl);
+                        }
+                    }, 100);
+                }
+                
+                // 리뷰 ID가 있는 경우 해당 리뷰를 modal로 표시
+                if (reviewId) {
+                    setTimeout(() => {
+                        showReviewDetail(parseInt(reviewId));
+                    }, 500); // bottom sheet가 열린 후 실행
+                }
+            }
+        } else {
+            urlParameterProcessed = true; // 파라미터가 없어도 플래그 설정
+        }
+        
+        // 추가 안전장치: URL 정리 플래그가 있으면 URL 정리
+        const shouldCleanupUrl = sessionStorage.getItem('shouldCleanupUrl');
+        if (shouldCleanupUrl === 'true') {
+            console.log('🧹 URL 정리 플래그 발견 - URL 정리 실행');
+            sessionStorage.removeItem('shouldCleanupUrl');
+            
+            setTimeout(() => {
+                const currentUrl = new URL(window.location);
+                currentUrl.searchParams.delete('center_id');
+                currentUrl.searchParams.delete('centerId');
+                currentUrl.searchParams.delete('t'); // 타임스탬프도 제거
+                const cleanUrl = currentUrl.toString();
+                window.history.replaceState({}, document.title, cleanUrl);
+                console.log('🗑️ 안전장치에 의한 URL 정리 완료:', cleanUrl);
+            }, 1000); // 1초 후 URL 정리
         }
     }
 
@@ -1307,3 +1427,38 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// 리뷰 상세보기 함수
+function showReviewDetail(reviewId) {
+    fetch(`/centers/api/review/${reviewId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const review = data.review;
+                
+                // 모달에 데이터 설정
+                document.getElementById('reviewDetailTitle').textContent = review.title;
+                document.getElementById('reviewDetailAuthor').textContent = review.author;
+                document.getElementById('reviewDetailDate').textContent = formatDate(review.created_at);
+                document.getElementById('reviewDetailContentText').textContent = review.content;
+                document.getElementById('reviewDetailCenter').textContent = review.center_name;
+                
+                // 별점 표시
+                const ratingContainer = document.getElementById('reviewDetailRating');
+                ratingContainer.innerHTML = generateStars(review.rating);
+                
+                // 모달 표시
+                document.getElementById('reviewDetailModal').classList.remove('hidden');
+            } else {
+                console.error('리뷰를 가져오는데 실패했습니다:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('리뷰 상세 정보 요청 중 오류 발생:', error);
+        });
+}
+
+// 리뷰 상세보기 모달 닫기 함수
+function closeReviewDetailModal() {
+    document.getElementById('reviewDetailModal').classList.add('hidden');
+}

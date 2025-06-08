@@ -12,6 +12,7 @@ var currentCenterId = null; // 현재 선택된 센터 ID를 저장할 변수
 
 // URL 파라미터 처리 완료 플래그 (한 번만 실행)
 var urlParameterProcessed = false;
+var isInitialLoad = true; // 초기 로드 여부를 추적하는 플래그
 
 // 드래그 핸들 관련 변수들
 let isDragging = false;
@@ -212,28 +213,8 @@ function loadCenters(centers) {
         }
     });
     
-    // URL에서 center_id 파라미터 확인
-    const urlParams = new URLSearchParams(window.location.search);
-    const centerId = urlParams.get('center_id');
-    const reviewId = urlParams.get('review_id');
-    
-    if (centerId) {
-        console.log("Found center_id in URL:", centerId);
-        const center = centers.find(c => c.id === parseInt(centerId));
-        if (center) {
-            console.log("Found matching center:", center);
-            showCenterDetails(center);
-            
-            // 리뷰 ID가 있는 경우 해당 리뷰를 modal로 표시
-            if (reviewId) {
-                setTimeout(() => {
-                    showReviewDetail(parseInt(reviewId));
-                }, 500); // bottom sheet가 열린 후 실행
-            }
-        } else {
-            console.error("No matching center found for ID:", centerId);
-        }
-    }
+    // URL 파라미터 처리는 initializeMap에서만 수행하므로 여기서는 제거
+    // 이는 중복 처리를 방지합니다.
 }
 
 function createTherapistCard(therapist) {
@@ -768,10 +749,27 @@ function closeBottomSheet() {
         
         console.log('🚪 Bottom Sheet 닫기');
         
-        // 스토리지 정리
-        sessionStorage.removeItem('selectedCenterId');
-        localStorage.removeItem('selectedCenterId');
-        console.log('🧹 스토리지 정리 완료');
+        // 스토리지 완전 정리
+        try {
+            sessionStorage.removeItem('selectedCenterId');
+            localStorage.removeItem('selectedCenterId');
+            console.log('🧹 스토리지 정리 완료');
+        } catch(e) {
+            console.warn('⚠️ 스토리지 정리 실패:', e);
+        }
+        
+        // URL에서 파라미터 제거 (추가 보안)
+        const currentUrl = new URL(window.location);
+        if (currentUrl.searchParams.has('center_id') || currentUrl.searchParams.has('centerId')) {
+            currentUrl.searchParams.delete('center_id');
+            currentUrl.searchParams.delete('centerId');
+            const newUrl = currentUrl.toString();
+            window.history.replaceState({}, document.title, newUrl);
+            console.log('🗑️ URL 파라미터 추가 정리 완료:', newUrl);
+        }
+        
+        // 현재 센터 ID 초기화
+        currentCenterId = null;
     }
 }
 
@@ -1239,11 +1237,18 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
         map.setSize(new naver.maps.Size(window.innerWidth, newHeight));
     });
 
-    // 지도 이벤트 리스너 추가 (단순화)
+    // 지도 이벤트 리스너 추가 (개선된 로직)
     naver.maps.Event.addListener(map, 'idle', function() {
         // URL 파라미터 처리가 완료된 후에만 마커 로딩
         if (!urlParameterProcessed) {
             console.log('⏸️ URL 파라미터 처리 대기 중...');
+            return;
+        }
+        
+        // 초기 로드 시에는 마커 로딩 스킵 (이미 loadCenters에서 처리됨)
+        if (isInitialLoad) {
+            console.log('⏸️ 초기 로드 중 - 마커 재로딩 스킵');
+            isInitialLoad = false;
             return;
         }
         
@@ -1291,16 +1296,37 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
                 console.log('📋 센터 상세 정보 표시 시작');
                 showCenterDetails(center);
                 
-                // 즉시 URL과 스토리지 정리
+                // 즉시 URL과 스토리지 정리 (더 확실한 방법)
                 console.log('🧹 즉시 정리 시작');
+                
+                // 스토리지 정리
                 if (sessionCenterId) {
                     sessionStorage.removeItem('selectedCenterId');
+                    console.log('🗑️ 세션 스토리지 정리 완료');
                 }
+                
+                // localStorage도 정리
+                try {
+                    localStorage.removeItem('selectedCenterId');
+                    console.log('🗑️ 로컬 스토리지 정리 완료');
+                } catch(e) {
+                    console.warn('⚠️ 로컬 스토리지 정리 실패:', e);
+                }
+                
+                // URL에서 파라미터 완전 제거
                 if (centerId) {
-                    // URL에서 파라미터 즉시 제거
-                    const newUrl = window.location.pathname;
+                    const newUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
                     window.history.replaceState({}, document.title, newUrl);
                     console.log('🗑️ URL 정리 완료:', newUrl);
+                    
+                    // 추가 보안: URL 파라미터가 완전히 제거되었는지 확인
+                    setTimeout(() => {
+                        const checkParams = new URLSearchParams(window.location.search);
+                        if (checkParams.get('center_id') || checkParams.get('centerId')) {
+                            console.warn('⚠️ URL 파라미터가 완전히 제거되지 않음, 재시도');
+                            window.history.replaceState({}, document.title, newUrl);
+                        }
+                    }, 100);
                 }
                 
                 // 리뷰 ID가 있는 경우 해당 리뷰를 modal로 표시
@@ -1312,6 +1338,23 @@ async function initializeMap(initialLat, initialLng, initialZoom) {
             }
         } else {
             urlParameterProcessed = true; // 파라미터가 없어도 플래그 설정
+        }
+        
+        // 추가 안전장치: URL 정리 플래그가 있으면 URL 정리
+        const shouldCleanupUrl = sessionStorage.getItem('shouldCleanupUrl');
+        if (shouldCleanupUrl === 'true') {
+            console.log('🧹 URL 정리 플래그 발견 - URL 정리 실행');
+            sessionStorage.removeItem('shouldCleanupUrl');
+            
+            setTimeout(() => {
+                const currentUrl = new URL(window.location);
+                currentUrl.searchParams.delete('center_id');
+                currentUrl.searchParams.delete('centerId');
+                currentUrl.searchParams.delete('t'); // 타임스탬프도 제거
+                const cleanUrl = currentUrl.toString();
+                window.history.replaceState({}, document.title, cleanUrl);
+                console.log('🗑️ 안전장치에 의한 URL 정리 완료:', cleanUrl);
+            }, 1000); // 1초 후 URL 정리
         }
     }
 
