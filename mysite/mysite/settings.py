@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.naver',
+    'allauth.socialaccount.providers.kakao',
     'django_extensions',  # URL 디버깅을 위해 추가
     
     # Local apps
@@ -228,6 +229,9 @@ SOCIALACCOUNT_ADAPTER = 'accounts.adapters.CustomSocialAccountAdapter'
 # Social account settings - 중간 확인 페이지 건너뛰기
 SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = False  # 이메일이 없어도 가입 가능
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'  # 소셜 로그인 시 이메일 인증 건너뛰기
+SOCIALACCOUNT_QUERY_EMAIL = False  # 이메일 추가 입력 건너뛰기
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -247,7 +251,7 @@ NAVER_CLIENT_ID = os.getenv('NAVER_CLIENT_ID')
 NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET')
 
 # Login and logout redirects
-LOGIN_REDIRECT_URL = 'centers:index'
+LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = 'accounts:account_login'
 LOGOUT_REDIRECT_URL = 'centers:index'
 
@@ -400,6 +404,8 @@ GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 NAVER_LOGIN_CLIENT_ID = os.getenv('NAVER_LOGIN_CLIENT_ID')
 NAVER_LOGIN_CLIENT_SECRET = os.getenv('NAVER_LOGIN_CLIENT_SECRET')
+KAKAO_REST_API_KEY = os.getenv('KAKAO_REST_API_KEY')
+KAKAO_CLIENT_SECRET = os.getenv('KAKAO_CLIENT_SECRET')
 
 # 운영환경에서 환경변수 로드 상태 확인 (로그에 기록)
 import logging
@@ -409,6 +415,8 @@ logger.info(f"GOOGLE_CLIENT_ID loaded: {'Yes' if GOOGLE_CLIENT_ID else 'No'}")
 logger.info(f"GOOGLE_CLIENT_SECRET loaded: {'Yes' if GOOGLE_CLIENT_SECRET else 'No'}")
 logger.info(f"NAVER_LOGIN_CLIENT_ID loaded: {'Yes' if NAVER_LOGIN_CLIENT_ID else 'No'}")
 logger.info(f"NAVER_LOGIN_CLIENT_SECRET loaded: {'Yes' if NAVER_LOGIN_CLIENT_SECRET else 'No'}")
+logger.info(f"KAKAO_REST_API_KEY loaded: {'Yes' if KAKAO_REST_API_KEY else 'No'}")
+logger.info(f"KAKAO_CLIENT_SECRET loaded: {'Yes' if KAKAO_CLIENT_SECRET else 'No'}")
 
 # 환경변수가 없으면 소셜 로그인을 비활성화
 SOCIALACCOUNT_PROVIDERS = {}
@@ -443,3 +451,22 @@ if NAVER_LOGIN_CLIENT_ID and NAVER_LOGIN_CLIENT_SECRET:
     logger.info("Naver OAuth configured successfully")
 else:
     logger.error("Naver OAuth not configured - missing environment variables")
+
+if KAKAO_REST_API_KEY and KAKAO_CLIENT_SECRET:
+    SOCIALACCOUNT_PROVIDERS['kakao'] = {
+        'APP': {
+            'client_id': KAKAO_REST_API_KEY,
+            'secret': KAKAO_CLIENT_SECRET,
+            'key': ''
+        },
+        'SCOPE': [
+            'profile_nickname',
+            'account_email',
+        ],
+        'AUTH_PARAMS': {
+            'response_type': 'code',
+        }
+    }
+    logger.info("Kakao OAuth configured successfully")
+else:
+    logger.error("Kakao OAuth not configured - missing environment variables")

@@ -50,6 +50,18 @@
     color: white;
     border-color: #02b351;
 }
+
+.kakao-btn {
+    background: #FEE500;
+    color: #3C1E1E;
+    border-color: #FEE500;
+}
+
+.kakao-btn:hover {
+    background: #FADA0A;
+    color: #3C1E1E;
+    border-color: #FADA0A;
+}
 </style>
 
 {% for provider in socialaccount_providers %}
@@ -76,6 +88,16 @@
                method="{{ process_var }}">
                 <img src="{% static 'images/naver_icon.png' %}" alt="Naver">
                 네이버 로그인
+            </a>
+        </li>
+    {% elif provider.id == "kakao" %}
+        <li class="socialaccount_provider {{ provider.id }}">
+            <a title="Kakao" 
+               class="socialaccount_provider kakao social-btn kakao-btn"
+               href="{% provider_login_url provider.id process=process %}"
+               method="{{ process_var }}">
+               <img src="{% static 'images/Kakao_login.png' %}" alt="Kakao">
+                카카오 로그인
             </a>
         </li>
     {% endif %}
